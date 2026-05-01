@@ -15,7 +15,7 @@ import 'package:domora/core/widgets/simple_form.dart';
 import 'package:domora/features/onboarding/data/sources/onboarding_data_source.dart';
 import 'package:domora/features/onboarding/ui/bloc/onboarding_bloc.dart';
 
-/// Pantalla de onboarding inicial (HU3).
+/// Pantalla de onboarding inicial
 /// Recibe el rol como parámetro de ruta (?role=client|provider).
 class OnboardingScreen extends StatefulWidget {
   final String role;
@@ -121,7 +121,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(state.message)));
     } else if (state is OnboardingSuccessState) {
-      // HU3: redirige al dashboard según rol.
+      // Redirige al dashboard según rol.
       context.go(state.role == AppConstants.roleProvider
           ? AppConstants.routeProviderHome
           : AppConstants.routeClientHome);
@@ -207,7 +207,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           validator: Validators.phone,
                         ),
 
-                        // ----------------- SOLO PROVEEDOR -----------------
+                        //  SOLO PROVEEDOR 
                         if (_isProvider) ...[
                           const _SectionHeader(
                             title: 'Sobre tu experiencia',

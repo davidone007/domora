@@ -13,7 +13,7 @@ import 'package:domora/features/profile/domain/repository/profile_repository.dar
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileDataSource _dataSource;
-  final SupabaseClient _client;
+  final supabase.SupabaseClient _client;
 
   ProfileRepositoryImpl(this._dataSource, this._client);
 
@@ -60,7 +60,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
           primaryAddress: primaryAddress,
         ),
       );
-    } on PostgrestException catch (e) {
+    } on supabase.PostgrestException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));

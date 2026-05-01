@@ -5,9 +5,7 @@ import 'package:domora/features/onboarding/data/sources/onboarding_data_source.d
 import 'package:domora/features/onboarding/domain/usecases/save_client_profile_usecase.dart';
 import 'package:domora/features/onboarding/domain/usecases/save_provider_profile_usecase.dart';
 
-// ---------------------------------------------------------------------------
 // EVENTS
-// ---------------------------------------------------------------------------
 abstract class OnboardingEvent extends Equatable {
   const OnboardingEvent();
   @override
@@ -24,9 +22,7 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
   const OnboardingSaveProviderEvent(this.data);
 }
 
-// ---------------------------------------------------------------------------
 // STATES
-// ---------------------------------------------------------------------------
 abstract class OnboardingState extends Equatable {
   const OnboardingState();
   @override
@@ -58,9 +54,7 @@ class OnboardingFailState extends OnboardingState {
   List<Object?> get props => [message];
 }
 
-// ---------------------------------------------------------------------------
 // BLOC
-// ---------------------------------------------------------------------------
 class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
   final SaveClientProfileUseCase _saveClient;
   final SaveProviderProfileUseCase _saveProvider;
