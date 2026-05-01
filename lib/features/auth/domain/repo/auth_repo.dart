@@ -1,0 +1,55 @@
+import 'package:dartz/dartz.dart';
+import 'package:equatable/equatable.dart';
+import 'package:domora/core/error/failures.dart';
+
+/// Resultado de operaciones de autenticación.
+class AuthResult extends Equatable {
+  final String userId;
+  final String email;
+  final String? role;
+  final bool onboardingCompleted;
+
+  const AuthResult({
+    required this.userId,
+    required this.email,
+    this.role,
+    this.onboardingCompleted = false,
+  });
+
+  AuthResult copyWith({
+    String? userId,
+    String? email,
+    String? role,
+    bool? onboardingCompleted,
+  }) {
+    return AuthResult(
+      userId: userId ?? this.userId,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+    );
+  }
+
+  @override
+  List<Object?> get props => [userId, email, role, onboardingCompleted];
+}
+
+/// Contrato abstracto del repositorio de autenticación. La capa de dominio
+/// no conoce la implementación concreta (Supabase u otra).
+abstract class AuthRepository {
+  Future<Either<Failure, AuthResult>> signUp({
+    required String email,
+    required String password,
+    required String role,
+  });
+
+  Future<Either<Failure, AuthResult>> signIn({
+    required String email,
+    required String password,
+  });
+
+  Future<Either<Failure, void>> signOut();
+
+  /// Devuelve el resultado de la sesión actual o `null` si no hay sesión.
+  Future<Either<Failure, AuthResult?>> getCurrentSession();
+}
