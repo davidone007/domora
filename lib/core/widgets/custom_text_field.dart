@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// Campo de texto reutilizable con etiqueta, validación y soporte de
-/// contraseña. Mantiene una apariencia consistente en toda la app.
+/// contraseña.
 class CustomTextField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
