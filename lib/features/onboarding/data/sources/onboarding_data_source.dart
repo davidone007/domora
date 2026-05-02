@@ -35,6 +35,7 @@ class ProviderOnboardingData {
   // Dirección
   final String addressLine1;
   final String? addressLine2;
+  final String department;
   final String city;
   final String? neighborhood;
 
@@ -49,6 +50,7 @@ class ProviderOnboardingData {
     this.avatar,
     required this.addressLine1,
     this.addressLine2,
+    required this.department,
     required this.city,
     this.neighborhood,
   });
@@ -140,6 +142,7 @@ class OnboardingDataSourceImpl implements OnboardingDataSource {
       'user_id': data.userId,
       'address_line1': data.addressLine1,
       'address_line2': data.addressLine2,
+      'department': data.department,
       'city': data.city,
       'neighborhood': data.neighborhood,
       'is_primary': true,

@@ -6,6 +6,7 @@ class Address extends Equatable {
   final String? locationName;
   final String addressLine1;
   final String? addressLine2;
+  final String department;
   final String city;
   final String? neighborhood;
   final double? latitude;
@@ -19,6 +20,7 @@ class Address extends Equatable {
     this.locationName,
     required this.addressLine1,
     this.addressLine2,
+    required this.department,
     required this.city,
     this.neighborhood,
     this.latitude,
@@ -32,6 +34,7 @@ class Address extends Equatable {
       addressLine1,
       if (addressLine2 != null && addressLine2!.isNotEmpty) addressLine2!,
       if (neighborhood != null && neighborhood!.isNotEmpty) neighborhood!,
+      department,
       city,
     ];
     return parts.join(', ');
@@ -43,6 +46,7 @@ class Address extends Equatable {
         userId,
         addressLine1,
         addressLine2,
+        department,
         city,
         neighborhood,
         isPrimary,

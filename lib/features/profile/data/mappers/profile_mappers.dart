@@ -31,6 +31,7 @@ class ProfileMappers {
       locationName: map['location_name'] as String?,
       addressLine1: map['address_line1'] as String? ?? '',
       addressLine2: map['address_line2'] as String?,
+      department: map['department'] as String? ?? '',
       city: map['city'] as String? ?? '',
       neighborhood: map['neighborhood'] as String?,
       latitude: (map['latitude'] as num?)?.toDouble(),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:domora/core/utils/colombia_locations.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/utils/validators.dart';
 import 'package:domora/core/widgets/avatar_picker.dart';
@@ -42,8 +43,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _bioCtrl = TextEditingController();
   final _addressLine1Ctrl = TextEditingController();
   final _addressLine2Ctrl = TextEditingController();
-  final _cityCtrl = TextEditingController();
   final _neighborhoodCtrl = TextEditingController();
+  String? _selectedDepartment;
+  String? _selectedCity;
 
   bool get _isProvider => widget.role == AppConstants.roleProvider;
 
@@ -57,7 +59,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _bioCtrl.dispose();
     _addressLine1Ctrl.dispose();
     _addressLine2Ctrl.dispose();
-    _cityCtrl.dispose();
     _neighborhoodCtrl.dispose();
     super.dispose();
   }
@@ -86,7 +87,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _addressLine2Ctrl.text.trim().isEmpty
                       ? null
                       : _addressLine2Ctrl.text.trim(),
-              city: _cityCtrl.text.trim(),
+              department: _selectedDepartment ?? '',
+              city: _selectedCity ?? '',
               neighborhood:
                   _neighborhoodCtrl.text.trim().isEmpty
                       ? null
@@ -257,15 +259,61 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             controller: _addressLine2Ctrl,
                             label: 'Apartamento / referencia (opcional)',
                           ),
+                          DropdownButtonFormField<String>(
+                            value: _selectedDepartment,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Departamento',
+                              prefixIcon: Icon(Icons.map_outlined, size: 20),
+                            ),
+                            items: ColombiaLocations.departmentList
+                                .map(
+                                  (department) => DropdownMenuItem(
+                                    value: department,
+                                    child: Text(department),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedDepartment = value;
+                                _selectedCity = null;
+                              });
+                            },
+                            validator: (v) =>
+                                Validators.required(v, fieldName: 'El departamento'),
+                          ),
                           Row(
                             children: [
                               Expanded(
-                                child: CustomTextField(
-                                  controller: _cityCtrl,
-                                  label: 'Ciudad',
-                                  prefixIcon: Icons.location_city_outlined,
-                                  validator: (v) => Validators.required(v,
-                                      fieldName: 'La ciudad'),
+                                child: DropdownButtonFormField<String>(
+                                  value: _selectedCity,
+                                  isExpanded: true,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Ciudad',
+                                    prefixIcon: Icon(
+                                      Icons.location_city_outlined,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  items: (_selectedDepartment == null)
+                                      ? const []
+                                      : ColombiaLocations.citiesFor(
+                                          _selectedDepartment!,
+                                        )
+                                          .map(
+                                            (city) => DropdownMenuItem(
+                                              value: city,
+                                              child: Text(city),
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged: _selectedDepartment == null
+                                      ? null
+                                      : (value) =>
+                                          setState(() => _selectedCity = value),
+                                  validator: (v) =>
+                                      Validators.required(v, fieldName: 'La ciudad'),
                                 ),
                               ),
                               const SizedBox(width: 12),
