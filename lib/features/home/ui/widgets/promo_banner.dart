@@ -23,7 +23,7 @@ class PromoBanner extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        height: 150,
+        constraints: const BoxConstraints(minHeight: 150),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: const LinearGradient(

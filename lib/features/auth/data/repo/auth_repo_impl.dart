@@ -105,10 +105,13 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, void>> signOut() async {
     try {
       await _dataSource.signOut();
-      return const Right(null);
-    } catch (e) {
-      return Left(UnknownFailure(e.toString()));
+    } catch (_) {
+      // Supabase Flutter siempre limpia la sesión local incluso si la
+      // petición al servidor falla (p.ej. sin conexión). Tratamos cualquier
+      // excepción como cierre de sesión exitoso para garantizar que la UI
+      // siempre navega a la pantalla de bienvenida.
     }
+    return const Right(null);
   }
 
   @override

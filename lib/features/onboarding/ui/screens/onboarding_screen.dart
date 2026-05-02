@@ -10,6 +10,7 @@ import 'package:domora/core/widgets/avatar_picker.dart';
 import 'package:domora/core/widgets/custom_button.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
 import 'package:domora/core/widgets/loading_overlay.dart';
+import 'package:domora/core/widgets/phone_field.dart';
 import 'package:domora/core/widgets/simple_form.dart';
 import 'package:domora/features/onboarding/ui/bloc/onboarding_bloc.dart';
 
@@ -34,6 +35,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  String _dialCode = '+57';
   File? _avatar;
 
   // Solo proveedor
@@ -76,7 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               userId: widget.userId,
               firstName: _firstNameCtrl.text.trim(),
               lastName: _lastNameCtrl.text.trim(),
-              phone: _phoneCtrl.text.trim(),
+              phone: '$_dialCode ${_phoneCtrl.text.trim()}',
               yearsExperience: years,
               hourlyRate: rate,
               bio: _bioCtrl.text.trim().isEmpty ? null : _bioCtrl.text.trim(),
@@ -99,7 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               userId: widget.userId,
               firstName: _firstNameCtrl.text.trim(),
               lastName: _lastNameCtrl.text.trim(),
-              phone: _phoneCtrl.text.trim(),
+              phone: '$_dialCode ${_phoneCtrl.text.trim()}',
               avatar: _avatar,
             ),
           );
@@ -189,13 +191,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ],
                         ),
-                        CustomTextField(
+                        PhoneField(
                           controller: _phoneCtrl,
-                          label: 'Teléfono',
-                          hint: '+57 300 123 4567',
-                          prefixIcon: Icons.phone_outlined,
-                          keyboardType: TextInputType.phone,
-                          validator: Validators.phone,
+                          dialCode: _dialCode,
+                          onDialCodeChanged: (code) =>
+                              setState(() => _dialCode = code),
+                          validator: Validators.phoneNumber,
                         ),
 
                         //  SOLO PROVEEDOR 
