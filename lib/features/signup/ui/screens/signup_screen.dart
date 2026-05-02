@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/utils/validators.dart';
-import 'package:domora/core/widgets/custom_button.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
 import 'package:domora/core/widgets/role_selector.dart';
-import 'package:domora/core/widgets/simple_form.dart';
 import 'package:domora/features/signup/ui/bloc/signup_bloc.dart';
 
+/// Pantalla de registro (HU1).
+///
+/// Diseño basado en la referencia de marca: AppBar con flecha y título
+/// "Registrarse" centrado, encabezado "Empecemos" + subtítulo, selector de
+/// rol, campos con label flotante, checkbox de términos, botón verde.
+///
+/// Mismos campos que el modelo de datos requiere
+/// (email, password, confirm, role);
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -25,6 +32,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   String? _role;
   bool _showRoleError = false;
+  bool _acceptTerms = false;
+  bool _showTermsError = false;
 
   @override
   void dispose() {
@@ -38,8 +47,14 @@ class _SignupScreenState extends State<SignupScreen> {
     FocusScope.of(context).unfocus();
     final formOk = _formKey.currentState?.validate() ?? false;
     final roleOk = _role != null;
-    setState(() => _showRoleError = !roleOk);
-    if (!formOk || !roleOk) return;
+    final termsOk = _acceptTerms;
+
+    setState(() {
+      _showRoleError = !roleOk;
+      _showTermsError = !termsOk;
+    });
+
+    if (!formOk || !roleOk || !termsOk) return;
 
     context.read<SignupBloc>().add(
           SignupSubmitEvent(
@@ -56,7 +71,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(state.message)));
     } else if (state is SignupSuccessState) {
-      // HU1: tras registro, redirige a onboarding del rol seleccionado.
+      // HU1: tras registro, redirige al onboarding del rol seleccionado.
       context.go(AppConstants.routeOnboarding);
     }
   }
@@ -66,10 +81,12 @@ class _SignupScreenState extends State<SignupScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
+        title: const Text('Registrarse'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_back, size: 22),
         ),
       ),
       body: SafeArea(
@@ -79,85 +96,191 @@ class _SignupScreenState extends State<SignupScreen> {
             final loading = state is SignupLoadingState;
 
             return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Crea tu cuenta',
-                      style: theme.textTheme.displayMedium),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
+
+                  // Encabezado.
+                  Text('Empecemos', style: theme.textTheme.displayMedium),
+                  const SizedBox(height: 12),
                   Text(
-                    'Únete a Domora y conecta con la red de servicios para el hogar.',
-                    style: theme.textTheme.bodyMedium,
+                    'Parece que eres nuevo aquí.\nConfiguremos tu perfil.',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
-                  const SizedBox(height: 28),
-                  SimpleForm(
-                    formKey: _formKey,
-                    children: [
-                      RoleSelector(
-                        selected: _role,
-                        onChanged: (r) {
-                          setState(() {
-                            _role = r;
-                            _showRoleError = false;
-                          });
-                        },
+
+                  const SizedBox(height: 32),
+
+                  // Selector de rol — central al modelo de datos.
+                  RoleSelector(
+                    selected: _role,
+                    onChanged: (r) {
+                      setState(() {
+                        _role = r;
+                        _showRoleError = false;
+                      });
+                    },
+                  ),
+                  if (_showRoleError)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4, top: 6),
+                      child: Text(
+                        'Selecciona un rol para continuar',
+                        style: TextStyle(
+                          color: theme.colorScheme.error,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      if (_showRoleError)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4, top: 4),
+                    ),
+
+                  const SizedBox(height: 24),
+
+                  // Campos.
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        CustomTextField(
+                          controller: _emailCtrl,
+                          label: 'Correo electrónico',
+                          hint: 'tucorreo@ejemplo.com',
+                          keyboardType: TextInputType.emailAddress,
+                          validator: Validators.email,
+                        ),
+                        const SizedBox(height: 16),
+                        CustomTextField(
+                          controller: _passwordCtrl,
+                          label: 'Contraseña',
+                          isPassword: true,
+                          validator: Validators.password,
+                          helperText:
+                              'Mínimo 8 caracteres, una letra y un número',
+                        ),
+                        const SizedBox(height: 16),
+                        CustomTextField(
+                          controller: _confirmCtrl,
+                          label: 'Confirmar contraseña',
+                          isPassword: true,
+                          textInputAction: TextInputAction.done,
+                          validator: (v) => Validators.confirmPassword(
+                              v, _passwordCtrl.text),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Términos y condiciones.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: Checkbox(
+                            value: _acceptTerms,
+                            onChanged: loading
+                                ? null
+                                : (v) => setState(() {
+                                      _acceptTerms = v ?? false;
+                                      if (_acceptTerms) _showTermsError = false;
+                                    }),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textPrimary,
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
+                            children: [
+                              const TextSpan(
+                                  text: 'Al crear una cuenta, aceptas nuestros '),
+                              TextSpan(
+                                text: 'Términos y condiciones',
+                                style: const TextStyle(
+                                  color: AppTheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const TextSpan(text: '.'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_showTermsError)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 34, top: 4),
+                      child: Text(
+                        'Debes aceptar los términos para continuar',
+                        style: TextStyle(
+                          color: theme.colorScheme.error,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 24),
+
+                  // Botón principal.
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: loading ? null : _submit,
+                      child: loading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.4,
+                                valueColor:
+                                    AlwaysStoppedAnimation(Colors.white),
+                              ),
+                            )
+                          : const Text('Continuar'),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Footer.
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '¿Ya tienes una cuenta? ',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        GestureDetector(
+                          onTap: loading ? null : () => context.pop(),
                           child: Text(
-                            'Selecciona un rol para continuar',
-                            style: TextStyle(
-                              color: theme.colorScheme.error,
-                              fontSize: 12,
+                            'Iniciar sesión',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.primary,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                      CustomTextField(
-                        controller: _emailCtrl,
-                        label: 'Correo electrónico',
-                        hint: 'tucorreo@ejemplo.com',
-                        prefixIcon: Icons.alternate_email,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: Validators.email,
-                      ),
-                      CustomTextField(
-                        controller: _passwordCtrl,
-                        label: 'Contraseña',
-                        prefixIcon: Icons.lock_outline,
-                        isPassword: true,
-                        validator: Validators.password,
-                        helperText: 'Mínimo 8 caracteres, una letra y un número',
-                      ),
-                      CustomTextField(
-                        controller: _confirmCtrl,
-                        label: 'Confirmar contraseña',
-                        prefixIcon: Icons.lock_reset_outlined,
-                        isPassword: true,
-                        textInputAction: TextInputAction.done,
-                        validator: (v) =>
-                            Validators.confirmPassword(v, _passwordCtrl.text),
-                      ),
-                      const SizedBox(height: 8),
-                      CustomButton(
-                        label: 'Crear cuenta',
-                        onPressed: _submit,
-                        isLoading: loading,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('¿Ya tienes cuenta? ',
-                          style: theme.textTheme.bodyMedium),
-                      TextButton(
-                        onPressed: loading ? null : () => context.pop(),
-                        child: const Text('Inicia sesión'),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),

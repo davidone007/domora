@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
+import 'package:domora/core/widgets/main_shell.dart';
 import 'package:domora/features/profile/domain/model/full_profile.dart';
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
 
@@ -24,44 +26,96 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _signOut() async {
     await Supabase.instance.client.auth.signOut();
-    if (mounted) context.go(AppConstants.routeLogin);
+    if (mounted) context.go(AppConstants.routeWelcome);
+  }
+
+  /// Decide a qué dashboard regresar según el rol cargado.
+  void _goToHome() {
+    final state = context.read<ProfileBloc>().state;
+    if (state is ProfileLoadedState) {
+      final route = state.profile.isProvider
+          ? AppConstants.routeProviderHome
+          : AppConstants.routeClientHome;
+      context.go(route);
+    } else {
+      // Fallback: home de cliente si aún no hemos cargado el perfil.
+      context.go(AppConstants.routeClientHome);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mi perfil'),
-        actions: [
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            icon: const Icon(Icons.logout),
-            onPressed: _signOut,
-          ),
-        ],
-      ),
-      body: BlocBuilder<ProfileBloc, ProfileState>(
-        builder: (context, state) {
-          if (state is ProfileLoadingState || state is ProfileInitialState) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state is ProfileErrorState) {
-            return _ErrorView(
-              message: state.message,
-              onRetry: () =>
-                  context.read<ProfileBloc>().add(const ProfileRefreshEvent()),
+    return MainShell(
+      activeTab: MainTab.profile,
+      onTabSelected: (tab) {
+        if (tab == MainTab.home) _goToHome();
+        if (tab == MainTab.requests || tab == MainTab.coupons) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(content: Text('Disponible próximamente')),
             );
-          }
-          if (state is ProfileLoadedState) {
-            return RefreshIndicator(
-              onRefresh: () async => context
-                  .read<ProfileBloc>()
-                  .add(const ProfileRefreshEvent()),
-              child: _ProfileContent(profile: state.profile),
-            );
-          }
-          return const SizedBox.shrink();
-        },
+        }
+      },
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // AppBar manual (no usamos Scaffold.appBar porque el MainShell ya
+            // posee el Scaffold raíz; añadir otro daría doble AppBar).
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: _goToHome,
+                    icon: const Icon(Icons.arrow_back, size: 22),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Mi perfil',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Cerrar sesión',
+                    onPressed: _signOut,
+                    icon: const Icon(Icons.logout, size: 22),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: BlocBuilder<ProfileBloc, ProfileState>(
+                builder: (context, state) {
+                  if (state is ProfileLoadingState ||
+                      state is ProfileInitialState) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state is ProfileErrorState) {
+                    return _ErrorView(
+                      message: state.message,
+                      onRetry: () => context
+                          .read<ProfileBloc>()
+                          .add(const ProfileRefreshEvent()),
+                    );
+                  }
+                  if (state is ProfileLoadedState) {
+                    return RefreshIndicator(
+                      onRefresh: () async => context
+                          .read<ProfileBloc>()
+                          .add(const ProfileRefreshEvent()),
+                      child: _ProfileContent(profile: state.profile),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -78,52 +132,47 @@ class _ProfileContent extends StatelessWidget {
     final isProvider = profile.isProvider;
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
       children: [
-        // Tarjeta principal
+        // Tarjeta principal con avatar y nombre.
         Container(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.dividerColor),
+            borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+            border: Border.all(color: AppTheme.border),
           ),
           child: Column(
             children: [
               CircleAvatar(
                 radius: 50,
-                backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+                backgroundColor: AppTheme.primarySoft,
                 backgroundImage: (profile.avatarUrl != null &&
                         profile.avatarUrl!.isNotEmpty)
                     ? NetworkImage(profile.avatarUrl!)
                     : null,
                 child: (profile.avatarUrl == null ||
                         profile.avatarUrl!.isEmpty)
-                    ? Icon(Icons.person,
-                        size: 56, color: theme.colorScheme.primary)
+                    ? const Icon(Icons.person,
+                        size: 56, color: AppTheme.primary)
                     : null,
               ),
               const SizedBox(height: 14),
               Text(profile.user.fullName,
                   style: theme.textTheme.headlineMedium,
                   textAlign: TextAlign.center),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 5),
+                    horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (isProvider
-                          ? theme.colorScheme.secondary
-                          : theme.colorScheme.primary)
-                      .withOpacity(0.12),
+                  color: AppTheme.primarySoft,
                   borderRadius: BorderRadius.circular(40),
                 ),
                 child: Text(
                   isProvider ? 'PROVEEDOR' : 'CLIENTE',
-                  style: TextStyle(
-                    color: isProvider
-                        ? theme.colorScheme.secondary
-                        : theme.colorScheme.primary,
+                  style: const TextStyle(
+                    color: AppTheme.primary,
                     fontWeight: FontWeight.w800,
                     fontSize: 11,
                     letterSpacing: 1.4,
@@ -143,7 +192,7 @@ class _ProfileContent extends StatelessWidget {
         ),
         const SizedBox(height: 20),
 
-        // Información de contacto
+        // Información de contacto.
         _InfoSection(
           title: 'Información de contacto',
           children: [
@@ -161,7 +210,7 @@ class _ProfileContent extends StatelessWidget {
           ],
         ),
 
-        // Sección específica de proveedor
+        // Sección específica de proveedor.
         if (isProvider && profile.providerProfile != null) ...[
           const SizedBox(height: 20),
           _InfoSection(
@@ -207,14 +256,14 @@ class _ProfileContent extends StatelessWidget {
           ],
         ],
 
-        // Acciones
+        // Acciones.
         const SizedBox(height: 28),
         OutlinedButton.icon(
-          icon: const Icon(Icons.logout),
+          icon: const Icon(Icons.logout, size: 18),
           label: const Text('Cerrar sesión'),
           onPressed: () async {
             await Supabase.instance.client.auth.signOut();
-            if (context.mounted) context.go(AppConstants.routeLogin);
+            if (context.mounted) context.go(AppConstants.routeWelcome);
           },
         ),
       ],
@@ -235,8 +284,8 @@ class _InfoSection extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,10 +321,10 @@ class _InfoRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.08),
+              color: AppTheme.primarySoft,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+            child: Icon(icon, color: AppTheme.primary, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -310,7 +359,7 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 56, color: Colors.redAccent),
+            const Icon(Icons.error_outline, size: 56, color: AppTheme.error),
             const SizedBox(height: 16),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 24),
