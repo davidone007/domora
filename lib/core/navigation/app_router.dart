@@ -137,15 +137,9 @@ GoRouter buildRouter() {
 
 /// Resuelve el rol del usuario actual antes de mostrar el onboarding.
 /// Necesario porque el rol vive en la base de datos, no en la URL.
-class _OnboardingRouteResolver extends StatefulWidget {
+class _OnboardingRouteResolver extends StatelessWidget {
   const _OnboardingRouteResolver();
 
-  @override
-  State<_OnboardingRouteResolver> createState() =>
-      _OnboardingRouteResolverState();
-}
-
-class _OnboardingRouteResolverState extends State<_OnboardingRouteResolver> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<OnboardingRouteBloc, OnboardingRouteState>(

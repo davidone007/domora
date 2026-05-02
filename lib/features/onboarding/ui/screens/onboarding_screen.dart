@@ -13,8 +13,10 @@ import 'package:domora/core/widgets/loading_overlay.dart';
 import 'package:domora/core/widgets/simple_form.dart';
 import 'package:domora/features/onboarding/ui/bloc/onboarding_bloc.dart';
 
-/// Pantalla de onboarding inicial
-/// Recibe el rol como parámetro de ruta (?role=client|provider).
+/// Pantalla de onboarding inicial.
+///
+/// Recibe el [role] y [userId] resueltos previamente desde la sesión
+/// del usuario (via _OnboardingRouteResolver en el router).
 class OnboardingScreen extends StatefulWidget {
   final String role;
   final String userId;

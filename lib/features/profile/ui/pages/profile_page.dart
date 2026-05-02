@@ -273,11 +273,25 @@ class _ProfileContent extends StatelessWidget {
 
         // Acciones.
         const SizedBox(height: 28),
-        OutlinedButton.icon(
-          icon: const Icon(Icons.logout, size: 18),
-          label: const Text('Cerrar sesión'),
-          onPressed: () =>
-              context.read<ProfileSignOutBloc>().add(const ProfileSignOutSubmitEvent()),
+        BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
+          builder: (context, state) {
+            final isLoading = state is ProfileSignOutLoadingState;
+            return OutlinedButton.icon(
+              icon: isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.logout, size: 18),
+              label: const Text('Cerrar sesión'),
+              onPressed: isLoading
+                  ? null
+                  : () => context
+                      .read<ProfileSignOutBloc>()
+                      .add(const ProfileSignOutSubmitEvent()),
+            );
+          },
         ),
       ],
     );

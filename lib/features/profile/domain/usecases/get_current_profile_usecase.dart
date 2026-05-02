@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:domora/core/error/failures.dart';
-import 'package:domora/features/profile/domain/model/full_profile.dart';
+import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 
 class GetCurrentProfileUseCase {
