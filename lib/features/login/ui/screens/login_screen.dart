@@ -56,11 +56,11 @@ class _LoginScreenState extends State<LoginScreen> {
         ..showSnackBar(SnackBar(content: Text(state.message)));
     } else if (state is LoginSuccessState) {
       // HU2: redirección según rol y estado de onboarding.
-      if (!state.result.onboardingCompleted) {
+      if (!state.onboardingCompleted) {
         context.go(AppConstants.routeOnboarding);
         return;
       }
-      switch (state.result.role) {
+      switch (state.role) {
         case AppConstants.roleProvider:
           context.go(AppConstants.routeProviderHome);
           break;

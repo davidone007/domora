@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:domora/features/profile/domain/model/full_profile.dart';
-import 'package:domora/features/profile/domain/repository/profile_repository.dart';
+import 'package:domora/features/profile/domain/entities/full_profile.dart';
+import 'package:domora/features/profile/domain/usecases/get_current_profile_usecase.dart';
 
 // ---------------------------------------------------------------------------
 // EVENTS
@@ -58,9 +58,9 @@ class ProfileErrorState extends ProfileState {
 // BLOC
 // ---------------------------------------------------------------------------
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
-  final ProfileRepository _repository;
+  final GetCurrentProfileUseCase _getCurrentProfile;
 
-  ProfileBloc(this._repository) : super(const ProfileInitialState()) {
+  ProfileBloc(this._getCurrentProfile) : super(const ProfileInitialState()) {
     on<ProfileLoadEvent>(_onLoad);
     on<ProfileRefreshEvent>(_onLoad);
   }
@@ -70,7 +70,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     emit(const ProfileLoadingState());
-    final result = await _repository.getCurrentProfile();
+    final result = await _getCurrentProfile();
     result.fold(
       (failure) => emit(ProfileErrorState(failure.message)),
       (profile) => emit(ProfileLoadedState(profile)),

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/utils/validators.dart';
@@ -12,14 +11,17 @@ import 'package:domora/core/widgets/custom_button.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
 import 'package:domora/core/widgets/loading_overlay.dart';
 import 'package:domora/core/widgets/simple_form.dart';
-import 'package:domora/features/onboarding/data/sources/onboarding_data_source.dart';
 import 'package:domora/features/onboarding/ui/bloc/onboarding_bloc.dart';
 
-/// Pantalla de onboarding inicial
-/// Recibe el rol como parámetro de ruta (?role=client|provider).
+/// Pantalla de onboarding inicial.
+///
+/// Recibe el [role] y [userId] resueltos previamente desde la sesión
+/// del usuario (via _OnboardingRouteResolver en el router).
 class OnboardingScreen extends StatefulWidget {
   final String role;
-  const OnboardingScreen({super.key, required this.role});
+  final String userId;
+
+  const OnboardingScreen({super.key, required this.role, required this.userId});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -64,15 +66,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sesión no encontrada. Inicia sesión.')),
-      );
-      context.go(AppConstants.routeLogin);
-      return;
-    }
-
     if (_isProvider) {
       final years = int.tryParse(_yearsCtrl.text.trim()) ?? 0;
       final rate =
@@ -80,36 +73,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
       context.read<OnboardingBloc>().add(
             OnboardingSaveProviderEvent(
-              ProviderOnboardingData(
-                userId: user.id,
-                firstName: _firstNameCtrl.text.trim(),
-                lastName: _lastNameCtrl.text.trim(),
-                phone: _phoneCtrl.text.trim(),
-                yearsExperience: years,
-                hourlyRate: rate,
-                bio: _bioCtrl.text.trim().isEmpty ? null : _bioCtrl.text.trim(),
-                avatar: _avatar,
-                addressLine1: _addressLine1Ctrl.text.trim(),
-                addressLine2: _addressLine2Ctrl.text.trim().isEmpty
-                    ? null
-                    : _addressLine2Ctrl.text.trim(),
-                city: _cityCtrl.text.trim(),
-                neighborhood: _neighborhoodCtrl.text.trim().isEmpty
-                    ? null
-                    : _neighborhoodCtrl.text.trim(),
-              ),
+              userId: widget.userId,
+              firstName: _firstNameCtrl.text.trim(),
+              lastName: _lastNameCtrl.text.trim(),
+              phone: _phoneCtrl.text.trim(),
+              yearsExperience: years,
+              hourlyRate: rate,
+              bio: _bioCtrl.text.trim().isEmpty ? null : _bioCtrl.text.trim(),
+              avatar: _avatar,
+              addressLine1: _addressLine1Ctrl.text.trim(),
+              addressLine2:
+                  _addressLine2Ctrl.text.trim().isEmpty
+                      ? null
+                      : _addressLine2Ctrl.text.trim(),
+              city: _cityCtrl.text.trim(),
+              neighborhood:
+                  _neighborhoodCtrl.text.trim().isEmpty
+                      ? null
+                      : _neighborhoodCtrl.text.trim(),
             ),
           );
     } else {
       context.read<OnboardingBloc>().add(
             OnboardingSaveClientEvent(
-              ClientOnboardingData(
-                userId: user.id,
-                firstName: _firstNameCtrl.text.trim(),
-                lastName: _lastNameCtrl.text.trim(),
-                phone: _phoneCtrl.text.trim(),
-                avatar: _avatar,
-              ),
+              userId: widget.userId,
+              firstName: _firstNameCtrl.text.trim(),
+              lastName: _lastNameCtrl.text.trim(),
+              phone: _phoneCtrl.text.trim(),
+              avatar: _avatar,
             ),
           );
     }

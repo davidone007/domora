@@ -37,22 +37,6 @@ class Address extends Equatable {
     return parts.join(', ');
   }
 
-  factory Address.fromMap(Map<String, dynamic> map) {
-    return Address(
-      id: map['id'] as String,
-      userId: map['user_id'] as String,
-      locationName: map['location_name'] as String?,
-      addressLine1: map['address_line1'] as String? ?? '',
-      addressLine2: map['address_line2'] as String?,
-      city: map['city'] as String? ?? '',
-      neighborhood: map['neighborhood'] as String?,
-      latitude: (map['latitude'] as num?)?.toDouble(),
-      longitude: (map['longitude'] as num?)?.toDouble(),
-      isPrimary: (map['is_primary'] as bool?) ?? false,
-      addressType: map['address_type'] as String?,
-    );
-  }
-
   @override
   List<Object?> get props => [
         id,

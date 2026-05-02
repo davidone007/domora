@@ -1,9 +1,9 @@
 import 'package:equatable/equatable.dart';
 
-import 'package:domora/features/profile/domain/model/address.dart';
-import 'package:domora/features/profile/domain/model/client_profile.dart';
-import 'package:domora/features/profile/domain/model/provider_profile.dart';
-import 'package:domora/features/profile/domain/model/user.dart';
+import 'package:domora/features/profile/domain/entities/address.dart';
+import 'package:domora/features/profile/domain/entities/client_profile.dart';
+import 'package:domora/features/profile/domain/entities/provider_profile.dart';
+import 'package:domora/features/profile/domain/entities/user.dart';
 
 /// Vista agregada del perfil para mostrar en la UI (HU4).
 class FullProfile extends Equatable {

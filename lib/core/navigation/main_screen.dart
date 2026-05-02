@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:domora/core/utils/constants.dart';
-import 'package:domora/features/auth/data/sources/auth_data_source.dart';
+import 'package:domora/core/navigation/bloc/splash_bloc.dart';
 
 /// Pantalla inicial. Decide a dónde enviar al usuario:
 /// - Sin sesión → login.
@@ -18,70 +17,41 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _decide());
-  }
-
-  Future<void> _decide() async {
-    final client = Supabase.instance.client;
-    final session = client.auth.currentSession;
-
-    if (session == null) {
-      if (mounted) context.go(AppConstants.routeWelcome);
-      return;
-    }
-
-    try {
-      final ds = AuthDataSourceImpl(client);
-      final userId = session.user.id;
-      final role = await ds.getUserRole(userId);
-      final onboardingDone = await ds.isOnboardingCompleted(userId);
-
-      if (!onboardingDone) {
-        if (mounted) context.go(AppConstants.routeOnboarding);
-        return;
-      }
-
-      if (role == AppConstants.roleProvider) {
-        if (mounted) context.go(AppConstants.routeProviderHome);
-      } else {
-        if (mounted) context.go(AppConstants.routeClientHome);
-      }
-    } catch (_) {
-      if (mounted) context.go(AppConstants.routeWelcome);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(20),
+    return BlocListener<SplashBloc, SplashState>(
+      listener: (context, state) {
+        if (state is SplashNavigateState) {
+          context.go(state.route);
+        }
+      },
+      child: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(Icons.cottage_outlined,
+                    color: Colors.white, size: 38),
               ),
-              child: const Icon(Icons.cottage_outlined,
-                  color: Colors.white, size: 38),
-            ),
-            const SizedBox(height: 24),
-            Text('Domora', style: theme.textTheme.displayMedium),
-            const SizedBox(height: 8),
-            Text('Servicios para tu hogar', style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 32),
-            const SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.4),
-            ),
-          ],
+              const SizedBox(height: 24),
+              Text('Domora', style: theme.textTheme.displayMedium),
+              const SizedBox(height: 8),
+              Text('Servicios para tu hogar', style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 32),
+              const SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(strokeWidth: 2.4),
+              ),
+            ],
+          ),
         ),
       ),
     );

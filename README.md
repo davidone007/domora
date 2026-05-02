@@ -131,10 +131,10 @@ lib/
 
 ### 1. Prerrequisitos
 
-- Flutter SDK instalado
-- Dart SDK
-- Un emulador Android/iOS o dispositivo físico
-- Proyecto en [Supabase](https://supabase.com)
+- Flutter SDK instalado.
+- Dart SDK.
+- Un emulador Android/iOS o dispositivo físico.
+- Proyecto en [Supabase](https://supabase.com).
 
 ### 2. Clonar el repositorio
 
@@ -149,22 +149,21 @@ cd domora
 flutter pub get
 ```
 
-### 4. Configuracion Supabase
+### 4. Configuración de Supabase y Variables de Entorno
 
-1. En el **SQL Editor** se ejecuto el archivo `supabase_schema.sql` (incluido en el repositorio). Este script crea:
-   - Todas las tablas requeridas (`roles`, `users`, `user_roles`, `client_profiles`, `provider_profiles`, `addresses`)
-   - Políticas de RLS con permisos adecuados
-   - Bucket `avatars` para fotos de perfil
-   - Trigger `handle_new_user()` para sincronizar `auth.users` con `public.users`
-   - Permisos de esquema para los roles `anon` y `authenticated`
-2. Crea `.env` y reemplaza con tus credenciales:
+1. En el **SQL Editor** de Supabase, ejecute el archivo `supabase_schema.sql` (incluido en la raíz del proyecto). Este script configura:
+   - Tablas: `roles`, `users`, `user_roles`, `client_profiles`, `provider_profiles`, `addresses`.
+   - Políticas RLS (Row Level Security) para protección de datos.
+   - Bucket `avatars` en Storage para fotos de perfil.
+   - Trigger `handle_new_user()` para sincronización automática.
+2. Cree un archivo `.env` en la raíz del proyecto y agregue sus credenciales:
 
 ```env
 SUPABASE_URL=https://tu-proyecto.supabase.co
 SUPABASE_ANON_KEY=tu-publishable-key
 ```
 
-> ⚠️ Verifica que `assets: - .env` está incluido en `pubspec.yaml`.
+> 💡 **Nota:** El archivo `.env` está excluido del control de versiones por seguridad. Asegúrese de que `assets: - .env` esté presente en su `pubspec.yaml`.
 
 ### 5. Ejecutar la aplicación
 
@@ -217,7 +216,37 @@ La pestaña activa se eleva como un círculo blanco con icono verde.
 
 ---
 
-## 🔄 Flujo de navegación completo
+## 🧭 Guía de Navegación y Flujos
+
+Para navegar y probar las funcionalidades de Domora, siga estos flujos principales:
+
+### A. Flujo de Usuario Nuevo (Registro y Onboarding)
+1. **Carrusel de Bienvenida:** Al abrir la app por primera vez, verá un carrusel informativo. Deslice hasta el final o presione "Siguiente" para llegar a la pantalla de **Login**.
+2. **Registro:** En la pantalla de Login, presione el enlace **"Regístrate"** en la parte inferior.
+3. **Selección de Rol:** Elija si desea registrarse como **Cliente** (para buscar servicios) o **Proveedor** (para ofrecerlos).
+4. **Formulario de Registro:** Ingrese sus datos (correo y contraseña). Al completar el registro, será redirigido automáticamente al **Onboarding**.
+5. **Onboarding (Perfil):** Complete la información de su perfil.
+   - Si es **Cliente**: Se le pedirá nombre, teléfono y foto de perfil.
+   - Si es **Proveedor**: Además de lo anterior, deberá ingresar años de experiencia, tarifa por hora, biografía y dirección.
+6. **Dashboard:** Una vez finalizado el onboarding, accederá al Dashboard principal adaptado a su rol.
+
+### B. Flujo de Usuario Existente (Login)
+1. Ingrese sus credenciales en la pantalla de **Login**.
+2. La aplicación detectará automáticamente si ya completó su perfil:
+   - Si está incompleto, lo llevará al **Onboarding**.
+   - Si está completo, lo llevará directamente al **Dashboard**.
+
+### C. Navegación en el Dashboard y Perfil
+1. **Dashboard:** Visualice los servicios disponibles y promociones (sección interactiva).
+2. **Menú Inferior (Bottom Nav):** Use la barra de navegación para moverse entre:
+   - **Inicio (Dashboard)**.
+   - **Solicitudes y Cupones** (Próximamente).
+   - **Perfil:** Acceda a su información completa.
+3. **Cerrar Sesión:** Dentro de la pestaña de **Perfil**, encontrará el botón para cerrar sesión, lo que lo devolverá a la pantalla de Bienvenida.
+
+---
+
+## 🔄 Resumen visual de navegación
 
 ```
 WelcomeScreen (carrusel)

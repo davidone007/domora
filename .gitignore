@@ -50,6 +50,7 @@ gemini*.md
 GEMINI*.md
 specs_*.md
 EXPLICACION_DETALLADA.md
+SPECS_REFACTOR_AUTH.md
 
 # .env files
 .env
