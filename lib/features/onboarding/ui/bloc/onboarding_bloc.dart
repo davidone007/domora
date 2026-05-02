@@ -45,6 +45,7 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
   final File? avatar;
   final String addressLine1;
   final String? addressLine2;
+  final String department;
   final String city;
   final String? neighborhood;
 
@@ -59,6 +60,7 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
     this.avatar,
     required this.addressLine1,
     this.addressLine2,
+    required this.department,
     required this.city,
     this.neighborhood,
   });
@@ -75,6 +77,7 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
     avatar,
     addressLine1,
     addressLine2,
+    department,
     city,
     neighborhood,
   ];
@@ -164,6 +167,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         avatar: event.avatar,
         addressLine1: event.addressLine1,
         addressLine2: event.addressLine2,
+        department: event.department,
         city: event.city,
         neighborhood: event.neighborhood,
       ),

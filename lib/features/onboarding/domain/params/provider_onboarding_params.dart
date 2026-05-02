@@ -11,6 +11,7 @@ class ProviderOnboardingParams {
   final File? avatar;
   final String addressLine1;
   final String? addressLine2;
+  final String department;
   final String city;
   final String? neighborhood;
 
@@ -25,6 +26,7 @@ class ProviderOnboardingParams {
     this.avatar,
     required this.addressLine1,
     this.addressLine2,
+    required this.department,
     required this.city,
     this.neighborhood,
   });

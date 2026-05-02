@@ -50,6 +50,7 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
           avatar: params.avatar,
           addressLine1: params.addressLine1,
           addressLine2: params.addressLine2,
+          department: params.department,
           city: params.city,
           neighborhood: params.neighborhood,
         ),

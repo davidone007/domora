@@ -145,7 +145,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           label: 'Contraseña',
                           isPassword: true,
                           textInputAction: TextInputAction.done,
-                          validator: Validators.password,
+                          validator: (v) =>
+                              Validators.required(v, fieldName: 'La contraseña'),
                         ),
                       ],
                     ),
