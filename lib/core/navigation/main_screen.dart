@@ -28,7 +28,7 @@ class _MainScreenState extends State<MainScreen> {
     final session = client.auth.currentSession;
 
     if (session == null) {
-      if (mounted) context.go(AppConstants.routeLogin);
+      if (mounted) context.go(AppConstants.routeWelcome);
       return;
     }
 
@@ -49,7 +49,7 @@ class _MainScreenState extends State<MainScreen> {
         if (mounted) context.go(AppConstants.routeClientHome);
       }
     } catch (_) {
-      if (mounted) context.go(AppConstants.routeLogin);
+      if (mounted) context.go(AppConstants.routeWelcome);
     }
   }
 

@@ -35,6 +35,8 @@ import 'package:domora/features/profile/ui/pages/profile_page.dart';
 import 'package:domora/features/home/ui/pages/client_home_page.dart';
 import 'package:domora/features/home/ui/pages/provider_home_page.dart';
 
+import 'package:domora/features/welcome/ui/screens/welcome_screen.dart';
+
 /// Construye y devuelve el router raíz de la aplicación.
 GoRouter buildRouter() {
   final supabase = Supabase.instance.client;
@@ -55,6 +57,10 @@ GoRouter buildRouter() {
       GoRoute(
         path: AppConstants.routeSplash,
         builder: (_, __) => const MainScreen(),
+      ),
+      GoRoute(
+        path: AppConstants.routeWelcome,
+        builder: (_, __) => const WelcomeScreen(),
       ),
       GoRoute(
         path: AppConstants.routeLogin,

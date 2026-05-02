@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Campo de texto reutilizable con etiqueta, validación y soporte de
-/// contraseña.
+import 'package:domora/core/theme/app_theme.dart';
+
+/// Campo de texto reutilizable con label flotante dentro del borde,
+/// validación y soporte de contraseña.
+///
+/// El label se renombró a `label` y ahora se pasa a Flutter como `labelText`,
+/// que es el comportamiento estándar de Material: el label se posiciona en
+/// la parte superior del borde rompiendo el stroke (estilo del referente).
 class CustomTextField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
@@ -46,45 +52,43 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 6),
-          child: Text(
-            widget.label,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ),
-        TextFormField(
-          controller: widget.controller,
-          obscureText: widget.isPassword && _obscure,
-          keyboardType: widget.keyboardType,
-          validator: widget.validator,
-          onChanged: widget.onChanged,
-          inputFormatters: widget.inputFormatters,
-          maxLines: widget.isPassword ? 1 : widget.maxLines,
-          maxLength: widget.maxLength,
-          enabled: widget.enabled,
-          textInputAction: widget.textInputAction,
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            helperText: widget.helperText,
-            counterText: '',
-            prefixIcon:
-                widget.prefixIcon != null ? Icon(widget.prefixIcon, size: 20) : null,
-            suffixIcon: widget.isPassword
-                ? IconButton(
-                    icon: Icon(
-                      _obscure ? Icons.visibility_off : Icons.visibility,
-                      size: 20,
-                    ),
-                    onPressed: () => setState(() => _obscure = !_obscure),
-                  )
-                : null,
-          ),
-        ),
-      ],
+    return TextFormField(
+      controller: widget.controller,
+      obscureText: widget.isPassword && _obscure,
+      keyboardType: widget.keyboardType,
+      validator: widget.validator,
+      onChanged: widget.onChanged,
+      inputFormatters: widget.inputFormatters,
+      maxLines: widget.isPassword ? 1 : widget.maxLines,
+      maxLength: widget.maxLength,
+      enabled: widget.enabled,
+      textInputAction: widget.textInputAction,
+      style: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+        color: AppTheme.textPrimary,
+      ),
+      decoration: InputDecoration(
+        labelText: widget.label,
+        hintText: widget.hint,
+        helperText: widget.helperText,
+        counterText: '',
+        prefixIcon: widget.prefixIcon != null
+            ? Icon(widget.prefixIcon, size: 20, color: AppTheme.textTertiary)
+            : null,
+        suffixIcon: widget.isPassword
+            ? IconButton(
+                icon: Icon(
+                  _obscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  size: 20,
+                  color: AppTheme.textTertiary,
+                ),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              )
+            : null,
+      ),
     );
   }
 }
