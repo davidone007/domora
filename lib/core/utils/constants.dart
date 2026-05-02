@@ -33,6 +33,7 @@ class AppConstants {
   // Rutas
   // ---------------------------------------------------------------------------
   static const String routeSplash = '/';
+  static const String routeWelcome = '/welcome';
   static const String routeLogin = '/login';
   static const String routeSignup = '/signup';
   static const String routeOnboarding = '/onboarding';
