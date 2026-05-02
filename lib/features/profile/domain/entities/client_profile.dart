@@ -13,15 +13,6 @@ class ClientProfile extends Equatable {
     this.bio,
   });
 
-  factory ClientProfile.fromMap(Map<String, dynamic> map) {
-    return ClientProfile(
-      id: map['id'] as String,
-      userId: map['user_id'] as String,
-      avatarUrl: map['avatar_url'] as String?,
-      bio: map['bio'] as String?,
-    );
-  }
-
   @override
   List<Object?> get props => [id, userId, avatarUrl, bio];
 }

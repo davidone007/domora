@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/utils/constants.dart';
 
 abstract class ProfileDataSource {
+  String? getCurrentUserId();
   Future<Map<String, dynamic>?> getUser(String userId);
   Future<String?> getRole(String userId);
   Future<Map<String, dynamic>?> getClientProfile(String userId);
@@ -13,6 +14,9 @@ abstract class ProfileDataSource {
 class ProfileDataSourceImpl implements ProfileDataSource {
   final SupabaseClient _client;
   ProfileDataSourceImpl(this._client);
+
+  @override
+  String? getCurrentUserId() => _client.auth.currentUser?.id;
 
   @override
   Future<Map<String, dynamic>?> getUser(String userId) async {

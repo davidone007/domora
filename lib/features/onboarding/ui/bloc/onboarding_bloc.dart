@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:domora/features/onboarding/data/sources/onboarding_data_source.dart';
+import 'package:domora/features/onboarding/domain/params/client_onboarding_params.dart';
+import 'package:domora/features/onboarding/domain/params/provider_onboarding_params.dart';
 import 'package:domora/features/onboarding/domain/usecases/save_client_profile_usecase.dart';
 import 'package:domora/features/onboarding/domain/usecases/save_provider_profile_usecase.dart';
 
@@ -13,13 +16,49 @@ abstract class OnboardingEvent extends Equatable {
 }
 
 class OnboardingSaveClientEvent extends OnboardingEvent {
-  final ClientOnboardingData data;
-  const OnboardingSaveClientEvent(this.data);
+  final String userId;
+  final String firstName;
+  final String lastName;
+  final String phone;
+  final File? avatar;
+
+  const OnboardingSaveClientEvent({
+    required this.userId,
+    required this.firstName,
+    required this.lastName,
+    required this.phone,
+    this.avatar,
+  });
 }
 
 class OnboardingSaveProviderEvent extends OnboardingEvent {
-  final ProviderOnboardingData data;
-  const OnboardingSaveProviderEvent(this.data);
+  final String userId;
+  final String firstName;
+  final String lastName;
+  final String phone;
+  final int yearsExperience;
+  final double hourlyRate;
+  final String? bio;
+  final File? avatar;
+  final String addressLine1;
+  final String? addressLine2;
+  final String city;
+  final String? neighborhood;
+
+  const OnboardingSaveProviderEvent({
+    required this.userId,
+    required this.firstName,
+    required this.lastName,
+    required this.phone,
+    required this.yearsExperience,
+    required this.hourlyRate,
+    this.bio,
+    this.avatar,
+    required this.addressLine1,
+    this.addressLine2,
+    required this.city,
+    this.neighborhood,
+  });
 }
 
 // STATES
@@ -74,7 +113,15 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     Emitter<OnboardingState> emit,
   ) async {
     emit(const OnboardingLoadingState());
-    final result = await _saveClient(event.data);
+    final result = await _saveClient(
+      ClientOnboardingParams(
+        userId: event.userId,
+        firstName: event.firstName,
+        lastName: event.lastName,
+        phone: event.phone,
+        avatar: event.avatar,
+      ),
+    );
     result.fold(
       (failure) => emit(OnboardingFailState(failure.message)),
       (_) => emit(const OnboardingSuccessState('client')),
@@ -86,7 +133,22 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     Emitter<OnboardingState> emit,
   ) async {
     emit(const OnboardingLoadingState());
-    final result = await _saveProvider(event.data);
+    final result = await _saveProvider(
+      ProviderOnboardingParams(
+        userId: event.userId,
+        firstName: event.firstName,
+        lastName: event.lastName,
+        phone: event.phone,
+        yearsExperience: event.yearsExperience,
+        hourlyRate: event.hourlyRate,
+        bio: event.bio,
+        avatar: event.avatar,
+        addressLine1: event.addressLine1,
+        addressLine2: event.addressLine2,
+        city: event.city,
+        neighborhood: event.neighborhood,
+      ),
+    );
     result.fold(
       (failure) => emit(OnboardingFailState(failure.message)),
       (_) => emit(const OnboardingSuccessState('provider')),

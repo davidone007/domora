@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:domora/features/auth/domain/repo/auth_repo.dart';
 import 'package:domora/features/auth/domain/usecases/signup_usecase.dart';
 
 // EVENTS
@@ -46,11 +45,12 @@ class SignupLoadingState extends SignupState {
 }
 
 class SignupSuccessState extends SignupState {
-  final AuthResult result;
-  const SignupSuccessState(this.result);
+  final String? role;
+
+  const SignupSuccessState({required this.role});
 
   @override
-  List<Object?> get props => [result];
+  List<Object?> get props => [role];
 }
 
 class SignupFailState extends SignupState {
@@ -86,7 +86,7 @@ class SignupBloc extends Bloc<SignupEvent, SignupState> {
 
     result.fold(
       (failure) => emit(SignupFailState(failure.message)),
-      (auth) => emit(SignupSuccessState(auth)),
+      (auth) => emit(SignupSuccessState(role: auth.role)),
     );
   }
 }

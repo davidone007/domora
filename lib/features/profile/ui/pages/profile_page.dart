@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/widgets/main_shell.dart';
-import 'package:domora/features/profile/domain/model/full_profile.dart';
+import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
+import 'package:domora/features/profile/ui/bloc/profile_signout_bloc.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -22,11 +22,6 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     context.read<ProfileBloc>().add(const ProfileLoadEvent());
-  }
-
-  Future<void> _signOut() async {
-    await Supabase.instance.client.auth.signOut();
-    if (mounted) context.go(AppConstants.routeWelcome);
   }
 
   /// Decide a qué dashboard regresar según el rol cargado.
@@ -45,22 +40,32 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return MainShell(
-      activeTab: MainTab.profile,
-      onTabSelected: (tab) {
-        if (tab == MainTab.home) _goToHome();
-        if (tab == MainTab.requests || tab == MainTab.coupons) {
+    return BlocListener<ProfileSignOutBloc, ProfileSignOutState>(
+      listener: (context, state) {
+        if (state is ProfileSignOutFailState) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(content: Text('Disponible próximamente')),
-            );
+            ..showSnackBar(SnackBar(content: Text(state.message)));
+        } else if (state is ProfileSignOutSuccessState) {
+          context.go(AppConstants.routeWelcome);
         }
       },
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
+      child: MainShell(
+        activeTab: MainTab.profile,
+        onTabSelected: (tab) {
+          if (tab == MainTab.home) _goToHome();
+          if (tab == MainTab.requests || tab == MainTab.coupons) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                const SnackBar(content: Text('Disponible próximamente')),
+              );
+          }
+        },
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
             // AppBar manual (no usamos Scaffold.appBar porque el MainShell ya
             // posee el Scaffold raíz; añadir otro daría doble AppBar).
             Padding(
@@ -79,10 +84,19 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Cerrar sesión',
-                    onPressed: _signOut,
-                    icon: const Icon(Icons.logout, size: 22),
+                  BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
+                    builder: (context, signOutState) {
+                      final isLoading = signOutState is ProfileSignOutLoadingState;
+                      return IconButton(
+                        tooltip: 'Cerrar sesión',
+                        onPressed: isLoading
+                            ? null
+                            : () => context
+                                .read<ProfileSignOutBloc>()
+                                .add(const ProfileSignOutSubmitEvent()),
+                        icon: const Icon(Icons.logout, size: 22),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -114,7 +128,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 },
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -261,10 +276,8 @@ class _ProfileContent extends StatelessWidget {
         OutlinedButton.icon(
           icon: const Icon(Icons.logout, size: 18),
           label: const Text('Cerrar sesión'),
-          onPressed: () async {
-            await Supabase.instance.client.auth.signOut();
-            if (context.mounted) context.go(AppConstants.routeWelcome);
-          },
+          onPressed: () =>
+              context.read<ProfileSignOutBloc>().add(const ProfileSignOutSubmitEvent()),
         ),
       ],
     );
