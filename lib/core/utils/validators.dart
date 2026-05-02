@@ -92,4 +92,21 @@ class Validators {
     if (v.length > max) return 'Máximo $max caracteres';
     return null;
   }
+
+  /// Número local de teléfono, sin indicativo de país.
+  ///
+  /// Se usa junto a [PhoneField]: el indicativo lo gestiona el widget y el
+  /// padre lo concatena antes de enviar al dominio.
+  static String? phoneNumber(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'El número de teléfono es obligatorio';
+    final digits = v.replaceAll(RegExp(r'[\s\-]'), '');
+    if (!RegExp(r'^\d+$').hasMatch(digits)) {
+      return 'Solo se permiten dígitos, espacios y guiones';
+    }
+    if (digits.length < 6 || digits.length > 15) {
+      return 'Ingresa un número válido (6–15 dígitos)';
+    }
+    return null;
+  }
 }
