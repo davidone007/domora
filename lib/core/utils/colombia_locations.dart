@@ -80,7 +80,7 @@ class ColombiaLocations {
       'Necocli',
       'Nechi',
       'Olaya',
-      'Peðol',
+      'Peñol',
       'Peque',
       'Pueblorrico',
       'Puerto Berrio',
