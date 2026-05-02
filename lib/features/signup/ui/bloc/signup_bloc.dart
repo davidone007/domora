@@ -45,7 +45,7 @@ class SignupLoadingState extends SignupState {
 }
 
 class SignupSuccessState extends SignupState {
-  final String? role;
+  final String role;
 
   const SignupSuccessState({required this.role});
 
@@ -86,7 +86,7 @@ class SignupBloc extends Bloc<SignupEvent, SignupState> {
 
     result.fold(
       (failure) => emit(SignupFailState(failure.message)),
-      (auth) => emit(SignupSuccessState(role: auth.role)),
+      (auth) => emit(SignupSuccessState(role: auth.role ?? event.role)),
     );
   }
 }

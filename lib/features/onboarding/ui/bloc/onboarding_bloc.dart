@@ -29,6 +29,9 @@ class OnboardingSaveClientEvent extends OnboardingEvent {
     required this.phone,
     this.avatar,
   });
+
+  @override
+  List<Object?> get props => [userId, firstName, lastName, phone, avatar];
 }
 
 class OnboardingSaveProviderEvent extends OnboardingEvent {
@@ -59,6 +62,22 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
     required this.city,
     this.neighborhood,
   });
+
+  @override
+  List<Object?> get props => [
+    userId,
+    firstName,
+    lastName,
+    phone,
+    yearsExperience,
+    hourlyRate,
+    bio,
+    avatar,
+    addressLine1,
+    addressLine2,
+    city,
+    neighborhood,
+  ];
 }
 
 // STATES

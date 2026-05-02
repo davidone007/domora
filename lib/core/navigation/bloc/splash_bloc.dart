@@ -60,6 +60,13 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           return;
         }
 
+        // Si ya completó onboarding pero por alguna razón el rol es nulo,
+        // mandamos al Welcome para evitar dashboards inconsistentes.
+        if (session.role == null) {
+          emit(const SplashNavigateState(AppConstants.routeWelcome));
+          return;
+        }
+
         emit(
           SplashNavigateState(
             session.role == AppConstants.roleProvider

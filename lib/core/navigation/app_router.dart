@@ -142,21 +142,29 @@ class _OnboardingRouteResolver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<OnboardingRouteBloc, OnboardingRouteState>(
-      builder: (_, state) {
+    return BlocListener<OnboardingRouteBloc, OnboardingRouteState>(
+      listener: (context, state) {
         if (state is OnboardingRouteErrorState) {
-          return Scaffold(
-            body: Center(child: Text(state.message)),
-          );
+          // Redirección defensiva: si falla la resolución (sesión expirada, etc.),
+          // mandamos al usuario al inicio para evitar que quede atrapado.
+          context.go(AppConstants.routeWelcome);
         }
-        if (state is OnboardingRouteReadyState) {
-          return OnboardingScreen(
-            role: state.role,
-            userId: state.userId,
-          );
-        }
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
+      child: BlocBuilder<OnboardingRouteBloc, OnboardingRouteState>(
+        builder: (_, state) {
+          if (state is OnboardingRouteReadyState) {
+            return OnboardingScreen(
+              role: state.role,
+              userId: state.userId,
+            );
+          }
+          // Mientras carga o en caso de error (antes de la redirección),
+          // mostramos el indicador de carga.
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        },
+      ),
     );
   }
 }
