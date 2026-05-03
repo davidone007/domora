@@ -129,9 +129,12 @@ class ErrorUIFactory {
   }) {
     return Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ErrorScreen(
-          failure: failure,
-          onRetry: onRetry,
+        builder: (context) => PopScope(
+          canPop: false,
+          child: ErrorScreen(
+            failure: failure,
+            onRetry: onRetry,
+          ),
         ),
         fullscreenDialog: true,
       ),
