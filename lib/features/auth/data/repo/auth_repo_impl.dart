@@ -1,7 +1,8 @@
 import 'package:dartz/dartz.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:domora/core/error/failures.dart';
+import 'package:domora/core/error/error_mapper.dart';
+import 'package:domora/core/error/error_context.dart';
 import 'package:domora/features/auth/data/sources/auth_data_source.dart';
 import 'package:domora/features/auth/domain/repo/auth_repo.dart';
 
@@ -9,26 +10,9 @@ import 'package:domora/features/auth/domain/repo/auth_repo.dart';
 /// Traduce las excepciones de la capa de datos a [Failure]s tipadas.
 class AuthRepositoryImpl implements AuthRepository {
   final AuthDataSource _dataSource;
+  final ErrorMapper _errorMapper;
 
-  AuthRepositoryImpl(this._dataSource);
-
-  String _mapAuthError(AuthException e) {
-    final m = e.message.toLowerCase();
-    if (m.contains('invalid login credentials')) {
-      return 'Correo o contraseña incorrectos';
-    }
-    if (m.contains('user already registered') ||
-        m.contains('already been registered')) {
-      return 'Este correo ya está registrado';
-    }
-    if (m.contains('email not confirmed')) {
-      return 'Debes confirmar tu correo antes de iniciar sesión';
-    }
-    if (m.contains('password should be')) {
-      return 'La contraseña no cumple los requisitos mínimos';
-    }
-    return e.message;
-  }
+  AuthRepositoryImpl(this._dataSource, this._errorMapper);
 
   @override
   Future<Either<Failure, AuthResult>> signUp({
@@ -57,12 +41,15 @@ class AuthRepositoryImpl implements AuthRepository {
           onboardingCompleted: false,
         ),
       );
-    } on AuthException catch (e) {
-      return Left(AuthFailure(_mapAuthError(e)));
-    } on PostgrestException catch (e) {
-      return Left(ServerFailure(e.message));
-    } catch (e) {
-      return Left(UnknownFailure(e.toString()));
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'signUp',
+          parameters: {'email': email, 'role': role},
+        ).toString(),
+      ));
     }
   }
 
@@ -92,12 +79,15 @@ class AuthRepositoryImpl implements AuthRepository {
           onboardingCompleted: onboardingDone,
         ),
       );
-    } on AuthException catch (e) {
-      return Left(AuthFailure(_mapAuthError(e)));
-    } on PostgrestException catch (e) {
-      return Left(ServerFailure(e.message));
-    } catch (e) {
-      return Left(UnknownFailure(e.toString()));
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'signIn',
+          parameters: {'email': email},
+        ).toString(),
+      ));
     }
   }
 
@@ -130,8 +120,12 @@ class AuthRepositoryImpl implements AuthRepository {
         role: role,
         onboardingCompleted: onboardingDone,
       ));
-    } catch (e) {
-      return Left(UnknownFailure(e.toString()));
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(operation: 'getCurrentSession').toString(),
+      ));
     }
   }
 }

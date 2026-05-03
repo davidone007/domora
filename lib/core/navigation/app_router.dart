@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:domora/core/error/error_mapper_singleton.dart';
 import 'package:domora/core/navigation/bloc/onboarding_route_bloc.dart';
 import 'package:domora/core/navigation/bloc/splash_bloc.dart';
 import 'package:domora/core/navigation/main_screen.dart';
@@ -48,16 +49,17 @@ GoRouter buildRouter() {
   final supabase = Supabase.instance.client;
 
   // Singletons de la capa de datos / dominio.
+  final errorMapper = ErrorMapperSingleton.instance;
   final AuthDataSource authDs = AuthDataSourceImpl(supabase);
-  final AuthRepository authRepo = AuthRepositoryImpl(authDs);
+  final AuthRepository authRepo = AuthRepositoryImpl(authDs, errorMapper);
   final getCurrentSession = GetCurrentSessionUseCase(authRepo);
   final signOut = SignOutUseCase(authRepo);
 
   final OnboardingDataSource onbDs = OnboardingDataSourceImpl(supabase);
-  final OnboardingRepository onbRepo = OnboardingRepositoryImpl(onbDs);
+  final OnboardingRepository onbRepo = OnboardingRepositoryImpl(onbDs, errorMapper);
 
   final ProfileDataSource profDs = ProfileDataSourceImpl(supabase);
-  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs);
+  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, errorMapper);
 
   return GoRouter(
     initialLocation: AppConstants.routeSplash,
