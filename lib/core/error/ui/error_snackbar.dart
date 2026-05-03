@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import 'package:domora/core/theme/app_theme.dart';
 
 /// Extension methods para mostrar SnackBars de error y éxito fácilmente.
 /// 
