@@ -1,7 +1,7 @@
+import 'package:domora/core/error/failures.dart';
+import 'package:domora/core/error/ui/error_ui_factory.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../failures.dart';
-import 'error_ui_factory.dart';
 
 /// Widget que escucha estados de error en BLoCs y muestra UI automáticamente.
 /// 
