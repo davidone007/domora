@@ -1,7 +1,8 @@
 import 'package:dartz/dartz.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:domora/core/error/failures.dart';
+import 'package:domora/core/error/error_mapper.dart';
+import 'package:domora/core/error/error_context.dart';
 import 'package:domora/features/onboarding/data/sources/onboarding_data_source.dart';
 import 'package:domora/features/onboarding/domain/params/client_onboarding_params.dart';
 import 'package:domora/features/onboarding/domain/params/provider_onboarding_params.dart';
@@ -9,7 +10,9 @@ import 'package:domora/features/onboarding/domain/repo/onboarding_repo.dart';
 
 class OnboardingRepositoryImpl implements OnboardingRepository {
   final OnboardingDataSource _dataSource;
-  OnboardingRepositoryImpl(this._dataSource);
+  final ErrorMapper _errorMapper;
+  
+  OnboardingRepositoryImpl(this._dataSource, this._errorMapper);
 
   @override
   Future<Either<Failure, void>> saveClientProfile(
@@ -25,12 +28,15 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
         ),
       );
       return const Right(null);
-    } on PostgrestException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on StorageException catch (e) {
-      return Left(ServerFailure('Error al subir el avatar: ${e.message}'));
-    } catch (e) {
-      return Left(UnknownFailure(e.toString()));
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'saveClientProfile',
+          userId: params.userId,
+        ).toString(),
+      ));
     }
   }
 
@@ -56,12 +62,15 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
         ),
       );
       return const Right(null);
-    } on PostgrestException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on StorageException catch (e) {
-      return Left(ServerFailure('Error al subir el avatar: ${e.message}'));
-    } catch (e) {
-      return Left(UnknownFailure(e.toString()));
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'saveProviderProfile',
+          userId: params.userId,
+        ).toString(),
+      ));
     }
   }
 }

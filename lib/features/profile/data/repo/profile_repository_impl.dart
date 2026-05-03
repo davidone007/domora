@@ -1,7 +1,8 @@
 import 'package:dartz/dartz.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 import 'package:domora/core/error/failures.dart';
+import 'package:domora/core/error/error_mapper.dart';
+import 'package:domora/core/error/error_context.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/features/profile/data/mappers/profile_mappers.dart';
 import 'package:domora/features/profile/data/sources/profile_data_source.dart';
@@ -13,13 +14,15 @@ import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileDataSource _dataSource;
+  final ErrorMapper _errorMapper;
 
-  ProfileRepositoryImpl(this._dataSource);
+  ProfileRepositoryImpl(this._dataSource, this._errorMapper);
 
   @override
   Future<Either<Failure, FullProfile>> getCurrentProfile() async {
+    String? userId;
     try {
-      final userId = _dataSource.getCurrentUserId();
+      userId = _dataSource.getCurrentUserId();
       if (userId == null) {
         return const Left(AuthFailure('No hay una sesión activa'));
       }
@@ -60,10 +63,15 @@ class ProfileRepositoryImpl implements ProfileRepository {
           primaryAddress: primaryAddress,
         ),
       );
-    } on supabase.PostgrestException catch (e) {
-      return Left(ServerFailure(e.message));
-    } catch (e) {
-      return Left(UnknownFailure(e.toString()));
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getCurrentProfile',
+          userId: userId,
+        ).toString(),
+      ));
     }
   }
 }

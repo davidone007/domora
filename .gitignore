@@ -51,6 +51,7 @@ GEMINI*.md
 specs_*.md
 EXPLICACION_DETALLADA.md
 SPECS_REFACTOR_AUTH.md
+.kiro
 
 # .env files
 .env
