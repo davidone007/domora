@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../failures.dart';
-import 'error_dialog.dart';
-import 'error_screen.dart';
+import 'package:domora/core/error/failures.dart';
+import 'package:domora/core/error/ui/error_dialog.dart';
+import 'package:domora/core/error/ui/error_screen.dart';
 
 /// Tipos de UI para mostrar errores
 enum ErrorUIType {
