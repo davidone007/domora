@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
-import '../failures.dart';
+import 'package:domora/core/theme/app_theme.dart';
+import 'package:domora/core/error/failures.dart';
 
 /// Pantalla completa para errores críticos con opción de retry.
 /// 
