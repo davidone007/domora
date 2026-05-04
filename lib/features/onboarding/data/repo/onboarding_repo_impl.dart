@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:domora/core/error/failures.dart';
-import 'package:domora/core/error/error_mapper.dart';
 import 'package:domora/core/error/error_context.dart';
+import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/features/onboarding/data/sources/onboarding_data_source.dart';
 import 'package:domora/features/onboarding/domain/params/client_onboarding_params.dart';
 import 'package:domora/features/onboarding/domain/params/provider_onboarding_params.dart';
@@ -10,7 +10,7 @@ import 'package:domora/features/onboarding/domain/repo/onboarding_repo.dart';
 
 class OnboardingRepositoryImpl implements OnboardingRepository {
   final OnboardingDataSource _dataSource;
-  final ErrorMapper _errorMapper;
+  final FailureMapper _errorMapper;
   
   OnboardingRepositoryImpl(this._dataSource, this._errorMapper);
 

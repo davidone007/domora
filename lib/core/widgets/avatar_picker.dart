@@ -1,18 +1,18 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
 
 /// Selector circular de avatar. Permite tomar una foto o elegir de la galería.
 /// Devuelve la ruta del archivo seleccionado mediante [onChanged].
 class AvatarPicker extends StatelessWidget {
-  final File? imageFile;
+  final AvatarFile? image;
   final String? imageUrl;
-  final ValueChanged<File?> onChanged;
+  final ValueChanged<AvatarFile?> onChanged;
   final double size;
 
   const AvatarPicker({
     super.key,
-    required this.imageFile,
+    required this.image,
     required this.onChanged,
     this.imageUrl,
     this.size = 110,
@@ -50,7 +50,7 @@ class AvatarPicker extends StatelessWidget {
               title: const Text('Elegir de la galería'),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
-            if (imageFile != null || (imageUrl != null && imageUrl!.isNotEmpty))
+            if (image != null || (imageUrl != null && imageUrl!.isNotEmpty))
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.red),
                 title: const Text(
@@ -74,13 +74,22 @@ class AvatarPicker extends StatelessWidget {
       maxWidth: 800,
       imageQuality: 80,
     );
-    if (picked != null) onChanged(File(picked.path));
+    if (picked != null) {
+      try {
+        final bytes = await picked.readAsBytes();
+        final name = (picked.name.isNotEmpty) ? picked.name : picked.path.split('/').last;
+        onChanged(AvatarFile(filename: name, bytes: bytes));
+      } catch (e) {
+        // Fallback: notify null if reading fails
+        onChanged(null);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasFile = imageFile != null;
+    final hasFile = image != null;
     final hasUrl = imageUrl != null && imageUrl!.isNotEmpty;
 
     return Center(
@@ -98,10 +107,14 @@ class AvatarPicker extends StatelessWidget {
               ),
               image: hasFile
                   ? DecorationImage(
-                      image: FileImage(imageFile!), fit: BoxFit.cover)
+                      image: MemoryImage(image!.bytes),
+                      fit: BoxFit.cover,
+                    )
                   : hasUrl
                       ? DecorationImage(
-                          image: NetworkImage(imageUrl!), fit: BoxFit.cover)
+                          image: NetworkImage(imageUrl!),
+                          fit: BoxFit.cover,
+                        )
                       : null,
             ),
             child: (!hasFile && !hasUrl)

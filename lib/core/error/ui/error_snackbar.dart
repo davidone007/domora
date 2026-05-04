@@ -10,7 +10,10 @@ import 'package:domora/core/theme/app_theme.dart';
 /// ```
 extension ErrorSnackBar on BuildContext {
   /// Muestra un SnackBar de error con estilo consistente
-  void showErrorSnackBar(String message) {
+  void showErrorSnackBar(
+    String message, {
+    Duration duration = const Duration(seconds: 3),
+  }) {
     ScaffoldMessenger.of(this)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -18,7 +21,7 @@ extension ErrorSnackBar on BuildContext {
           content: Text(message),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
+          duration: duration,
           action: SnackBarAction(
             label: 'Cerrar',
             textColor: Colors.white,

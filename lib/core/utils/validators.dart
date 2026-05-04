@@ -109,4 +109,27 @@ class Validators {
     }
     return null;
   }
+
+  /// Alias para [email] validator.
+  static String? validateEmail(String? value) => email(value);
+
+  /// Alias para [password] validator.
+  static String? validatePassword(String? value) => password(value);
+
+  /// Alias para [phone] validator.
+  static String? validatePhone(String? value) => phone(value);
+
+  /// Alias para [required] validator.
+  static String? validateNotEmpty(String? value, {String fieldName = 'Este campo'}) =>
+      required(value, fieldName: fieldName);
+
+  /// Número genérico (entero o decimal) para campos como experiencia o tarifa.
+  static String? validateNumberField(String? value, String fieldName) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return '$fieldName es obligatorio';
+    final num = double.tryParse(v.replaceAll(',', '.'));
+    if (num == null) return 'Ingresa un número válido para $fieldName';
+    if (num < 0) return '$fieldName no puede ser negativo';
+    return null;
+  }
 }

@@ -4,55 +4,53 @@ import 'dart:io';
 import 'package:http/http.dart' show ClientException;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'error_config.dart';
-import 'error_logger.dart';
-import 'failures.dart';
+import 'package:domora/core/error/failure_mapper.dart';
+import 'package:domora/core/error/error_config.dart';
+import 'package:domora/core/error/error_logger.dart';
+import 'package:domora/core/error/failures.dart';
 
-/// Mapea excepciones técnicas a objetos Failure con mensajes amigables.
-/// 
-/// Este es el componente central del sistema de manejo de errores.
-/// Traduce excepciones de Supabase, red, validación y otras fuentes
-/// a mensajes comprensibles para el usuario final.
-class ErrorMapper {
+/// Implementación concreta del mapeador de errores colocada en la capa de
+/// infraestructura. Implementa el contrato `FailureMapper` definido en core.
+class ErrorMapperImpl implements FailureMapper {
   final ErrorLogger _logger;
   final ErrorConfig _config;
 
-  const ErrorMapper({
+  const ErrorMapperImpl({
     required ErrorLogger logger,
     required ErrorConfig config,
   })  : _logger = logger,
         _config = config;
 
-  /// Mapea cualquier excepción a un Failure apropiado
-  /// 
-  /// Este es el método principal que debe usarse en los repositories.
-  /// Maneja defensivamente sus propios errores para no afectar la UX.
+  @override
   Failure mapException(
     Object exception, {
     StackTrace? stackTrace,
     String? context,
   }) {
-    // Log el error con detalles técnicos
     try {
       _logger.logError(exception, stackTrace, context);
     } catch (e) {
-      // Logging failure no debe afectar el mapeo
       // ignore: avoid_print
       print('ErrorLogger failed: $e');
     }
 
     try {
-      // Mapeo específico por tipo
       return _mapExceptionInternal(exception);
     } catch (e) {
-      // Si el mapeo falla, retornar UnknownFailure
       return UnknownFailure(_config.genericErrorMessage);
     }
   }
 
-  /// Lógica interna de mapeo de excepciones
   Failure _mapExceptionInternal(Object exception) {
-    // Primero verificar si es un error de red (más común)
+    if (exception is StorageException) {
+      final msg = exception.message ?? 'Error subiendo archivo. Verifica permisos de Storage.';
+      return ServerFailure(
+        _buildMessage(
+          userMessage: 'No se pudo subir la imagen. Revisa permisos y reglas de Storage.',
+          technicalMessage: msg,
+        ),
+      );
+    }
     if (exception is ClientException ||
         exception is SocketException ||
         exception is TimeoutException ||
@@ -72,92 +70,83 @@ class ErrorMapper {
       return mapValidationException(exception);
     }
 
-    // Verificar si el mensaje de la excepción contiene indicadores de problemas de red
-    final exceptionString = exception.toString().toLowerCase();
-    if (exceptionString.contains('clientexception') ||
-        exceptionString.contains('socketexception') ||
-        exceptionString.contains('failed host lookup') ||
-        exceptionString.contains('no address associated') ||
-        exceptionString.contains('network is unreachable') ||
-        exceptionString.contains('connection refused') ||
-        exceptionString.contains('connection timed out') ||
-        exceptionString.contains('timeout')) {
+    final exceptionString = exception.toString();
+    if (_looksLikeNetworkIssue(exceptionString)) {
       return const NetworkFailure(
         'No hay conexión a internet. Verifica tu red e intenta nuevamente',
         type: NetworkErrorType.noConnection,
       );
     }
 
-    // Fallback: UnknownFailure con mensaje genérico
     return UnknownFailure(_config.genericErrorMessage);
   }
 
-  /// Mapea específicamente AuthException de Supabase
-  AuthFailure mapAuthException(AuthException exception) {
-    final message = exception.message.toLowerCase();
+  Failure mapAuthException(AuthException exception) {
+    final message = exception.message;
 
-    // Verificar si AuthException contiene un error de red
-    if (message.contains('clientexception') ||
-        message.contains('socketexception') ||
-        message.contains('failed host lookup') ||
-        message.contains('no address associated') ||
-        message.contains('network') ||
-        message.contains('connection') ||
-        message.contains('timeout')) {
-      return const AuthFailure(
+    if (_looksLikeNetworkIssue(message)) {
+      return const NetworkFailure(
         'No hay conexión a internet. Verifica tu red e intenta nuevamente',
+        type: NetworkErrorType.noConnection,
       );
     }
 
-    if (message.contains('invalid login credentials')) {
+    final normalizedMessage = message.toLowerCase();
+
+    if (normalizedMessage.contains('invalid login credentials')) {
       return const AuthFailure('Correo o contraseña incorrectos');
     }
 
-    if (message.contains('user already registered') ||
-        message.contains('already been registered')) {
+    if (normalizedMessage.contains('user already registered') ||
+        normalizedMessage.contains('already been registered')) {
       return const AuthFailure(
           'Este correo ya está registrado. Intenta iniciar sesión');
     }
 
-    if (message.contains('email not confirmed')) {
+    if (normalizedMessage.contains('email not confirmed')) {
       return const AuthFailure(
         'Debes confirmar tu correo antes de iniciar sesión. '
         'Revisa tu bandeja de entrada',
       );
     }
 
-    if (message.contains('password should be')) {
+    if (normalizedMessage.contains('password should be')) {
       return const AuthFailure(
         'La contraseña debe tener al menos 8 caracteres, '
         'una letra y un número',
       );
     }
 
-    if (message.contains('session') && message.contains('expired')) {
+    // Mensaje común de Supabase al limitar peticiones por seguridad, p.ej:
+    // "For security purposes, you can only request this after 47 seconds."
+    if (normalizedMessage.contains('for security purposes') ||
+        normalizedMessage.contains('you can only request this')) {
+      return const AuthFailure(
+        'Por motivos de seguridad, debes esperar unos segundos antes de intentar de nuevo.',
+      );
+    }
+
+    if (normalizedMessage.contains('session') &&
+        normalizedMessage.contains('expired')) {
       return const AuthFailure('Tu sesión ha expirado. Inicia sesión nuevamente');
     }
 
-    // Fallback: mensaje genérico en lugar del mensaje técnico
-    return const AuthFailure(
-      'Ocurrió un error al autenticar. Intenta nuevamente',
+    return AuthFailure(
+      _buildMessage(
+        userMessage: 'Ocurrió un error al autenticar. Intenta nuevamente',
+        technicalMessage: message,
+      ),
     );
   }
 
-  /// Mapea específicamente PostgrestException de Supabase
-  ServerFailure mapPostgrestException(PostgrestException exception) {
+  Failure mapPostgrestException(PostgrestException exception) {
     final code = exception.code;
-    final message = exception.message.toLowerCase();
+    final message = exception.message;
 
-    // Verificar si PostgrestException contiene un error de red
-    if (message.contains('clientexception') ||
-        message.contains('socketexception') ||
-        message.contains('failed host lookup') ||
-        message.contains('no address associated') ||
-        message.contains('network') ||
-        message.contains('connection') ||
-        message.contains('timeout')) {
-      return const ServerFailure(
+    if (_looksLikeNetworkIssue(message)) {
+      return const NetworkFailure(
         'No hay conexión a internet. Verifica tu red e intenta nuevamente',
+        type: NetworkErrorType.noConnection,
       );
     }
 
@@ -198,13 +187,14 @@ class ErrorMapper {
       );
     }
 
-    // Fallback: mensaje genérico en lugar del mensaje técnico
-    return const ServerFailure(
-      'Ocurrió un error en el servidor. Intenta más tarde',
+    return ServerFailure(
+      _buildMessage(
+        userMessage: 'Ocurrió un error en el servidor. Intenta más tarde',
+        technicalMessage: message,
+      ),
     );
   }
 
-  /// Mapea errores de red (timeouts, conexión)
   NetworkFailure mapNetworkException(Object exception) {
     if (exception is TimeoutException) {
       return const NetworkFailure(
@@ -221,11 +211,9 @@ class ErrorMapper {
     }
 
     if (exception is ClientException) {
-      // ClientException puede contener otras excepciones dentro
-      // Revisar el mensaje para determinar el tipo específico
       final message = exception.toString().toLowerCase();
-      
-      if (message.contains('socketexception') || 
+
+      if (message.contains('socketexception') ||
           message.contains('failed host lookup') ||
           message.contains('no address associated with hostname')) {
         return const NetworkFailure(
@@ -233,15 +221,14 @@ class ErrorMapper {
           type: NetworkErrorType.noConnection,
         );
       }
-      
+
       if (message.contains('timeout')) {
         return const NetworkFailure(
           'La operación tardó demasiado. Verifica tu conexión e intenta nuevamente',
           type: NetworkErrorType.timeout,
         );
       }
-      
-      // Fallback genérico para ClientException
+
       return const NetworkFailure(
         'No hay conexión a internet. Verifica tu red e intenta nuevamente',
         type: NetworkErrorType.noConnection,
@@ -261,7 +248,6 @@ class ErrorMapper {
     );
   }
 
-  /// Mapea errores de validación
   ValidationFailure mapValidationException(Object exception) {
     if (exception is FormatException) {
       return ValidationFailure(
@@ -272,7 +258,6 @@ class ErrorMapper {
     return const ValidationFailure('Datos inválidos');
   }
 
-  /// Mapea errores de permisos
   PermissionFailure mapPermissionException(
     PermissionType permissionType, {
     bool permanentlyDenied = false,
@@ -282,23 +267,23 @@ class ErrorMapper {
     switch (permissionType) {
       case PermissionType.camera:
         message =
-            'Necesitamos acceso a tu cámara para tomar fotos. Ve a Configuración para otorgar el permiso';
+            'Necesitamos acceso a tu cámara para tomar fotos. ${_permissionActionHint(permanentlyDenied)}';
         break;
       case PermissionType.photos:
         message =
-            'Necesitamos acceso a tus fotos para seleccionar imágenes. Ve a Configuración para otorgar el permiso';
+            'Necesitamos acceso a tus fotos para seleccionar imágenes. ${_permissionActionHint(permanentlyDenied)}';
         break;
       case PermissionType.location:
         message =
-            'Necesitamos acceso a tu ubicación para mostrarte servicios cercanos. Ve a Configuración para otorgar el permiso';
+            'Necesitamos acceso a tu ubicación para mostrarte servicios cercanos. ${_permissionActionHint(permanentlyDenied)}';
         break;
       case PermissionType.storage:
         message =
-            'Necesitamos acceso al almacenamiento para guardar archivos. Ve a Configuración para otorgar el permiso';
+            'Necesitamos acceso al almacenamiento para guardar archivos. ${_permissionActionHint(permanentlyDenied)}';
         break;
       case PermissionType.microphone:
         message =
-            'Necesitamos acceso al micrófono para grabar audio. Ve a Configuración para otorgar el permiso';
+            'Necesitamos acceso al micrófono para grabar audio. ${_permissionActionHint(permanentlyDenied)}';
         break;
     }
 
@@ -307,5 +292,42 @@ class ErrorMapper {
       permissionType: permissionType,
       permanentlyDenied: permanentlyDenied,
     );
+  }
+
+  bool _looksLikeNetworkIssue(String rawMessage) {
+    final message = rawMessage.toLowerCase();
+    return message.contains('clientexception') ||
+        message.contains('socketexception') ||
+        message.contains('failed host lookup') ||
+        message.contains('no address associated') ||
+        message.contains('network') ||
+        message.contains('connection') ||
+        message.contains('timeout') ||
+        message.contains('network is unreachable') ||
+        message.contains('connection refused') ||
+        message.contains('connection timed out');
+  }
+
+  String _permissionActionHint(bool permanentlyDenied) {
+    if (permanentlyDenied) {
+      return 'Ve a Configuración para otorgar el permiso';
+    }
+    return 'Intenta nuevamente y acepta el permiso cuando se te solicite';
+  }
+
+  String _buildMessage({
+    required String userMessage,
+    required String technicalMessage,
+  }) {
+    if (!_config.showTechnicalDetails) {
+      return userMessage;
+    }
+
+    final compactTechnical = technicalMessage.trim();
+    if (compactTechnical.isEmpty) {
+      return userMessage;
+    }
+
+    return '$userMessage\nDetalle técnico: $compactTechnical';
   }
 }

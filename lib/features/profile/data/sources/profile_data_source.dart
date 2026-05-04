@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:domora/core/utils/constants.dart';
+import 'package:domora/core/network/network_info.dart';
+import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
+import 'package:domora/infrastructure/network/network_info_impl.dart';
 
 abstract class ProfileDataSource {
   String? getCurrentUserId();
@@ -9,17 +14,40 @@ abstract class ProfileDataSource {
   Future<Map<String, dynamic>?> getClientProfile(String userId);
   Future<Map<String, dynamic>?> getProviderProfile(String userId);
   Future<Map<String, dynamic>?> getPrimaryAddress(String userId);
+
+  /// Actualiza la fila en la tabla `users` identificada por `userId`.
+  Future<void> updateUser(String userId, Map<String, dynamic> updates);
+
+  /// Actualiza la fila en `client_profiles` para el `userId`.
+  Future<void> updateClientProfile(String userId, Map<String, dynamic> updates);
+
+  /// Actualiza la fila en `provider_profiles` para el `userId`.
+  Future<void> updateProviderProfile(String userId, Map<String, dynamic> updates);
+
+  /// Sube el avatar a Supabase Storage y retorna la URL pública.
+  /// El parámetro [isProvider] determina la subcarpeta (client_avatars o provider_avatars).
+  Future<String> uploadAvatar({
+    required String userId,
+    required AvatarFile avatarFile,
+    required bool isProvider,
+  });
 }
 
 class ProfileDataSourceImpl implements ProfileDataSource {
   final SupabaseClient _client;
-  ProfileDataSourceImpl(this._client);
+  final NetworkInfo _networkInfo;
+
+  ProfileDataSourceImpl(this._client, {NetworkInfo? networkInfo}) : _networkInfo = networkInfo ?? NetworkInfoImpl();
 
   @override
   String? getCurrentUserId() => _client.auth.currentUser?.id;
 
   @override
   Future<Map<String, dynamic>?> getUser(String userId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
     return await _client
         .from(AppConstants.tableUsers)
         .select()
@@ -29,6 +57,10 @@ class ProfileDataSourceImpl implements ProfileDataSource {
 
   @override
   Future<String?> getRole(String userId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
     final result = await _client
         .from(AppConstants.tableUserRoles)
         .select('roles(name)')
@@ -43,6 +75,10 @@ class ProfileDataSourceImpl implements ProfileDataSource {
 
   @override
   Future<Map<String, dynamic>?> getClientProfile(String userId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
     return await _client
         .from(AppConstants.tableClientProfiles)
         .select()
@@ -52,6 +88,10 @@ class ProfileDataSourceImpl implements ProfileDataSource {
 
   @override
   Future<Map<String, dynamic>?> getProviderProfile(String userId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
     return await _client
         .from(AppConstants.tableProviderProfiles)
         .select()
@@ -61,6 +101,10 @@ class ProfileDataSourceImpl implements ProfileDataSource {
 
   @override
   Future<Map<String, dynamic>?> getPrimaryAddress(String userId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
     // Devuelve la primaria; si no hay, la primera registrada.
     final primary = await _client
         .from(AppConstants.tableAddresses)
@@ -77,5 +121,68 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .limit(1)
         .maybeSingle();
     return any;
+  }
+
+  @override
+  Future<void> updateUser(String userId, Map<String, dynamic> updates) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    if (userId.isEmpty) {
+      throw const SocketException('userId está vacío');
+    }
+
+    await _client.from(AppConstants.tableUsers).update(updates).eq('id', userId);
+  }
+
+  @override
+  Future<void> updateClientProfile(String userId, Map<String, dynamic> updates) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    await _client.from(AppConstants.tableClientProfiles).update(updates).eq('user_id', userId);
+  }
+
+  @override
+  Future<void> updateProviderProfile(String userId, Map<String, dynamic> updates) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    await _client.from(AppConstants.tableProviderProfiles).update(updates).eq('user_id', userId);
+  }
+
+  @override
+  Future<String> uploadAvatar({
+    required String userId,
+    required AvatarFile avatarFile,
+    required bool isProvider,
+  }) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    if (userId.isEmpty) {
+      throw const SocketException('userId está vacío');
+    }
+
+    final ext = avatarFile.filename.split('.').last.toLowerCase();
+    final safeExt = ext.isNotEmpty ? ext : 'png';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final path = '$userId/avatar_$timestamp.$safeExt';
+
+    await _client.storage
+      .from(AppConstants.bucketAvatars)
+        .uploadBinary(
+          path,
+          avatarFile.bytes,
+          fileOptions: const FileOptions(upsert: true),
+        );
+
+    final publicUrl = _client.storage.from(AppConstants.bucketAvatars).getPublicUrl(path);
+
+    return publicUrl;
   }
 }

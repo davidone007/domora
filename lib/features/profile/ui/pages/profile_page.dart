@@ -84,19 +84,36 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
-                  BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
-                    builder: (context, signOutState) {
-                      final isLoading = signOutState is ProfileSignOutLoadingState;
-                      return IconButton(
-                        tooltip: 'Cerrar sesión',
-                        onPressed: isLoading
-                            ? null
-                            : () => context
-                                .read<ProfileSignOutBloc>()
-                                .add(const ProfileSignOutSubmitEvent()),
-                        icon: const Icon(Icons.logout, size: 22),
-                      );
-                    },
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Editar perfil',
+                        onPressed: () {
+                          // Pasamos el `FullProfile` actual como extra para prefijar el formulario.
+                          final state = context.read<ProfileBloc>().state;
+                          if (state is ProfileLoadedState) {
+                            context.go(AppConstants.routeProfileEdit, extra: state.profile);
+                          } else {
+                            context.go(AppConstants.routeProfileEdit);
+                          }
+                        },
+                        icon: const Icon(Icons.edit, size: 20),
+                      ),
+                      BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
+                        builder: (context, signOutState) {
+                          final isLoading = signOutState is ProfileSignOutLoadingState;
+                          return IconButton(
+                            tooltip: 'Cerrar sesión',
+                            onPressed: isLoading
+                                ? null
+                                : () => context
+                                    .read<ProfileSignOutBloc>()
+                                    .add(const ProfileSignOutSubmitEvent()),
+                            icon: const Icon(Icons.logout, size: 22),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

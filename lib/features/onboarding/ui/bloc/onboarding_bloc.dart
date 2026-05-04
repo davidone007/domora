@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,7 +20,7 @@ class OnboardingSaveClientEvent extends OnboardingEvent {
   final String firstName;
   final String lastName;
   final String phone;
-  final File? avatar;
+  final AvatarFile? avatar;
 
   const OnboardingSaveClientEvent({
     required this.userId,
@@ -42,7 +42,7 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
   final int yearsExperience;
   final double hourlyRate;
   final String? bio;
-  final File? avatar;
+  final AvatarFile? avatar;
   final String addressLine1;
   final String? addressLine2;
   final String department;
