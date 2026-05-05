@@ -1,4 +1,4 @@
-import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
+import 'package:domora/core/entities/avatar_file.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

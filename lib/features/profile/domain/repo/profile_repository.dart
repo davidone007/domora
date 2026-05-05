@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:domora/core/error/failures.dart';
-import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
+import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 
 abstract class ProfileRepository {

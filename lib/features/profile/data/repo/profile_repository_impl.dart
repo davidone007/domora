@@ -4,10 +4,10 @@ import 'package:domora/core/error/failures.dart';
 import 'package:domora/core/error/error_context.dart';
 import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/core/utils/constants.dart';
-import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
+import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/features/profile/data/mappers/profile_mappers.dart';
 import 'package:domora/features/profile/data/sources/profile_data_source.dart';
-import 'package:domora/features/auth/data/sources/auth_data_source.dart';
+import 'package:domora/features/auth/domain/repo/auth_repo.dart';
 import 'package:domora/features/profile/domain/entities/address.dart';
 import 'package:domora/features/profile/domain/entities/client_profile.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
@@ -16,10 +16,10 @@ import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileDataSource _dataSource;
-  final AuthDataSource _authDataSource;
+  final AuthRepository _authRepository;
   final FailureMapper _errorMapper;
 
-  ProfileRepositoryImpl(this._dataSource, this._authDataSource, this._errorMapper);
+  ProfileRepositoryImpl(this._dataSource, this._authRepository, this._errorMapper);
 
   @override
   Future<Either<Failure, FullProfile>> getCurrentProfile() async {
@@ -35,7 +35,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         return const Left(ServerFailure('Usuario no encontrado'));
       }
 
-      final authEmail = _authDataSource.currentUser?.email;
+      final authEmail = _authRepository.currentUserEmail;
       if (authEmail != null && authEmail.isNotEmpty) {
         userMap['email'] = authEmail;
       }
@@ -170,20 +170,12 @@ class ProfileRepositoryImpl implements ProfileRepository {
     required String currentPassword,
     required String newEmail,
   }) async {
-    try {
-      await _authDataSource.updateEmail(
-        currentEmail: currentEmail,
-        currentPassword: currentPassword,
-        newEmail: newEmail,
-      );
-      return const Right(unit);
-    } catch (e, stackTrace) {
-      return Left(_errorMapper.mapException(
-        e,
-        stackTrace: stackTrace,
-        context: ErrorContext(operation: 'updateEmail').toString(),
-      ));
-    }
+    final result = await _authRepository.updateEmail(
+      currentEmail: currentEmail,
+      currentPassword: currentPassword,
+      newEmail: newEmail,
+    );
+    return result.map((_) => unit);
   }
 
   @override
@@ -191,19 +183,11 @@ class ProfileRepositoryImpl implements ProfileRepository {
     required String currentPassword,
     required String newPassword,
   }) async {
-    try {
-      await _authDataSource.updatePassword(
-        currentPassword: currentPassword,
-        newPassword: newPassword,
-      );
-      return const Right(unit);
-    } catch (e, stackTrace) {
-      return Left(_errorMapper.mapException(
-        e,
-        stackTrace: stackTrace,
-        context: ErrorContext(operation: 'updatePassword').toString(),
-      ));
-    }
+    final result = await _authRepository.updatePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+    return result.map((_) => unit);
   }
 
   @override

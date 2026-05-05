@@ -52,4 +52,20 @@ abstract class AuthRepository {
 
   /// Devuelve el resultado de la sesión actual o `null` si no hay sesión.
   Future<Either<Failure, AuthResult?>> getCurrentSession();
+
+  /// Devuelve el correo del usuario actualmente autenticado, o `null`.
+  String? get currentUserEmail;
+
+  /// Reautentica con el correo y contraseña actual antes de cambiar el correo.
+  Future<Either<Failure, void>> updateEmail({
+    required String currentEmail,
+    required String currentPassword,
+    required String newEmail,
+  });
+
+  /// Reautentica con la contraseña actual y actualiza la contraseña en Auth.
+  Future<Either<Failure, void>> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
 }

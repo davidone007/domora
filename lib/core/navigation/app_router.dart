@@ -71,7 +71,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
   final OnboardingRepository onbRepo = OnboardingRepositoryImpl(onbDs, errorMapper);
 
   final ProfileDataSource profDs = ProfileDataSourceImpl(supabase, networkInfo: networkInfo);
-  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, authDs, errorMapper);
+  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, authRepo, errorMapper);
 
   return GoRouter(
     initialLocation: AppConstants.routeSplash,

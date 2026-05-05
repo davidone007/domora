@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
+import 'package:domora/core/entities/avatar_file.dart';
 
 /// Selector circular de avatar. Permite tomar una foto o elegir de la galería.
 /// Devuelve la ruta del archivo seleccionado mediante [onChanged].

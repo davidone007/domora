@@ -1,9 +1,3 @@
-import 'dart:typed_data';
-
-/// Representa un archivo de avatar de forma independiente a la plataforma.
-class AvatarFile {
-  final String filename;
-  final Uint8List bytes;
-
-  const AvatarFile({required this.filename, required this.bytes});
-}
+// AvatarFile fue movida a core/entities/ para ser compartida entre features.
+// Este archivo se mantiene solo como referencia histórica y puede eliminarse.
+export 'package:domora/core/entities/avatar_file.dart';

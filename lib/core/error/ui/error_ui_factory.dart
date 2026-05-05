@@ -108,13 +108,15 @@ class ErrorUIFactory {
     return ErrorDialog.show(context, failure, onRetry: onRetry);
   }
 
-  /// Navega a pantalla completa para errores críticos
+  /// Navega a pantalla completa para errores críticos.
+  /// Usa rootNavigator: true para situarse sobre el árbol de GoRouter
+  /// y evitar conflictos con su historial de rutas.
   Future<void> showErrorScreen(
     BuildContext context,
     Failure failure, {
     required VoidCallback onRetry,
   }) {
-    return Navigator.of(context).push(
+    return Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (context) => PopScope(
           canPop: false,

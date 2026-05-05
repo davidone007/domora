@@ -12,7 +12,7 @@ import 'package:domora/core/widgets/custom_button.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
 import 'package:domora/core/widgets/loading_overlay.dart';
 import 'package:domora/core/widgets/simple_form.dart';
-import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
+import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/ui/bloc/profile_edit_bloc.dart';
 

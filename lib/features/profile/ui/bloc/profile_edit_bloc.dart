@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
+import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';

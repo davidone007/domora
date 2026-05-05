@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/network/network_info.dart';
-import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
+import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/infrastructure/network/network_info_impl.dart';
 
 abstract class ProfileDataSource {

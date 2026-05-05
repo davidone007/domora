@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:domora/core/error/failures.dart';
-import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
+import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 
 /// UseCase para subir la foto de perfil del usuario a Supabase Storage.

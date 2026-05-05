@@ -128,4 +128,49 @@ class AuthRepositoryImpl implements AuthRepository {
       ));
     }
   }
+
+  @override
+  String? get currentUserEmail => _dataSource.currentUser?.email;
+
+  @override
+  Future<Either<Failure, void>> updateEmail({
+    required String currentEmail,
+    required String currentPassword,
+    required String newEmail,
+  }) async {
+    try {
+      await _dataSource.updateEmail(
+        currentEmail: currentEmail,
+        currentPassword: currentPassword,
+        newEmail: newEmail,
+      );
+      return const Right(null);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(operation: 'updateEmail').toString(),
+      ));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _dataSource.updatePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      return const Right(null);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(operation: 'updatePassword').toString(),
+      ));
+    }
+  }
 }
