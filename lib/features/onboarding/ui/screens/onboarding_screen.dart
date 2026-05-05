@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -37,7 +37,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _lastNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   String _dialCode = '+57';
-  File? _avatar;
+  AvatarFile? _avatar;
 
   // Solo proveedor
   final _yearsCtrl = TextEditingController();
@@ -155,7 +155,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                     const SizedBox(height: 28),
                     AvatarPicker(
-                      imageFile: _avatar,
+                      image: _avatar,
                       onChanged: (f) => setState(() => _avatar = f),
                     ),
                     const SizedBox(height: 8),

@@ -1,8 +1,11 @@
-import 'dart:io';
-
+import 'package:http/http.dart' show ClientException;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:domora/core/utils/constants.dart';
+import 'package:domora/core/network/network_info.dart';
+import 'package:domora/infrastructure/network/network_info_impl.dart';
+
+import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
 
 /// Datos requeridos para completar el perfil de un cliente.
 class ClientOnboardingData {
@@ -10,7 +13,7 @@ class ClientOnboardingData {
   final String firstName;
   final String lastName;
   final String phone;
-  final File? avatar;
+  final AvatarFile? avatar;
 
   const ClientOnboardingData({
     required this.userId,
@@ -30,7 +33,7 @@ class ProviderOnboardingData {
   final int yearsExperience;
   final double hourlyRate;
   final String? bio;
-  final File? avatar;
+  final AvatarFile? avatar;
 
   // Dirección
   final String addressLine1;
@@ -65,25 +68,32 @@ abstract class OnboardingDataSource {
 
 class OnboardingDataSourceImpl implements OnboardingDataSource {
   final SupabaseClient _client;
-  OnboardingDataSourceImpl(this._client);
+  final NetworkInfo _networkInfo;
+
+  OnboardingDataSourceImpl(this._client, {NetworkInfo? networkInfo}) : _networkInfo = networkInfo ?? NetworkInfoImpl();
 
   /// Sube el avatar al bucket `avatars` y devuelve su URL pública.
-  Future<String?> _uploadAvatar(String userId, File file) async {
-    final ext = file.path.split('.').last.toLowerCase();
-    final path =
-        '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+  Future<String?> _uploadAvatar(String userId, AvatarFile file) async {
+    final ext = file.filename.split('.').last.toLowerCase();
+    final path = '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
 
-    await _client.storage.from(AppConstants.bucketAvatars).upload(
-          path,
-          file,
-          fileOptions: const FileOptions(upsert: true),
-        );
+    final storage = _client.storage.from(AppConstants.bucketAvatars);
 
-    return _client.storage.from(AppConstants.bucketAvatars).getPublicUrl(path);
+    await storage.uploadBinary(
+      path,
+      file.bytes,
+      fileOptions: const FileOptions(upsert: true),
+    );
+
+    return storage.getPublicUrl(path);
   }
 
   @override
   Future<void> saveClientProfile(ClientOnboardingData data) async {
+    if (!await _networkInfo.isConnected()) {
+      throw ClientException('No internet');
+    }
+
     String? avatarUrl;
     if (data.avatar != null) {
       avatarUrl = await _uploadAvatar(data.userId, data.avatar!);
@@ -110,6 +120,10 @@ class OnboardingDataSourceImpl implements OnboardingDataSource {
 
   @override
   Future<void> saveProviderProfile(ProviderOnboardingData data) async {
+    if (!await _networkInfo.isConnected()) {
+      throw ClientException('No internet');
+    }
+
     String? avatarUrl;
     if (data.avatar != null) {
       avatarUrl = await _uploadAvatar(data.userId, data.avatar!);

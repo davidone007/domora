@@ -16,6 +16,15 @@ class Validators {
     return null;
   }
 
+  static String? differentEmail(String? value, String currentEmail) {
+    final v = value?.trim().toLowerCase() ?? '';
+    final current = currentEmail.trim().toLowerCase();
+    if (v.isEmpty) return 'El correo es obligatorio';
+    if (!_emailRegex.hasMatch(v)) return 'Ingresa un correo válido';
+    if (v == current) return 'No se puede cambiar por el mismo correo';
+    return null;
+  }
+
   /// Contraseña: mínimo 8 caracteres, al menos una letra y un número.
   static String? password(String? value) {
     final v = value ?? '';
@@ -28,6 +37,13 @@ class Validators {
       return 'Debe contener al menos un número';
     }
     return null;
+  }
+
+  static String? differentPassword(String? value, String currentPassword) {
+    final v = value ?? '';
+    if (v.isEmpty) return 'La contraseña es obligatoria';
+    if (v == currentPassword) return 'No se puede cambiar por la misma contraseña';
+    return password(v);
   }
 
   /// Confirmación de contraseña.
@@ -74,6 +90,17 @@ class Validators {
     return null;
   }
 
+  static String? integerField(String? value, {required String fieldName, int? min, int? max}) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return '$fieldName es obligatorio';
+    if (!_onlyDigits.hasMatch(v)) return 'Solo se permiten números enteros';
+    final parsed = int.tryParse(v);
+    if (parsed == null) return 'Ingresa un número válido para $fieldName';
+    if (min != null && parsed < min) return '$fieldName no puede ser menor que $min';
+    if (max != null && parsed > max) return '$fieldName no puede ser mayor que $max';
+    return null;
+  }
+
   /// Tarifa por hora: número decimal positivo.
   static String? hourlyRate(String? value) {
     final v = value?.trim().replaceAll(',', '.') ?? '';
@@ -107,6 +134,29 @@ class Validators {
     if (digits.length < 6 || digits.length > 15) {
       return 'Ingresa un número válido (6–15 dígitos)';
     }
+    return null;
+  }
+
+  /// Alias para [email] validator.
+  static String? validateEmail(String? value) => email(value);
+
+  /// Alias para [password] validator.
+  static String? validatePassword(String? value) => password(value);
+
+  /// Alias para [phone] validator.
+  static String? validatePhone(String? value) => phone(value);
+
+  /// Alias para [required] validator.
+  static String? validateNotEmpty(String? value, {String fieldName = 'Este campo'}) =>
+      required(value, fieldName: fieldName);
+
+  /// Número genérico (entero o decimal) para campos como experiencia o tarifa.
+  static String? validateNumberField(String? value, String fieldName) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return '$fieldName es obligatorio';
+    final num = double.tryParse(v.replaceAll(',', '.'));
+    if (num == null) return 'Ingresa un número válido para $fieldName';
+    if (num < 0) return '$fieldName no puede ser negativo';
     return null;
   }
 }

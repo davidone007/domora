@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:domora/core/error/failures.dart';
-import 'package:domora/core/error/error_mapper.dart';
 import 'package:domora/core/error/error_context.dart';
+import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/features/auth/data/sources/auth_data_source.dart';
 import 'package:domora/features/auth/domain/repo/auth_repo.dart';
 
@@ -10,7 +10,7 @@ import 'package:domora/features/auth/domain/repo/auth_repo.dart';
 /// Traduce las excepciones de la capa de datos a [Failure]s tipadas.
 class AuthRepositoryImpl implements AuthRepository {
   final AuthDataSource _dataSource;
-  final ErrorMapper _errorMapper;
+  final FailureMapper _errorMapper;
 
   AuthRepositoryImpl(this._dataSource, this._errorMapper);
 

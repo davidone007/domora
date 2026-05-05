@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:domora/core/error/failures.dart';
 import 'package:domora/core/error/ui/error_dialog.dart';
 import 'package:domora/core/error/ui/error_screen.dart';
+import 'package:domora/core/error/ui/error_snackbar.dart';
 
 /// Tipos de UI para mostrar errores
 enum ErrorUIType {
@@ -95,21 +96,7 @@ class ErrorUIFactory {
     String message, {
     Duration duration = const Duration(seconds: 4),
   }) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: duration,
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'Cerrar',
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
-          ),
-        ),
-      );
+    context.showErrorSnackBar(message, duration: duration);
   }
 
   /// Muestra Dialog para errores moderados

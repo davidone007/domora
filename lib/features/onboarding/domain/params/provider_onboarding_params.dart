@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
 
 class ProviderOnboardingParams {
   final String userId;
@@ -8,7 +8,7 @@ class ProviderOnboardingParams {
   final int yearsExperience;
   final double hourlyRate;
   final String? bio;
-  final File? avatar;
+  final AvatarFile? avatar;
   final String addressLine1;
   final String? addressLine2;
   final String department;

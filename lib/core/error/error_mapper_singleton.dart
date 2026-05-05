@@ -1,35 +1,29 @@
-import 'error_config.dart';
-import 'error_logger.dart';
-import 'error_mapper.dart';
+import 'failure_mapper.dart';
 
-/// Singleton para acceder al ErrorMapper globalmente.
-/// 
-/// Debe ser inicializado en main.dart antes de usar la aplicación.
+/// Singleton para acceder al FailureMapper globalmente.
+///
+/// Debe ser inicializado en `main.dart` o desde la capa de aplicación antes
+/// de usar la aplicación. Este archivo NO debe importar implementaciones de
+/// infraestructura para evitar acoplamientos en `core`.
 class ErrorMapperSingleton {
-  static ErrorMapper? _instance;
+  static FailureMapper? _instance;
 
   /// Inicializa el singleton con la configuración especificada
-  static void initialize(ErrorMapper mapper) {
+  static void initialize(FailureMapper mapper) {
     _instance = mapper;
   }
 
-  /// Obtiene la instancia del ErrorMapper
-  /// 
+  /// Obtiene la instancia del FailureMapper
+  ///
   /// Lanza una excepción si no ha sido inicializado.
-  static ErrorMapper get instance {
+  static FailureMapper get instance {
     if (_instance == null) {
       throw StateError(
-        'ErrorMapper no ha sido inicializado. '
-        'Llama a ErrorMapperSingleton.initialize() en main.dart',
+        'FailureMapper no ha sido inicializado. '
+        'Crea la implementación concreta en la capa de aplicación e ' 
+        'inicializa con ErrorMapperSingleton.initialize()',
       );
     }
     return _instance!;
-  }
-
-  /// Crea una instancia con configuración automática (dev/prod)
-  static ErrorMapper createDefault() {
-    final config = ErrorConfig.auto();
-    final logger = ErrorLogger(config);
-    return ErrorMapper(logger: logger, config: config);
   }
 }

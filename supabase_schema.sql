@@ -39,6 +39,8 @@ create table if not exists public.users (
   last_login            timestamptz
 );
 
+
+
 -- ============================================================================
 -- USER_ROLES
 -- ============================================================================
@@ -106,7 +108,7 @@ as $$
 begin
   insert into public.users (id, email)
   values (new.id, new.email)
-  on conflict (id) do nothing;
+  on conflict do nothing;
   return new;
 end;
 $$;
@@ -115,6 +117,28 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- ============================================================================
+-- TRIGGER: sync email changes from auth.users to public.users
+-- ============================================================================
+create or replace function public.sync_user_email()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  update public.users
+  set email = new.email,
+      updated_at = now()
+  where id = new.id;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_updated on auth.users;
+create trigger on_auth_user_updated
+  after update on auth.users
+  for each row execute function public.sync_user_email();
 
 -- ============================================================================
 -- ROW LEVEL SECURITY
@@ -178,22 +202,23 @@ insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)
 on conflict (id) do nothing;
 
-drop policy if exists "avatars_public_read"  on storage.objects;
-drop policy if exists "avatars_user_write"   on storage.objects;
-drop policy if exists "avatars_user_update"  on storage.objects;
-drop policy if exists "avatars_user_delete"  on storage.objects;
+drop policy if exists "avatars_public_read" on storage.objects;
+drop policy if exists "avatars_user_write" on storage.objects;
+drop policy if exists "avatars_user_update" on storage.objects;
+drop policy if exists "avatars_user_delete" on storage.objects;
+drop policy if exists "avatars_insert_owner_authenticated" on storage.objects;
+drop policy if exists "avatars_update_owner" on storage.objects;
+drop policy if exists "avatars_delete_owner" on storage.objects;
 
-create policy "avatars_public_read" on storage.objects
-  for select using (bucket_id = 'avatars');
-
-create policy "avatars_user_write" on storage.objects
+create policy "avatars_insert_owner_authenticated" on storage.objects
   for insert to authenticated
-  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+  with check (bucket_id = 'avatars' and auth.role() = 'authenticated');
 
-create policy "avatars_user_update" on storage.objects
+create policy "avatars_update_owner" on storage.objects
   for update to authenticated
-  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+  using (bucket_id = 'avatars' and auth.role() = 'authenticated')
+  with check (bucket_id = 'avatars' and auth.role() = 'authenticated');
 
-create policy "avatars_user_delete" on storage.objects
+create policy "avatars_delete_owner" on storage.objects
   for delete to authenticated
-  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+  using (bucket_id = 'avatars' and auth.role() = 'authenticated');
