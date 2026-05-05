@@ -12,6 +12,10 @@ class UpdatePasswordUseCase {
     required String currentPassword,
     required String newPassword,
   }) async {
+    if (currentPassword == newPassword) {
+      return const Left(ValidationFailure('No se puede cambiar por la misma contraseña'));
+    }
+
     return await repository.updatePassword(
       currentPassword: currentPassword,
       newPassword: newPassword,

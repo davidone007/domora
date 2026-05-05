@@ -29,9 +29,7 @@ class ErrorMapperImpl implements FailureMapper {
   }) {
     try {
       _logger.logError(exception, stackTrace, context);
-    } catch (e) {
-      // ignore: avoid_print
-      print('ErrorLogger failed: $e');
+    } catch (_) {
     }
 
     try {
@@ -43,7 +41,7 @@ class ErrorMapperImpl implements FailureMapper {
 
   Failure _mapExceptionInternal(Object exception) {
     if (exception is StorageException) {
-      final msg = exception.message ?? 'Error subiendo archivo. Verifica permisos de Storage.';
+      final msg = exception.message;
       return ServerFailure(
         _buildMessage(
           userMessage: 'No se pudo subir la imagen. Revisa permisos y reglas de Storage.',
@@ -83,6 +81,18 @@ class ErrorMapperImpl implements FailureMapper {
 
   Failure mapAuthException(AuthException exception) {
     final message = exception.message;
+
+    if (message.toLowerCase().contains('no se puede cambiar por el mismo correo')) {
+      return const AuthFailure('No se puede cambiar por el mismo correo');
+    }
+
+    if (message.toLowerCase().contains('no se puede cambiar por la misma contraseña')) {
+      return const AuthFailure('No se puede cambiar por la misma contraseña');
+    }
+
+    if (message.toLowerCase().contains('contraseña incorrecta')) {
+      return const AuthFailure('Contraseña incorrecta');
+    }
 
     if (_looksLikeNetworkIssue(message)) {
       return const NetworkFailure(

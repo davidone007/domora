@@ -13,6 +13,10 @@ class UpdateEmailUseCase {
     required String currentPassword,
     required String newEmail,
   }) async {
+    if (currentEmail.trim().toLowerCase() == newEmail.trim().toLowerCase()) {
+      return Left(const ValidationFailure('No se puede cambiar por el mismo correo'));
+    }
+
     return await repository.updateEmail(
       currentEmail: currentEmail,
       currentPassword: currentPassword,

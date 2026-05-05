@@ -24,6 +24,7 @@ class CustomTextField extends StatefulWidget {
   final bool enabled;
   final TextInputAction textInputAction;
   final String? helperText;
+  final AutovalidateMode? autovalidateMode;
 
   const CustomTextField({
     super.key,
@@ -41,6 +42,7 @@ class CustomTextField extends StatefulWidget {
     this.enabled = true,
     this.textInputAction = TextInputAction.next,
     this.helperText,
+    this.autovalidateMode,
   });
 
   @override
@@ -57,6 +59,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       obscureText: widget.isPassword && _obscure,
       keyboardType: widget.keyboardType,
       validator: widget.validator,
+      autovalidateMode: widget.autovalidateMode,
       onChanged: widget.onChanged,
       inputFormatters: widget.inputFormatters,
       maxLines: widget.isPassword ? 1 : widget.maxLines,

@@ -35,6 +35,11 @@ class ProfileRepositoryImpl implements ProfileRepository {
         return const Left(ServerFailure('Usuario no encontrado'));
       }
 
+      final authEmail = _authDataSource.currentUser?.email;
+      if (authEmail != null && authEmail.isNotEmpty) {
+        userMap['email'] = authEmail;
+      }
+
       final role = await _dataSource.getRole(userId);
       if (role == null) {
         return const Left(ServerFailure('No se encontró el rol del usuario'));
@@ -132,6 +137,29 @@ class ProfileRepositoryImpl implements ProfileRepository {
         e,
         stackTrace: stackTrace,
         context: ErrorContext(operation: 'updateProfileFields', userId: userId).toString(),
+      ));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> updatePrimaryAddress(String userId, Map<String, dynamic> updates) async {
+    try {
+      final addressUpdates = _pickAllowedFields(
+        updates,
+        {'address_line1', 'address_line2', 'department', 'city', 'neighborhood'},
+      );
+
+      if (addressUpdates.isEmpty) {
+        return const Left(ValidationFailure('No hay campos válidos para actualizar'));
+      }
+
+      await _dataSource.updatePrimaryAddress(userId, addressUpdates);
+      return const Right(unit);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(operation: 'updatePrimaryAddress', userId: userId).toString(),
       ));
     }
   }

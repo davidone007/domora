@@ -91,37 +91,32 @@ class AuthDataSourceImpl implements AuthDataSource {
       throw const SocketException('No internet');
     }
 
-    final emailToUse = currentEmail.trim().toLowerCase();
+    final authEmail = _client.auth.currentUser?.email?.trim().toLowerCase();
+    final emailToUse = (authEmail == null || authEmail.isEmpty)
+      ? currentEmail.trim().toLowerCase()
+      : authEmail;
     final nextEmail = newEmail.trim().toLowerCase();
     if (emailToUse.isEmpty || nextEmail.isEmpty) {
       throw const AuthException('El correo no es válido');
     }
 
-    print('🔵 AuthDataSource.updateEmail: $emailToUse → $nextEmail');
+    if (emailToUse == nextEmail) {
+      throw const AuthException('No se puede cambiar por el mismo correo');
+    }
 
-    // Re-authenticate with current credentials
-    await _client.auth.signInWithPassword(email: emailToUse, password: currentPassword);
-    print('✅ AuthDataSource: re-autenticado con $emailToUse');
-    
-    // Update email in Auth
+    try {
+      await _client.auth.signInWithPassword(email: emailToUse, password: currentPassword);
+    } on AuthException {
+      throw const AuthException('Contraseña incorrecta');
+    }
+
     await _client.auth.updateUser(UserAttributes(email: nextEmail));
-    print('✅ AuthDataSource: email en auth.users actualizado a $nextEmail');
 
-    // Verifica que el nuevo correo ya pueda autenticarse antes de sincronizar
-    // la tabla pública. Si Supabase dejó el cambio pendiente de confirmación,
-    // aquí se devuelve error en lugar de mostrar un éxito falso.
-    await _client.auth.signInWithPassword(email: nextEmail, password: currentPassword);
-    print('✅ AuthDataSource: verificado acceso con el nuevo correo $nextEmail');
-    
-    // Sync email change to public.users table
     final userId = _client.auth.currentUser?.id;
     if (userId != null && userId.isNotEmpty) {
       await _client.from(AppConstants.tableUsers)
           .update({'email': nextEmail})
           .eq('id', userId);
-      print('✅ AuthDataSource: email en public.users actualizado a $nextEmail');
-    } else {
-      print('⚠️ AuthDataSource: userId es null o vacío, no se sincronizó en public.users');
     }
   }
 
@@ -136,17 +131,17 @@ class AuthDataSourceImpl implements AuthDataSource {
       throw const AuthException('No se pudo obtener el correo actual');
     }
 
-    print('🔵 AuthDataSource.updatePassword: email=$email');
+    if (currentPassword == newPassword) {
+      throw const AuthException('No se puede cambiar por la misma contraseña');
+    }
 
-    await _client.auth.signInWithPassword(email: email, password: currentPassword);
-    print('✅ AuthDataSource: re-autenticado con $email');
-    
+    try {
+      await _client.auth.signInWithPassword(email: email, password: currentPassword);
+    } on AuthException {
+      throw const AuthException('Contraseña incorrecta');
+    }
+
     await _client.auth.updateUser(UserAttributes(password: newPassword));
-    print('✅ AuthDataSource: contraseña actualizada');
-
-    // Verifica que la nueva contraseña ya sea válida en Supabase Auth.
-    await _client.auth.signInWithPassword(email: email, password: newPassword);
-    print('✅ AuthDataSource: verificado acceso con la nueva contraseña');
   }
 
   @override

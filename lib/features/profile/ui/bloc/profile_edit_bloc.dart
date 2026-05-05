@@ -5,6 +5,7 @@ import 'package:domora/features/onboarding/domain/entities/avatar_file.dart';
 import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/upload_avatar_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_email_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_password_usecase.dart';
@@ -63,6 +64,27 @@ class UpdateProviderProfileEvent extends ProfileEditEvent {
 
   @override
   List<Object?> get props => [userId, yearsExperience, hourlyRate, isAvailable, bio, avatarUrl];
+}
+
+class UpdateProviderAddressEvent extends ProfileEditEvent {
+  final String userId;
+  final String addressLine1;
+  final String? addressLine2;
+  final String department;
+  final String city;
+  final String? neighborhood;
+
+  const UpdateProviderAddressEvent({
+    required this.userId,
+    required this.addressLine1,
+    this.addressLine2,
+    required this.department,
+    required this.city,
+    this.neighborhood,
+  });
+
+  @override
+  List<Object?> get props => [userId, addressLine1, addressLine2, department, city, neighborhood];
 }
 
 class UploadAvatarEvent extends ProfileEditEvent {
@@ -156,6 +178,7 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
   final UpdateProfileUseCase _updateProfile;
   final UpdateClientProfileUseCase _updateClientProfile;
   final UpdateProviderProfileUseCase _updateProviderProfile;
+  final UpdateProviderAddressUseCase _updateProviderAddress;
   final UploadAvatarUseCase _uploadAvatar;
   final UpdateEmailUseCase _updateEmail;
   final UpdatePasswordUseCase _updatePassword;
@@ -164,6 +187,7 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     this._updateProfile,
     this._updateClientProfile,
     this._updateProviderProfile,
+    this._updateProviderAddress,
     this._uploadAvatar,
     this._updateEmail,
     this._updatePassword,
@@ -171,6 +195,7 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     on<UpdateProfileFieldsEvent>(_onUpdateProfileFields);
     on<UpdateClientProfileEvent>(_onUpdateClientProfile);
     on<UpdateProviderProfileEvent>(_onUpdateProviderProfile);
+    on<UpdateProviderAddressEvent>(_onUpdateProviderAddress);
     on<UploadAvatarEvent>(_onUploadAvatar);
     on<UpdateEmailEvent>(_onUpdateEmail);
     on<UpdatePasswordEvent>(_onUpdatePassword);
@@ -226,6 +251,27 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     res.fold(
       (f) => emit(ProfileEditFailure(f.message)),
       (_) => emit(const ProfileEditSuccess('Perfil de proveedor actualizado')),
+    );
+  }
+
+  Future<void> _onUpdateProviderAddress(
+    UpdateProviderAddressEvent event,
+    Emitter<ProfileEditState> emit,
+  ) async {
+    emit(const ProfileEditLoading());
+    final res = await _updateProviderAddress(
+      UpdateProviderAddressParams(
+        userId: event.userId,
+        addressLine1: event.addressLine1,
+        addressLine2: event.addressLine2,
+        department: event.department,
+        city: event.city,
+        neighborhood: event.neighborhood,
+      ),
+    );
+    res.fold(
+      (f) => emit(ProfileEditFailure(f.message)),
+      (_) => emit(const ProfileEditSuccess('Ubicación actualizada')),
     );
   }
 

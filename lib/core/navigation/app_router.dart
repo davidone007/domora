@@ -43,6 +43,7 @@ import 'package:domora/features/profile/ui/pages/profile_page.dart';
 import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/upload_avatar_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_email_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_password_usecase.dart';
@@ -155,6 +156,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               UpdateProfileUseCase(profRepo),
               UpdateClientProfileUseCase(profRepo),
               UpdateProviderProfileUseCase(profRepo),
+              UpdateProviderAddressUseCase(profRepo),
               UploadAvatarUseCase(profRepo),
               UpdateEmailUseCase(profRepo),
               UpdatePasswordUseCase(profRepo),

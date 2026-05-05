@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 
 import 'package:domora/core/error/ui/error_snackbar.dart';
+import 'package:domora/core/utils/colombia_locations.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/utils/validators.dart';
 import 'package:domora/core/widgets/avatar_picker.dart';
@@ -27,6 +29,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _personalFormKey = GlobalKey<FormState>();
   final _providerFormKey = GlobalKey<FormState>();
   final _clientFormKey = GlobalKey<FormState>();
+  final _locationFormKey = GlobalKey<FormState>();
   final _emailFormKey = GlobalKey<FormState>();
   final _passwordFormKey = GlobalKey<FormState>();
 
@@ -52,6 +55,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _providerBioCtrl = TextEditingController();
   final _yearsExperienceCtrl = TextEditingController();
   final _hourlyRateCtrl = TextEditingController();
+  final _addressLine1Ctrl = TextEditingController();
+  final _addressLine2Ctrl = TextEditingController();
+  final _neighborhoodCtrl = TextEditingController();
+  String? _selectedDepartment;
+  String? _selectedCity;
   bool _providerIsAvailable = true;
 
   // UI state
@@ -83,6 +91,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
         _hourlyRateCtrl.text = (profile.providerProfile?.hourlyRate ?? 0).toString();
         _providerIsAvailable = profile.providerProfile?.isAvailable ?? true;
         _currentAvatarUrl = profile.providerProfile?.avatarUrl;
+        final address = profile.primaryAddress;
+        if (address != null) {
+          _addressLine1Ctrl.text = address.addressLine1;
+          _addressLine2Ctrl.text = address.addressLine2 ?? '';
+          _neighborhoodCtrl.text = address.neighborhood ?? '';
+          _selectedDepartment = address.department.isNotEmpty ? address.department : null;
+          _selectedCity = address.city.isNotEmpty ? address.city : null;
+        }
       } else if (!_isProvider && profile.clientProfile != null) {
         _clientBioCtrl.text = profile.clientProfile?.bio ?? '';
         _currentAvatarUrl = profile.clientProfile?.avatarUrl;
@@ -105,6 +121,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _providerBioCtrl.dispose();
     _yearsExperienceCtrl.dispose();
     _hourlyRateCtrl.dispose();
+    _addressLine1Ctrl.dispose();
+    _addressLine2Ctrl.dispose();
+    _neighborhoodCtrl.dispose();
     super.dispose();
   }
 
@@ -140,9 +159,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (state is ProfileEditSuccess) {
       // Handle specific success messages to update UI accordingly
       if (state.message.toLowerCase().contains('correo')) {
-        // Update displayed email only when backend confirms success
         setState(() {
-          _emailCtrl.text = _newEmailCtrl.text;
+          _emailCtrl.text = _newEmailCtrl.text.trim().toLowerCase();
           _newEmailCtrl.clear();
           _currentPasswordForEmailCtrl.clear();
           _showEmailEditor = false;
@@ -199,6 +217,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
             hourlyRate: hourlyRate > 0 ? hourlyRate : null,
             isAvailable: _providerIsAvailable,
             bio: _providerBioCtrl.text.isNotEmpty ? _providerBioCtrl.text : null,
+          ),
+        );
+  }
+
+  void _submitProviderLocationUpdate() {
+    if (!_locationFormKey.currentState!.validate()) return;
+
+    if (_selectedDepartment == null || _selectedCity == null) {
+      return;
+    }
+
+    context.read<ProfileEditBloc>().add(
+          UpdateProviderAddressEvent(
+            userId: _userId,
+            addressLine1: _addressLine1Ctrl.text.trim(),
+            addressLine2: _addressLine2Ctrl.text.trim().isEmpty
+                ? null
+                : _addressLine2Ctrl.text.trim(),
+            department: _selectedDepartment!,
+            city: _selectedCity!,
+            neighborhood: _neighborhoodCtrl.text.trim().isEmpty
+                ? null
+                : _neighborhoodCtrl.text.trim(),
           ),
         );
   }
@@ -388,8 +429,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   label: 'Años de Experiencia',
                                   prefixIcon: Icons.school_outlined,
                                   keyboardType: TextInputType.number,
-                                  validator: (v) =>
-                                      Validators.validateNumberField(v, 'Años'),
+                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                    validator: Validators.yearsExperience,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -425,6 +466,110 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           CustomButton(
                             label: 'Guardar Información Profesional',
                             onPressed: _submitProviderProfileUpdate,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Ubicación de Trabajo',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SimpleForm(
+                        formKey: _locationFormKey,
+                        children: [
+                          CustomTextField(
+                            controller: _addressLine1Ctrl,
+                            label: 'Dirección',
+                            prefixIcon: Icons.home_outlined,
+                            validator: (v) => Validators.validateNotEmpty(
+                              v,
+                              fieldName: 'La dirección',
+                            ),
+                          ),
+                          CustomTextField(
+                            controller: _addressLine2Ctrl,
+                            label: 'Apartamento / referencia (opcional)',
+                            prefixIcon: Icons.apartment_outlined,
+                            validator: (v) => Validators.bio(v, max: 120),
+                          ),
+                          DropdownButtonFormField<String>(
+                            value: _selectedDepartment,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Departamento',
+                              prefixIcon: Icon(Icons.map_outlined, size: 20),
+                            ),
+                            items: ColombiaLocations.departmentList
+                                .map(
+                                  (department) => DropdownMenuItem(
+                                    value: department,
+                                    child: Text(department),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedDepartment = value;
+                                _selectedCity = null;
+                              });
+                            },
+                            validator: (v) => Validators.validateNotEmpty(
+                              v,
+                              fieldName: 'El departamento',
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: _selectedCity,
+                                  isExpanded: true,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Ciudad',
+                                    prefixIcon: Icon(
+                                      Icons.location_city_outlined,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  items: (_selectedDepartment == null)
+                                      ? const []
+                                      : ColombiaLocations.citiesFor(
+                                          _selectedDepartment!,
+                                        )
+                                          .map(
+                                            (city) => DropdownMenuItem(
+                                              value: city,
+                                              child: Text(city),
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged: _selectedDepartment == null
+                                      ? null
+                                      : (value) => setState(() => _selectedCity = value),
+                                  validator: (v) => Validators.validateNotEmpty(
+                                    v,
+                                    fieldName: 'La ciudad',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _neighborhoodCtrl,
+                                  label: 'Barrio (opcional)',
+                                  prefixIcon: Icons.location_on_outlined,
+                                  validator: (v) => Validators.bio(v, max: 80),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          CustomButton(
+                            label: 'Guardar Ubicación',
+                            onPressed: _submitProviderLocationUpdate,
                           ),
                         ],
                       ),
@@ -493,14 +638,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             label: 'Nuevo Correo',
                             prefixIcon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
-                            validator: Validators.validateEmail,
+                            validator: (v) => Validators.differentEmail(v, _emailCtrl.text),
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            onChanged: (_) => setState(() {}),
                           ),
                           CustomTextField(
                             controller: _currentPasswordForEmailCtrl,
                             label: 'Contraseña Actual',
                             prefixIcon: Icons.lock_outlined,
                             isPassword: true,
-                            validator: Validators.validatePassword,
+                            validator: Validators.validateNotEmpty,
                           ),
                           const SizedBox(height: 16),
                           Row(
@@ -554,21 +701,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             label: 'Contraseña Actual',
                             prefixIcon: Icons.lock_outlined,
                             isPassword: true,
-                            validator: Validators.validatePassword,
+                            validator: Validators.validateNotEmpty,
                           ),
                           CustomTextField(
                             controller: _newPasswordCtrl,
                             label: 'Nueva Contraseña',
                             prefixIcon: Icons.lock_outlined,
                             isPassword: true,
-                            validator: Validators.validatePassword,
+                            validator: (v) => Validators.differentPassword(v, _currentPasswordCtrl.text),
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            onChanged: (_) => setState(() {}),
                           ),
                           CustomTextField(
                             controller: _confirmPasswordCtrl,
                             label: 'Confirmar Nueva Contraseña',
                             prefixIcon: Icons.lock_outlined,
                             isPassword: true,
-                            validator: Validators.validatePassword,
+                            validator: (v) => Validators.confirmPassword(v, _newPasswordCtrl.text),
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            onChanged: (_) => setState(() {}),
                           ),
                           const SizedBox(height: 16),
                           Row(

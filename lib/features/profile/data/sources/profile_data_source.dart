@@ -24,6 +24,9 @@ abstract class ProfileDataSource {
   /// Actualiza la fila en `provider_profiles` para el `userId`.
   Future<void> updateProviderProfile(String userId, Map<String, dynamic> updates);
 
+  /// Actualiza o crea la dirección principal del usuario.
+  Future<void> updatePrimaryAddress(String userId, Map<String, dynamic> updates);
+
   /// Sube el avatar a Supabase Storage y retorna la URL pública.
   /// El parámetro [isProvider] determina la subcarpeta (client_avatars o provider_avatars).
   Future<String> uploadAvatar({
@@ -152,6 +155,26 @@ class ProfileDataSourceImpl implements ProfileDataSource {
     }
 
     await _client.from(AppConstants.tableProviderProfiles).update(updates).eq('user_id', userId);
+  }
+
+  @override
+  Future<void> updatePrimaryAddress(String userId, Map<String, dynamic> updates) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    final current = await getPrimaryAddress(userId);
+    if (current != null && current['id'] != null) {
+      await _client.from(AppConstants.tableAddresses).update(updates).eq('id', current['id']);
+      return;
+    }
+
+    await _client.from(AppConstants.tableAddresses).insert({
+      'user_id': userId,
+      'is_primary': true,
+      'address_type': 'work',
+      ...updates,
+    });
   }
 
   @override

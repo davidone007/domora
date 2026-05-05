@@ -14,6 +14,9 @@ abstract class ProfileRepository {
   /// Actualiza campos del perfil específico (client o provider) asociados al usuario.
   Future<Either<Failure, Unit>> updateProfileFields(String userId, Map<String, dynamic> updates);
 
+  /// Actualiza la dirección principal del usuario.
+  Future<Either<Failure, Unit>> updatePrimaryAddress(String userId, Map<String, dynamic> updates);
+
   /// Reautentica con el correo y contraseña actual antes de cambiar el correo en Auth.
   Future<Either<Failure, Unit>> updateEmail({
     required String currentEmail,
