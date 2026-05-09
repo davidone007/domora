@@ -16,11 +16,9 @@ Future<void> handleAuthRedirectFragment(SupabaseClient client) async {
       // Some versions of the client expose `getSessionFromUrl`/`getSessionFromUri`.
       final auth = client.auth;
       // Use dynamic invocation to avoid compile-time dependency on specific API.
-      if (auth != null) {
-        final dyn = auth as dynamic;
-        if (dyn.getSessionFromUrl != null) {
-          await dyn.getSessionFromUrl();
-        }
+      final dyn = auth as dynamic;
+      if (dyn.getSessionFromUrl != null) {
+        await dyn.getSessionFromUrl();
       }
     } catch (_) {
       // ignore - not all clients expose getSessionFromUrl

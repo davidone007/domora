@@ -9,8 +9,8 @@ import 'package:domora/core/error/error_config.dart';
 import 'package:domora/core/error/error_logger.dart';
 import 'package:domora/core/error/failures.dart';
 
-/// Implementación concreta del mapeador de errores colocada en la capa de
-/// infraestructura. Implementa el contrato `FailureMapper` definido en core.
+/// Implementación concreta del mapeador de errores.
+/// Implementa el contrato `FailureMapper` definido en core.
 class ErrorMapperImpl implements FailureMapper {
   final ErrorLogger _logger;
   final ErrorConfig _config;

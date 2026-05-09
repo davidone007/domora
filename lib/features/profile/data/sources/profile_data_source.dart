@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/network/network_info.dart';
 import 'package:domora/core/entities/avatar_file.dart';
-import 'package:domora/infrastructure/network/network_info_impl.dart';
 
 abstract class ProfileDataSource {
   String? getCurrentUserId();
@@ -40,7 +39,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
   final SupabaseClient _client;
   final NetworkInfo _networkInfo;
 
-  ProfileDataSourceImpl(this._client, {NetworkInfo? networkInfo}) : _networkInfo = networkInfo ?? NetworkInfoImpl();
+  ProfileDataSourceImpl(this._client, {required NetworkInfo networkInfo}) : _networkInfo = networkInfo;
 
   @override
   String? getCurrentUserId() => _client.auth.currentUser?.id;

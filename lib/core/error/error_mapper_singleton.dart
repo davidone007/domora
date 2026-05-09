@@ -3,8 +3,8 @@ import 'failure_mapper.dart';
 /// Singleton para acceder al FailureMapper globalmente.
 ///
 /// Debe ser inicializado en `main.dart` o desde la capa de aplicación antes
-/// de usar la aplicación. Este archivo NO debe importar implementaciones de
-/// infraestructura para evitar acoplamientos en `core`.
+/// de usar la aplicación. Este archivo permite que los features dependan 
+/// de la abstracción FailureMapper.
 class ErrorMapperSingleton {
   static FailureMapper? _instance;
 
