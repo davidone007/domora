@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/network/network_info.dart';
-import 'package:domora/infrastructure/network/network_info_impl.dart';
 
 /// Fuente de datos para autenticación. Encapsula toda la interacción con
 /// Supabase Auth y la tabla `user_roles`.
@@ -40,7 +39,7 @@ class AuthDataSourceImpl implements AuthDataSource {
   final SupabaseClient _client;
   final NetworkInfo _networkInfo;
 
-  AuthDataSourceImpl(this._client, {NetworkInfo? networkInfo}) : _networkInfo = networkInfo ?? NetworkInfoImpl();
+  AuthDataSourceImpl(this._client, {required NetworkInfo networkInfo}) : _networkInfo = networkInfo;
 
   @override
   Session? get currentSession => _client.auth.currentSession;

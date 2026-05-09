@@ -5,12 +5,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/error/error_mapper_singleton.dart';
 import 'package:domora/core/error/error_config.dart';
 import 'package:domora/core/error/error_logger.dart';
-import 'package:domora/infrastructure/network/network_info_impl.dart';
-import 'package:domora/infrastructure/error/error_mapper_impl.dart';
+import 'package:domora/core/network/data/network_info_impl.dart';
+import 'package:domora/core/error/data/error_mapper_impl.dart';
 import 'package:domora/core/navigation/app_router.dart';
 import 'package:domora/core/theme/app_theme.dart';
-import 'package:domora/utils/web_utils_stub.dart'
-  if (dart.library.html) 'package:domora/utils/web_utils.dart';
+import 'package:domora/core/utils/web_utils_stub.dart'
+  if (dart.library.html) 'package:domora/core/utils/web_utils.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

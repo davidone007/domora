@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/network/network_info.dart';
-import 'package:domora/infrastructure/network/network_info_impl.dart';
 
 import 'package:domora/core/entities/avatar_file.dart';
 
@@ -70,7 +69,7 @@ class OnboardingDataSourceImpl implements OnboardingDataSource {
   final SupabaseClient _client;
   final NetworkInfo _networkInfo;
 
-  OnboardingDataSourceImpl(this._client, {NetworkInfo? networkInfo}) : _networkInfo = networkInfo ?? NetworkInfoImpl();
+  OnboardingDataSourceImpl(this._client, {required NetworkInfo networkInfo}) : _networkInfo = networkInfo;
 
   /// Sube el avatar al bucket `avatars` y devuelve su URL pública.
   Future<String?> _uploadAvatar(String userId, AvatarFile file) async {
