@@ -1,0 +1,51 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:domora/core/network/network_info.dart';
+import 'package:domora/core/utils/constants.dart';
+import '../models/cleaning_details_model.dart';
+import '../models/service_address_model.dart';
+import '../models/service_model.dart';
+import '../../domain/entities/cleaning_service_request.dart';
+
+abstract class ServiceRemoteDataSource {
+  Future<void> publishCleaningService(CleaningServiceRequest request);
+}
+
+class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
+  final SupabaseClient _client;
+  final NetworkInfo _networkInfo;
+
+  ServiceRemoteDataSourceImpl(this._client, {required NetworkInfo networkInfo})
+      : _networkInfo = networkInfo;
+
+  @override
+  Future<void> publishCleaningService(CleaningServiceRequest request) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const PostgrestException(message: 'No hay conexión a internet');
+    }
+
+    // 1. Insertar dirección
+    final addressModel = ServiceAddressModel.fromEntity(request.address);
+    final addressResponse = await _client
+        .from(AppConstants.tableAddresses)
+        .insert(addressModel.toJson(request.clientId))
+        .select('id')
+        .single();
+
+    final addressId = addressResponse['id'] as String;
+
+    // 2. Insertar servicio
+    final serviceResponse = await _client
+        .from('services')
+        .insert(ServiceModel.toJson(request, addressId))
+        .select('id')
+        .single();
+
+    final serviceId = serviceResponse['id'] as String;
+
+    // 3. Insertar detalles de limpieza
+    final detailsModel = CleaningDetailsModel.fromEntity(request.details);
+    await _client
+        .from('cleaning_details')
+        .insert(detailsModel.toJson(serviceId));
+  }
+}
