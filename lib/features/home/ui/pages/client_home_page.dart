@@ -17,7 +17,8 @@ import 'package:domora/features/home/ui/widgets/service_card.dart';
 ///      Noticias y Ofertas (chips + banner promocional).
 ///   3. Bottom nav del MainShell.
 class ClientHomePage extends StatefulWidget {
-  const ClientHomePage({super.key});
+  final String? userId;
+  const ClientHomePage({super.key, this.userId});
 
   @override
   State<ClientHomePage> createState() => _ClientHomePageState();
@@ -29,6 +30,10 @@ class _ClientHomePageState extends State<ClientHomePage> {
   static const _newsFilters = ['Cupones', 'Promoción', 'Ofertas de Verano'];
 
   void _onServiceTap(String name) {
+    if (name == 'Limpieza') {
+      context.push('/publish-service', extra: widget.userId);
+      return;
+    }
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text('$name disponible próximamente')));

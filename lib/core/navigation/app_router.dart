@@ -50,6 +50,13 @@ import 'package:domora/features/profile/domain/usecases/update_password_usecase.
 import 'package:domora/features/profile/ui/bloc/profile_edit_bloc.dart';
 import 'package:domora/features/profile/ui/pages/edit_profile_page.dart';
 
+import 'package:domora/features/services/data/repo/service_repository_impl.dart';
+import 'package:domora/features/services/data/sources/service_remote_data_source.dart';
+import 'package:domora/features/services/domain/repo/service_repository.dart';
+import 'package:domora/features/services/domain/usecases/publish_cleaning_service_usecase.dart';
+import 'package:domora/features/services/ui/bloc/service_publish_bloc.dart';
+import 'package:domora/features/services/ui/screens/publish_service_screen.dart';
+
 import 'package:domora/features/home/ui/pages/client_home_page.dart';
 import 'package:domora/features/home/ui/pages/provider_home_page.dart';
 
@@ -72,6 +79,9 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
 
   final ProfileDataSource profDs = ProfileDataSourceImpl(supabase, networkInfo: networkInfo);
   final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, authRepo, errorMapper);
+
+  final ServiceRemoteDataSource servDs = ServiceRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
+  final ServiceRepository servRepo = ServiceRepositoryImpl(servDs, errorMapper);
 
   return GoRouter(
     initialLocation: AppConstants.routeSplash,
@@ -122,11 +132,21 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       ),
       GoRoute(
         path: AppConstants.routeClientHome,
-        builder: (_, __) => const ClientHomePage(),
+        builder: (_, __) => ClientHomePage(userId: supabase.auth.currentUser?.id),
       ),
       GoRoute(
         path: AppConstants.routeProviderHome,
         builder: (_, __) => const ProviderHomePage(),
+      ),
+      GoRoute(
+        path: '/publish-service',
+        builder: (context, state) {
+          final userId = state.extra as String? ?? '';
+          return BlocProvider(
+            create: (_) => ServicePublishBloc(PublishCleaningServiceUseCase(servRepo)),
+            child: PublishServiceScreen(userId: userId),
+          );
+        },
       ),
       GoRoute(
         path: AppConstants.routeProfile,
