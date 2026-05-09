@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:domora/core/error/error_mapper_singleton.dart';
@@ -14,6 +16,9 @@ import 'package:domora/core/utils/web_utils_stub.dart'
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar localización para fechas (Intl)
+  await initializeDateFormatting('es_CO', null);
 
   // Carga de variables de entorno desde .env (declarado como asset).
   await dotenv.load(fileName: '.env');
@@ -54,6 +59,14 @@ class DomoraApp extends StatelessWidget {
       title: 'Domora',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es', 'CO'),
+      ],
       routerConfig: buildRouter(networkInfo: networkInfo),
     );
   }

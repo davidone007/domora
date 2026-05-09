@@ -54,8 +54,9 @@ class _MapAddressPickerState extends State<MapAddressPicker> {
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
               userAgentPackageName: 'com.domora.app',
+              subdomains: const ['a', 'b', 'c', 'd'],
             ),
             MarkerLayer(
               markers: [

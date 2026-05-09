@@ -1,68 +1,190 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/cleaning_service_request.dart';
+import '../../domain/entities/cleaning_service_detail.dart';
+import '../../domain/entities/service_address.dart';
 import '../../domain/usecases/publish_cleaning_service_usecase.dart';
 
-// EVENTS
+// --- EVENTS ---
 abstract class ServicePublishEvent extends Equatable {
   const ServicePublishEvent();
   @override
   List<Object?> get props => [];
 }
 
+class ServicePublishUpdateDraftEvent extends ServicePublishEvent {
+  final String? title;
+  final String? description;
+  final DateTime? preferredDate;
+  final String? preferredTimeStart;
+  final ServiceAddress? address;
+  final CleaningServiceDetail? details;
+
+  const ServicePublishUpdateDraftEvent({
+    this.title,
+    this.description,
+    this.preferredDate,
+    this.preferredTimeStart,
+    this.address,
+    this.details,
+  });
+
+  @override
+  List<Object?> get props => [title, description, preferredDate, preferredTimeStart, address, details];
+}
+
+class ServicePublishNextStepEvent extends ServicePublishEvent {
+  const ServicePublishNextStepEvent();
+}
+
+class ServicePublishPrevStepEvent extends ServicePublishEvent {
+  const ServicePublishPrevStepEvent();
+}
+
 class ServicePublishSubmitEvent extends ServicePublishEvent {
-  final CleaningServiceRequest request;
+  const ServicePublishSubmitEvent();
+}
 
-  const ServicePublishSubmitEvent(this.request);
+// --- STATE ---
+enum ServicePublishStatus { initial, loading, success, error }
+
+class ServicePublishState extends Equatable {
+  final int currentStep; // 0 to 4 (Step 1 to 5)
+  final ServicePublishStatus status;
+  final String? errorMessage;
+  
+  // Borrador de la solicitud
+  final String clientId;
+  final String title;
+  final String? description;
+  final DateTime preferredDate;
+  final String preferredTimeStart;
+  final ServiceAddress address;
+  final CleaningServiceDetail details;
+
+  const ServicePublishState({
+    required this.clientId,
+    this.currentStep = 0,
+    this.status = ServicePublishStatus.initial,
+    this.errorMessage,
+    this.title = '',
+    this.description,
+    required this.preferredDate,
+    this.preferredTimeStart = '08:00:00',
+    required this.address,
+    required this.details,
+  });
+
+  factory ServicePublishState.initial(String userId) {
+    return ServicePublishState(
+      clientId: userId,
+      preferredDate: DateTime.now().add(const Duration(days: 1)),
+      address: const ServiceAddress(addressLine1: '', city: 'Cali'),
+      details: const CleaningServiceDetail(),
+    );
+  }
+
+  ServicePublishState copyWith({
+    int? currentStep,
+    ServicePublishStatus? status,
+    String? errorMessage,
+    String? title,
+    String? description,
+    DateTime? preferredDate,
+    String? preferredTimeStart,
+    ServiceAddress? address,
+    CleaningServiceDetail? details,
+  }) {
+    return ServicePublishState(
+      clientId: clientId,
+      currentStep: currentStep ?? this.currentStep,
+      status: status ?? this.status,
+      errorMessage: errorMessage ?? this.errorMessage,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      preferredDate: preferredDate ?? this.preferredDate,
+      preferredTimeStart: preferredTimeStart ?? this.preferredTimeStart,
+      address: address ?? this.address,
+      details: details ?? this.details,
+    );
+  }
+
+  CleaningServiceRequest toRequest() {
+    return CleaningServiceRequest(
+      clientId: clientId,
+      title: title,
+      description: description,
+      preferredDate: preferredDate,
+      preferredTimeStart: preferredTimeStart,
+      address: address,
+      details: details,
+    );
+  }
 
   @override
-  List<Object?> get props => [request];
+  List<Object?> get props => [
+        clientId,
+        currentStep,
+        status,
+        errorMessage,
+        title,
+        description,
+        preferredDate,
+        preferredTimeStart,
+        address,
+        details,
+      ];
 }
 
-// STATES
-abstract class ServicePublishState extends Equatable {
-  const ServicePublishState();
-  @override
-  List<Object?> get props => [];
-}
-
-class ServicePublishInitial extends ServicePublishState {
-  const ServicePublishInitial();
-}
-
-class ServicePublishLoading extends ServicePublishState {
-  const ServicePublishLoading();
-}
-
-class ServicePublishSuccess extends ServicePublishState {
-  const ServicePublishSuccess();
-}
-
-class ServicePublishError extends ServicePublishState {
-  final String message;
-  const ServicePublishError(this.message);
-
-  @override
-  List<Object?> get props => [message];
-}
-
-// BLOC
+// --- BLOC ---
 class ServicePublishBloc extends Bloc<ServicePublishEvent, ServicePublishState> {
   final PublishCleaningServiceUseCase _publishCleaningService;
 
-  ServicePublishBloc(this._publishCleaningService) : super(const ServicePublishInitial()) {
+  ServicePublishBloc(this._publishCleaningService, String userId)
+      : super(ServicePublishState.initial(userId)) {
+    on<ServicePublishUpdateDraftEvent>(_onUpdateDraft);
+    on<ServicePublishNextStepEvent>(_onNextStep);
+    on<ServicePublishPrevStepEvent>(_onPrevStep);
     on<ServicePublishSubmitEvent>(_onSubmit);
   }
 
-  Future<void> _onSubmit(
-    ServicePublishSubmitEvent event,
-    Emitter<ServicePublishState> emit,
-  ) async {
-    emit(const ServicePublishLoading());
-    final result = await _publishCleaningService(event.request);
+  void _onUpdateDraft(ServicePublishUpdateDraftEvent event, Emitter<ServicePublishState> emit) {
+    emit(state.copyWith(
+      title: event.title,
+      description: event.description,
+      preferredDate: event.preferredDate,
+      preferredTimeStart: event.preferredTimeStart,
+      address: event.address,
+      details: event.details,
+    ));
+  }
+
+  void _onNextStep(ServicePublishNextStepEvent event, Emitter<ServicePublishState> emit) {
+    if (state.currentStep < 4) {
+      emit(state.copyWith(currentStep: state.currentStep + 1));
+    }
+  }
+
+  void _onPrevStep(ServicePublishPrevStepEvent event, Emitter<ServicePublishState> emit) {
+    if (state.currentStep > 0) {
+      emit(state.copyWith(currentStep: state.currentStep - 1));
+    }
+  }
+
+  Future<void> _onSubmit(ServicePublishSubmitEvent event, Emitter<ServicePublishState> emit) async {
+    emit(state.copyWith(status: ServicePublishStatus.loading));
+    
+    final result = await _publishCleaningService(state.toRequest());
+    
     result.fold(
-      (failure) => emit(ServicePublishError(failure.message)),
-      (_) => emit(const ServicePublishSuccess()),
+      (failure) => emit(state.copyWith(
+        status: ServicePublishStatus.error,
+        errorMessage: failure.message,
+      )),
+      (_) => emit(state.copyWith(
+        status: ServicePublishStatus.success,
+        currentStep: 4, // Mover a la pantalla de éxito
+      )),
     );
   }
 }
