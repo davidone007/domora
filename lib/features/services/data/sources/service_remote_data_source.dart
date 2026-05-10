@@ -5,6 +5,7 @@ import 'package:domora/core/entities/avatar_file.dart';
 import '../models/cleaning_details_model.dart';
 import '../models/service_address_model.dart';
 import '../models/service_model.dart';
+import '../models/service_detail_model.dart';
 import '../../domain/entities/cleaning_service_request.dart';
 
 abstract class ServiceRemoteDataSource {
@@ -19,6 +20,9 @@ abstract class ServiceRemoteDataSource {
 
   /// Obtiene los servicios del usuario con conteo de propuestas
   Future<List<ServiceModel>> getMyServices(String userId);
+
+  /// Obtiene el detalle de un servicio por su ID
+  Future<ServiceDetailModel> getServiceById(String serviceId);
 }
 
 class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
@@ -27,6 +31,21 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
   ServiceRemoteDataSourceImpl(this._client, {required NetworkInfo networkInfo})
       : _networkInfo = networkInfo;
+
+  @override
+  Future<ServiceDetailModel> getServiceById(String serviceId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const PostgrestException(message: 'No hay conexión a internet');
+    }
+
+    final response = await _client
+        .from('services')
+        .select('*, cleaning_details(*), addresses(*), service_images(*), quotes(count)')
+        .eq('id', serviceId)
+        .single();
+
+    return ServiceDetailModel.fromJson(response);
+  }
 
   @override
   Future<List<ServiceModel>> getMyServices(String userId) async {

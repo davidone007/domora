@@ -4,6 +4,7 @@ import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/core/error/failures.dart';
 import '../../domain/entities/cleaning_service_request.dart';
 import '../../domain/entities/service.dart';
+import '../../domain/entities/service_detail.dart';
 import '../../domain/repo/service_repository.dart';
 import '../sources/service_remote_data_source.dart';
 
@@ -25,6 +26,23 @@ class ServiceRepositoryImpl implements ServiceRepository {
         context: ErrorContext(
           operation: 'getMyServices',
           userId: userId,
+        ).toString(),
+      ));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ServiceDetail>> getServiceById(String id) async {
+    try {
+      final detail = await _remoteDataSource.getServiceById(id);
+      return Right(detail);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getServiceById',
+          userId: id,
         ).toString(),
       ));
     }

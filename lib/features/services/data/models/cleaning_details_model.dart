@@ -35,4 +35,16 @@ class CleaningDetailsModel extends CleaningServiceDetail {
       suppliesNotes: detail.suppliesNotes,
     );
   }
+
+  factory CleaningDetailsModel.fromJson(Map<String, dynamic> json) {
+    return CleaningDetailsModel(
+      bathrooms: json['bathrooms'] ?? 0,
+      kitchens: json['kitchens'] ?? 0,
+      bedrooms: json['bedrooms'] ?? 0,
+      livingRooms: json['living_rooms'] ?? 0,
+      includesBalcony: json['includes_balcony'] ?? false,
+      hasOwnSupplies: json['has_own_supplies'] ?? false,
+      suppliesNotes: json['supplies_notes'],
+    );
+  }
 }

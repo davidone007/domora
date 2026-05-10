@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/widgets/main_shell.dart';
@@ -105,7 +106,7 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                         return ServiceCard(
                           service: services[index],
                           onTap: () {
-                            // TODO: Navegar al detalle (HU10)
+                            context.push('/service-detail/${services[index].id}');
                           },
                         );
                       },

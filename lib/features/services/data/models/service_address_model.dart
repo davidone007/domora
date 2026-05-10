@@ -34,4 +34,15 @@ class ServiceAddressModel extends ServiceAddress {
       longitude: address.longitude,
     );
   }
+
+  factory ServiceAddressModel.fromJson(Map<String, dynamic> json) {
+    return ServiceAddressModel(
+      addressLine1: json['address_line1'],
+      addressLine2: json['address_line2'],
+      city: json['city'],
+      neighborhood: json['neighborhood'],
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
+    );
+  }
 }
