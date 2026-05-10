@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:domora/core/error/failures.dart';
 import '../entities/cleaning_service_request.dart';
 import '../entities/service.dart';
+import '../entities/service_detail.dart';
 
 /// Contrato para la gestión de servicios.
 abstract class ServiceRepository {
@@ -11,4 +12,7 @@ abstract class ServiceRepository {
 
   /// Obtiene la lista de servicios publicados por un usuario (cliente).
   Future<Either<Failure, List<Service>>> getMyServices(String userId);
+
+  /// Obtiene el detalle de un servicio por su ID.
+  Future<Either<Failure, ServiceDetail>> getServiceById(String id);
 }

@@ -58,8 +58,11 @@ import 'package:domora/features/services/ui/bloc/service_publish_bloc.dart';
 import 'package:domora/features/services/ui/screens/publish_service_flow_screen.dart';
 
 import 'package:domora/features/services/domain/usecases/get_my_services_usecase.dart';
+import 'package:domora/features/services/domain/usecases/get_service_detail_usecase.dart';
 import 'package:domora/features/services/ui/bloc/my_services_bloc.dart';
+import 'package:domora/features/services/ui/bloc/service_detail_bloc.dart';
 import 'package:domora/features/services/ui/screens/my_services_screen.dart';
+import 'package:domora/features/services/ui/screens/service_detail_screen.dart';
 
 import 'package:domora/features/home/ui/pages/client_home_page.dart';
 import 'package:domora/features/home/ui/pages/provider_home_page.dart';
@@ -198,6 +201,19 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
           create: (_) => MyServicesBloc(GetMyServicesUseCase(servRepo)),
           child: const MyServicesScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/service-detail/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return BlocProvider(
+            create: (_) => ServiceDetailBloc(
+              GetServiceDetailUseCase(servRepo),
+              authRepo,
+            )..add(FetchServiceDetailEvent(id)),
+            child: ServiceDetailScreen(serviceId: id),
+          );
+        },
       ),
     ],
     errorBuilder: (_, state) => Scaffold(
