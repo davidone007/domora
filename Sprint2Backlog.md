@@ -126,7 +126,7 @@ Este sprint establece el núcleo funcional del marketplace.
 ### Task 1
 
 * **Summary:** Configurar bucket `service-images` en Supabase
-* **Description:** Crear bucket y políticas RLS para subida de imágenes
+* **Description:** Crear bucket y sin políticas RLS para subida de imágenes, regla publica para usar el bucket
 * **Priority:** High
 * **Sprint:** Sprint 2
 

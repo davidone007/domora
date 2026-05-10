@@ -16,7 +16,16 @@ class ServiceRepositoryImpl implements ServiceRepository {
   Future<Either<Failure, Unit>> publishCleaningService(
       CleaningServiceRequest request) async {
     try {
-      await _remoteDataSource.publishCleaningService(request);
+      final serviceId = await _remoteDataSource.publishCleaningService(request);
+      
+      if (request.images.isNotEmpty) {
+        await _remoteDataSource.uploadServiceImages(
+          serviceId: serviceId,
+          images: request.images,
+          primaryIndex: request.primaryImageIndex,
+        );
+      }
+      
       return const Right(unit);
     } catch (e, stackTrace) {
       return Left(_errorMapper.mapException(
