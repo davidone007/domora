@@ -57,6 +57,10 @@ import 'package:domora/features/services/domain/usecases/publish_cleaning_servic
 import 'package:domora/features/services/ui/bloc/service_publish_bloc.dart';
 import 'package:domora/features/services/ui/screens/publish_service_flow_screen.dart';
 
+import 'package:domora/features/services/domain/usecases/get_my_services_usecase.dart';
+import 'package:domora/features/services/ui/bloc/my_services_bloc.dart';
+import 'package:domora/features/services/ui/screens/my_services_screen.dart';
+
 import 'package:domora/features/home/ui/pages/client_home_page.dart';
 import 'package:domora/features/home/ui/pages/provider_home_page.dart';
 
@@ -187,6 +191,13 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
             child: EditProfilePage(initialProfile: initialProfile),
           );
         },
+      ),
+      GoRoute(
+        path: AppConstants.routeMyServices,
+        builder: (_, __) => BlocProvider(
+          create: (_) => MyServicesBloc(GetMyServicesUseCase(servRepo)),
+          child: const MyServicesScreen(),
+        ),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

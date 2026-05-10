@@ -54,7 +54,8 @@ class _ProfilePageState extends State<ProfilePage> {
         activeTab: MainTab.profile,
         onTabSelected: (tab) {
           if (tab == MainTab.home) _goToHome();
-          if (tab == MainTab.requests || tab == MainTab.coupons) {
+          if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);
+          if (tab == MainTab.coupons) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(

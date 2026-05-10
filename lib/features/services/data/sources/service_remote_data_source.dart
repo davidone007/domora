@@ -16,6 +16,9 @@ abstract class ServiceRemoteDataSource {
     required List<AvatarFile> images,
     required int primaryIndex,
   });
+
+  /// Obtiene los servicios del usuario con conteo de propuestas
+  Future<List<ServiceModel>> getMyServices(String userId);
 }
 
 class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
@@ -24,6 +27,22 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
   ServiceRemoteDataSourceImpl(this._client, {required NetworkInfo networkInfo})
       : _networkInfo = networkInfo;
+
+  @override
+  Future<List<ServiceModel>> getMyServices(String userId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const PostgrestException(message: 'No hay conexión a internet');
+    }
+
+    // Consulta que trae los servicios y cuenta las propuestas (quotes)
+    final response = await _client
+        .from('services')
+        .select('*, quotes(count)')
+        .eq('client_id', userId)
+        .order('created_at', ascending: false);
+
+    return (response as List).map((json) => ServiceModel.fromJson(json)).toList();
+  }
 
   @override
   Future<String> publishCleaningService(CleaningServiceRequest request) async {
