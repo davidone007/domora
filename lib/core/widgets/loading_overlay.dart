@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:domora/core/theme/app_theme.dart';
 
 /// Capa de carga semitransparente para bloquear la UI durante operaciones
 /// asíncronas largas.
@@ -22,18 +23,24 @@ class LoadingOverlay extends StatelessWidget {
         if (isLoading)
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.35),
+              color: Colors.white.withOpacity(0.75),
               alignment: Alignment.center,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const CircularProgressIndicator(color: Colors.white),
+                  const CircularProgressIndicator(
+                    color: AppTheme.primary,
+                    strokeWidth: 3,
+                  ),
                   if (message != null) ...[
                     const SizedBox(height: 16),
                     Text(
                       message!,
                       style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w600),
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
                     ),
                   ],
                 ],

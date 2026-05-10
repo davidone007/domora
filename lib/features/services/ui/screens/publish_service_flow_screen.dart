@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/widgets/custom_button.dart';
-import 'package:domora/core/widgets/loading_overlay.dart';
 
 import '../bloc/service_publish_bloc.dart';
 import 'steps/step1_place_details.dart';
@@ -45,62 +44,74 @@ class _PublishServiceFlowScreenState extends State<PublishServiceFlowScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ServicePublishBloc, ServicePublishState>(
-      listenWhen: (prev, curr) => prev.currentStep != curr.currentStep,
       listener: (context, state) {
-        _handleStepChange(state.currentStep);
+        // Sincronizar el PageView con el estado del BLoC
+        if (_pageController.hasClients &&
+            _pageController.page?.toInt() != state.currentStep) {
+          _handleStepChange(state.currentStep);
+        }
+
+        if (state.status == ServicePublishStatus.error &&
+            state.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor: AppTheme.error,
+            ),
+          );
+        }
       },
       builder: (context, state) {
         final isLastStep = state.currentStep == 4;
         final progress = (state.currentStep + 1) / 5;
+        final isLoading = state.status == ServicePublishStatus.loading;
 
-        return LoadingOverlay(
-          isLoading: state.status == ServicePublishStatus.loading,
-          message: 'Publicando servicio...',
-          child: Scaffold(
-            backgroundColor: AppTheme.background,
-            appBar: isLastStep
-                ? null
-                : AppBar(
-                    title: const Text('Publicar Limpieza'),
-                    leading: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => context.pop(),
-                    ),
-                    bottom: PreferredSize(
-                      preferredSize: const Size.fromHeight(4),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        backgroundColor: AppTheme.border,
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
-                        minHeight: 4,
-                      ),
-                    ),
+        return Scaffold(
+          backgroundColor: AppTheme.background,
+          appBar: isLastStep
+              ? null
+              : AppBar(
+                  title: const Text('Publicar Limpieza'),
+                  leading: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: isLoading ? null : () => context.pop(),
                   ),
-            body: Column(
-              children: [
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: const [
-                      Step1PlaceDetails(),
-                      Step2GeneralInfo(),
-                      Step3Schedule(),
-                      Step4Location(),
-                      Step5Success(),
-                    ],
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(4),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor: AppTheme.border,
+                      valueColor:
+                          const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                      minHeight: 4,
+                    ),
                   ),
                 ),
-                if (!isLastStep) _buildNavigationButtons(context, state),
-              ],
-            ),
+          body: Column(
+            children: [
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: const [
+                    Step1PlaceDetails(),
+                    Step2GeneralInfo(),
+                    Step3Schedule(),
+                    Step4Location(),
+                    Step5Success(),
+                  ],
+                ),
+              ),
+              if (!isLastStep) _buildNavigationButtons(context, state, isLoading),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildNavigationButtons(BuildContext context, ServicePublishState state) {
+  Widget _buildNavigationButtons(
+      BuildContext context, ServicePublishState state, bool isLoading) {
     final isFirstStep = state.currentStep == 0;
     final isSubmitStep = state.currentStep == 3;
 
@@ -125,9 +136,13 @@ class _PublishServiceFlowScreenState extends State<PublishServiceFlowScreen> {
                 child: Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: OutlinedButton(
-                    onPressed: () {
-                      context.read<ServicePublishBloc>().add(const ServicePublishPrevStepEvent());
-                    },
+                    onPressed: isLoading
+                        ? null
+                        : () {
+                            context
+                                .read<ServicePublishBloc>()
+                                .add(const ServicePublishPrevStepEvent());
+                          },
                     child: const Text('Atrás'),
                   ),
                 ),
@@ -136,11 +151,16 @@ class _PublishServiceFlowScreenState extends State<PublishServiceFlowScreen> {
               flex: 2,
               child: CustomButton(
                 label: isSubmitStep ? 'Publicar Ahora' : 'Continuar',
+                isLoading: isLoading,
                 onPressed: () {
                   if (isSubmitStep) {
-                    context.read<ServicePublishBloc>().add(const ServicePublishSubmitEvent());
+                    context
+                        .read<ServicePublishBloc>()
+                        .add(const ServicePublishSubmitEvent());
                   } else {
-                    context.read<ServicePublishBloc>().add(const ServicePublishNextStepEvent());
+                    context
+                        .read<ServicePublishBloc>()
+                        .add(const ServicePublishNextStepEvent());
                   }
                 },
               ),
