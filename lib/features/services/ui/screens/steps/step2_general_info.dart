@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
 import '../../bloc/service_publish_bloc.dart';
+import '../../widgets/multi_image_picker.dart';
+import '../../widgets/image_thumbnail_grid.dart';
 
 class Step2GeneralInfo extends StatelessWidget {
   const Step2GeneralInfo({super.key});
@@ -44,6 +46,39 @@ class Step2GeneralInfo extends StatelessWidget {
                 maxLines: 6,
                 onChanged: (v) => context.read<ServicePublishBloc>().add(ServicePublishUpdateDraftEvent(description: v)),
               ),
+              
+              const Divider(height: 48),
+              
+              Text(
+                'Fotos del lugar (Opcional)',
+                style: theme.textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Sube fotos para que los aseadores entiendan mejor el trabajo.',
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+              ),
+              const SizedBox(height: 20),
+              
+              MultiImagePicker(
+                onImageSelected: (image) {
+                  context.read<ServicePublishBloc>().add(ServicePublishAddImageEvent(image));
+                },
+              ),
+              
+              const SizedBox(height: 16),
+              
+              ImageThumbnailGrid(
+                images: state.images,
+                primaryIndex: state.primaryImageIndex,
+                onRemove: (index) {
+                  context.read<ServicePublishBloc>().add(ServicePublishRemoveImageEvent(index));
+                },
+                onSetPrimary: (index) {
+                  context.read<ServicePublishBloc>().add(ServicePublishSetPrimaryImageEvent(index));
+                },
+              ),
+              
               const SizedBox(height: 40),
             ],
           ),

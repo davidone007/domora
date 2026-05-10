@@ -1,3 +1,4 @@
+import 'package:domora/core/entities/avatar_file.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/cleaning_service_request.dart';
@@ -33,6 +34,27 @@ class ServicePublishUpdateDraftEvent extends ServicePublishEvent {
   List<Object?> get props => [title, description, preferredDate, preferredTimeStart, address, details];
 }
 
+class ServicePublishAddImageEvent extends ServicePublishEvent {
+  final AvatarFile image;
+  const ServicePublishAddImageEvent(this.image);
+  @override
+  List<Object?> get props => [image];
+}
+
+class ServicePublishRemoveImageEvent extends ServicePublishEvent {
+  final int index;
+  const ServicePublishRemoveImageEvent(this.index);
+  @override
+  List<Object?> get props => [index];
+}
+
+class ServicePublishSetPrimaryImageEvent extends ServicePublishEvent {
+  final int index;
+  const ServicePublishSetPrimaryImageEvent(this.index);
+  @override
+  List<Object?> get props => [index];
+}
+
 class ServicePublishNextStepEvent extends ServicePublishEvent {
   const ServicePublishNextStepEvent();
 }
@@ -61,6 +83,10 @@ class ServicePublishState extends Equatable {
   final String preferredTimeStart;
   final ServiceAddress address;
   final CleaningServiceDetail details;
+  
+  // Imágenes (HU8)
+  final List<AvatarFile> images;
+  final int primaryImageIndex;
 
   const ServicePublishState({
     required this.clientId,
@@ -73,6 +99,8 @@ class ServicePublishState extends Equatable {
     this.preferredTimeStart = '08:00:00',
     required this.address,
     required this.details,
+    this.images = const [],
+    this.primaryImageIndex = 0,
   });
 
   factory ServicePublishState.initial(String userId) {
@@ -94,6 +122,8 @@ class ServicePublishState extends Equatable {
     String? preferredTimeStart,
     ServiceAddress? address,
     CleaningServiceDetail? details,
+    List<AvatarFile>? images,
+    int? primaryImageIndex,
   }) {
     return ServicePublishState(
       clientId: clientId,
@@ -106,6 +136,8 @@ class ServicePublishState extends Equatable {
       preferredTimeStart: preferredTimeStart ?? this.preferredTimeStart,
       address: address ?? this.address,
       details: details ?? this.details,
+      images: images ?? this.images,
+      primaryImageIndex: primaryImageIndex ?? this.primaryImageIndex,
     );
   }
 
@@ -118,6 +150,8 @@ class ServicePublishState extends Equatable {
       preferredTimeStart: preferredTimeStart,
       address: address,
       details: details,
+      images: images,
+      primaryImageIndex: primaryImageIndex,
     );
   }
 
@@ -133,6 +167,8 @@ class ServicePublishState extends Equatable {
         preferredTimeStart,
         address,
         details,
+        images,
+        primaryImageIndex,
       ];
 }
 
@@ -143,6 +179,9 @@ class ServicePublishBloc extends Bloc<ServicePublishEvent, ServicePublishState> 
   ServicePublishBloc(this._publishCleaningService, String userId)
       : super(ServicePublishState.initial(userId)) {
     on<ServicePublishUpdateDraftEvent>(_onUpdateDraft);
+    on<ServicePublishAddImageEvent>(_onAddImage);
+    on<ServicePublishRemoveImageEvent>(_onRemoveImage);
+    on<ServicePublishSetPrimaryImageEvent>(_onSetPrimaryImage);
     on<ServicePublishNextStepEvent>(_onNextStep);
     on<ServicePublishPrevStepEvent>(_onPrevStep);
     on<ServicePublishSubmitEvent>(_onSubmit);
@@ -157,6 +196,24 @@ class ServicePublishBloc extends Bloc<ServicePublishEvent, ServicePublishState> 
       address: event.address,
       details: event.details,
     ));
+  }
+
+  void _onAddImage(ServicePublishAddImageEvent event, Emitter<ServicePublishState> emit) {
+    final newImages = List<AvatarFile>.from(state.images)..add(event.image);
+    emit(state.copyWith(images: newImages));
+  }
+
+  void _onRemoveImage(ServicePublishRemoveImageEvent event, Emitter<ServicePublishState> emit) {
+    final newImages = List<AvatarFile>.from(state.images)..removeAt(event.index);
+    int newPrimaryIndex = state.primaryImageIndex;
+    if (newPrimaryIndex >= newImages.length) {
+      newPrimaryIndex = newImages.isEmpty ? 0 : newImages.length - 1;
+    }
+    emit(state.copyWith(images: newImages, primaryImageIndex: newPrimaryIndex));
+  }
+
+  void _onSetPrimaryImage(ServicePublishSetPrimaryImageEvent event, Emitter<ServicePublishState> emit) {
+    emit(state.copyWith(primaryImageIndex: event.index));
   }
 
   void _onNextStep(ServicePublishNextStepEvent event, Emitter<ServicePublishState> emit) {
