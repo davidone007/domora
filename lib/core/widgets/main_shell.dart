@@ -56,6 +56,8 @@ class MainShell extends StatelessWidget {
         context.go(AppConstants.routeProfile);
         break;
       case MainTab.requests:
+        context.go(AppConstants.routeMyServices);
+        break;
       case MainTab.coupons:
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()

@@ -39,7 +39,8 @@ class _ProviderHomePageState extends State<ProviderHomePage> {
       activeTab: MainTab.home,
       onTabSelected: (tab) {
         if (tab == MainTab.profile) context.go(AppConstants.routeProfile);
-        if (tab == MainTab.requests || tab == MainTab.coupons) {
+        if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);
+        if (tab == MainTab.coupons) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(
