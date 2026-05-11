@@ -64,6 +64,14 @@ import 'package:domora/features/services/ui/bloc/service_detail_bloc.dart';
 import 'package:domora/features/services/ui/screens/my_services_screen.dart';
 import 'package:domora/features/services/ui/screens/service_detail_screen.dart';
 
+import 'package:domora/features/proposals/data/repo/proposal_repository_impl.dart';
+import 'package:domora/features/proposals/data/sources/proposal_remote_data_source.dart';
+import 'package:domora/features/proposals/domain/repo/proposal_repository.dart';
+import 'package:domora/features/proposals/domain/usecases/check_user_proposal_usecase.dart';
+import 'package:domora/features/proposals/domain/usecases/send_proposal_usecase.dart';
+import 'package:domora/features/proposals/ui/bloc/proposal_send_bloc.dart';
+import 'package:domora/features/proposals/ui/screens/send_proposal_screen.dart';
+
 import 'package:domora/features/home/ui/pages/client_home_page.dart';
 import 'package:domora/features/home/ui/pages/provider_home_page.dart';
 
@@ -89,6 +97,11 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
 
   final ServiceRemoteDataSource servDs = ServiceRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
   final ServiceRepository servRepo = ServiceRepositoryImpl(servDs, errorMapper);
+
+  final ProposalRemoteDataSource propDs =
+      ProposalRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
+  final ProposalRepository propRepo =
+      ProposalRepositoryImpl(propDs, errorMapper);
 
   return GoRouter(
     initialLocation: AppConstants.routeSplash,
@@ -210,8 +223,22 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
             create: (_) => ServiceDetailBloc(
               GetServiceDetailUseCase(servRepo),
               authRepo,
+              CheckUserProposalUseCase(propRepo),
             )..add(FetchServiceDetailEvent(id)),
             child: ServiceDetailScreen(serviceId: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/send-proposal/:serviceId',
+        builder: (context, state) {
+          final serviceId = state.pathParameters['serviceId']!;
+          return BlocProvider(
+            create: (_) => ProposalSendBloc(
+              SendProposalUseCase(propRepo),
+              CheckUserProposalUseCase(propRepo),
+            ),
+            child: SendProposalScreen(serviceId: serviceId),
           );
         },
       ),
