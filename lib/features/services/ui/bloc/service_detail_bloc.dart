@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:domora/features/auth/domain/repo/auth_repo.dart';
+import 'package:domora/features/proposals/domain/usecases/check_user_proposal_usecase.dart';
 import '../../domain/entities/service_detail.dart';
 import '../../domain/usecases/get_service_detail_usecase.dart';
 
@@ -27,6 +28,7 @@ class ServiceDetailState extends Equatable {
   final String? errorMessage;
   final bool isProvider;
   final String? currentUserId;
+  final bool hasProposed;
 
   const ServiceDetailState({
     this.status = ServiceDetailStatus.initial,
@@ -34,6 +36,7 @@ class ServiceDetailState extends Equatable {
     this.errorMessage,
     this.isProvider = false,
     this.currentUserId,
+    this.hasProposed = false,
   });
 
   ServiceDetailState copyWith({
@@ -42,6 +45,7 @@ class ServiceDetailState extends Equatable {
     String? errorMessage,
     bool? isProvider,
     String? currentUserId,
+    bool? hasProposed,
   }) {
     return ServiceDetailState(
       status: status ?? this.status,
@@ -49,19 +53,22 @@ class ServiceDetailState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
       isProvider: isProvider ?? this.isProvider,
       currentUserId: currentUserId ?? this.currentUserId,
+      hasProposed: hasProposed ?? this.hasProposed,
     );
   }
 
   @override
-  List<Object?> get props => [status, serviceDetail, errorMessage, isProvider, currentUserId];
+  List<Object?> get props => [status, serviceDetail, errorMessage, isProvider, currentUserId, hasProposed];
 }
 
 // --- BLOC ---
 class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
   final GetServiceDetailUseCase _getServiceDetail;
   final AuthRepository _authRepository;
+  final CheckUserProposalUseCase _checkUserProposal;
 
-  ServiceDetailBloc(this._getServiceDetail, this._authRepository) : super(const ServiceDetailState()) {
+  ServiceDetailBloc(this._getServiceDetail, this._authRepository, this._checkUserProposal)
+      : super(const ServiceDetailState()) {
     on<FetchServiceDetailEvent>(_onFetch);
   }
 
@@ -72,6 +79,7 @@ class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
     final sessionResult = await _authRepository.getCurrentSession();
     String? userId;
     bool isProvider = false;
+    bool hasProposed = false;
 
     sessionResult.fold(
       (_) {},
@@ -83,6 +91,11 @@ class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
       },
     );
 
+    if (isProvider && userId != null) {
+      final proposalResult = await _checkUserProposal.execute(event.serviceId, userId!);
+      proposalResult.fold((_) {}, (exists) => hasProposed = exists);
+    }
+
     final result = await _getServiceDetail.execute(event.serviceId);
     
     result.fold(
@@ -91,12 +104,14 @@ class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
         errorMessage: failure.message,
         isProvider: isProvider,
         currentUserId: userId,
+        hasProposed: hasProposed,
       )),
       (detail) => emit(state.copyWith(
         status: ServiceDetailStatus.success,
         serviceDetail: detail,
         isProvider: isProvider,
         currentUserId: userId,
+        hasProposed: hasProposed,
       )),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/widgets/custom_button.dart';
@@ -128,12 +129,37 @@ class ServiceDetailScreen extends StatelessWidget {
             ),
             child: SafeArea(
               child: state.isProvider
-                  ? CustomButton(
-                      label: 'Enviar Propuesta',
-                      onPressed: () {
-                        // TODO: Navegar a HU11
-                      },
-                    )
+                  ? state.hasProposed
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primarySoft,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_circle, color: AppTheme.primary),
+                              SizedBox(width: 8),
+                              Text(
+                                'Propuesta enviada',
+                                style: TextStyle(
+                                  color: AppTheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : CustomButton(
+                          label: 'Enviar Propuesta',
+                          onPressed: () async {
+                            final result = await context.push('/send-proposal/${state.serviceDetail!.service.id}');
+                            if (result == true && context.mounted) {
+                              context.read<ServiceDetailBloc>().add(FetchServiceDetailEvent(serviceId));
+                            }
+                          },
+                        )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
