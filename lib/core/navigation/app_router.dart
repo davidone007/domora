@@ -58,6 +58,7 @@ import 'package:domora/features/services/ui/bloc/service_publish_bloc.dart';
 import 'package:domora/features/services/ui/screens/publish_service_flow_screen.dart';
 
 import 'package:domora/features/services/domain/usecases/get_my_services_usecase.dart';
+import 'package:domora/features/services/domain/usecases/get_all_services_usecase.dart';
 import 'package:domora/features/services/domain/usecases/get_service_detail_usecase.dart';
 import 'package:domora/features/services/ui/bloc/my_services_bloc.dart';
 import 'package:domora/features/services/ui/bloc/service_detail_bloc.dart';
@@ -211,7 +212,11 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       GoRoute(
         path: AppConstants.routeMyServices,
         builder: (_, __) => BlocProvider(
-          create: (_) => MyServicesBloc(GetMyServicesUseCase(servRepo)),
+          create: (_) => MyServicesBloc(
+            GetMyServicesUseCase(servRepo),
+            GetAllServicesUseCase(servRepo),
+            authRepo,
+          ),
           child: const MyServicesScreen(),
         ),
       ),

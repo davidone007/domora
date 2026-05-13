@@ -51,6 +51,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
   Widget build(BuildContext context) {
     return MainShell(
       activeTab: MainTab.home,
+      role: AppConstants.roleClient, // Añadido rol explícito
       onTabSelected: (tab) {
         if (tab == MainTab.profile) context.go(AppConstants.routeProfile);
         if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);

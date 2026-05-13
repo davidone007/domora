@@ -21,6 +21,9 @@ abstract class ServiceRemoteDataSource {
   /// Obtiene los servicios del usuario con conteo de propuestas
   Future<List<ServiceModel>> getMyServices(String userId);
 
+  /// Obtiene todos los servicios disponibles con conteo de propuestas
+  Future<List<ServiceModel>> getAllAvailableServices();
+
   /// Obtiene el detalle de un servicio por su ID
   Future<ServiceDetailModel> getServiceById(String serviceId);
 }
@@ -58,6 +61,21 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
         .from('services')
         .select('*, quotes(count)')
         .eq('client_id', userId)
+        .order('created_at', ascending: false);
+
+    return (response as List).map((json) => ServiceModel.fromJson(json)).toList();
+  }
+
+  @override
+  Future<List<ServiceModel>> getAllAvailableServices() async {
+    if (!await _networkInfo.isConnected()) {
+      throw const PostgrestException(message: 'No hay conexión a internet');
+    }
+
+    // Consulta que trae todos los servicios y cuenta las propuestas (quotes)
+    final response = await _client
+        .from('services')
+        .select('*, quotes(count)')
         .order('created_at', ascending: false);
 
     return (response as List).map((json) => ServiceModel.fromJson(json)).toList();

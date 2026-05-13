@@ -18,12 +18,14 @@ class MainShell extends StatelessWidget {
     super.key,
     required this.activeTab,
     required this.body,
+    this.role, // Opcional: client o provider
     this.onTabSelected,
     this.extendBodyBehindNav = false,
   });
 
   final MainTab activeTab;
   final Widget body;
+  final String? role;
 
   /// Callback opcional. Si la pestaña tocada es la misma activa, no se
   /// invoca (no tiene sentido re-navegar a uno mismo).
@@ -50,7 +52,13 @@ class MainShell extends StatelessWidget {
 
     switch (tab) {
       case MainTab.home:
-        context.go(AppConstants.routeClientHome);
+        // Si el rol es proveedor, intentamos ir al home de proveedor.
+        // Aunque el router suele manejar esto, aquí forzamos consistencia.
+        if (role == AppConstants.roleProvider) {
+          context.go(AppConstants.routeProviderHome);
+        } else {
+          context.go(AppConstants.routeClientHome);
+        }
         break;
       case MainTab.profile:
         context.go(AppConstants.routeProfile);
@@ -76,6 +84,7 @@ class MainShell extends StatelessWidget {
       body: body,
       bottomNavigationBar: _DomoraBottomNav(
         activeTab: activeTab,
+        role: role,
         onTap: (tab) => _handleTap(context, tab),
       ),
     );
@@ -86,13 +95,17 @@ class MainShell extends StatelessWidget {
 // Bottom nav oscuro con la pestaña activa elevada en círculo blanco.
 // -----------------------------------------------------------------------------
 class _DomoraBottomNav extends StatelessWidget {
-  const _DomoraBottomNav({required this.activeTab, required this.onTap});
+  const _DomoraBottomNav({required this.activeTab, required this.onTap, this.role});
 
   final MainTab activeTab;
   final ValueChanged<MainTab> onTap;
+  final String? role;
 
   @override
   Widget build(BuildContext context) {
+    final isProvider = role == AppConstants.roleProvider;
+    final requestsLabel = isProvider ? 'Servicios' : 'Solicitudes';
+
     return Container(
       decoration: const BoxDecoration(
         color: AppTheme.surfaceDark,
@@ -116,8 +129,8 @@ class _DomoraBottomNav extends StatelessWidget {
               ),
               _NavItem(
                 tab: MainTab.requests,
-                icon: Icons.description_outlined,
-                label: 'Solicitudes',
+                icon: isProvider ? Icons.assignment_outlined : Icons.description_outlined,
+                label: requestsLabel,
                 active: activeTab == MainTab.requests,
                 onTap: onTap,
               ),
