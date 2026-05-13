@@ -32,6 +32,22 @@ class ServiceRepositoryImpl implements ServiceRepository {
   }
 
   @override
+  Future<Either<Failure, List<Service>>> getAllAvailableServices() async {
+    try {
+      final services = await _remoteDataSource.getAllAvailableServices();
+      return Right(services);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getAllAvailableServices',
+        ).toString(),
+      ));
+    }
+  }
+
+  @override
   Future<Either<Failure, ServiceDetail>> getServiceById(String id) async {
     try {
       final detail = await _remoteDataSource.getServiceById(id);

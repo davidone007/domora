@@ -13,6 +13,9 @@ abstract class ServiceRepository {
   /// Obtiene la lista de servicios publicados por un usuario (cliente).
   Future<Either<Failure, List<Service>>> getMyServices(String userId);
 
+  /// Obtiene todos los servicios disponibles (para proveedores).
+  Future<Either<Failure, List<Service>>> getAllAvailableServices();
+
   /// Obtiene el detalle de un servicio por su ID.
   Future<Either<Failure, ServiceDetail>> getServiceById(String id);
 }

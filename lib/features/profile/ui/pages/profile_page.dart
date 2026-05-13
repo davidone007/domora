@@ -50,20 +50,25 @@ class _ProfilePageState extends State<ProfilePage> {
           context.go(AppConstants.routeWelcome);
         }
       },
-      child: MainShell(
-        activeTab: MainTab.profile,
-        onTabSelected: (tab) {
-          if (tab == MainTab.home) _goToHome();
-          if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);
-          if (tab == MainTab.coupons) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                const SnackBar(content: Text('Disponible próximamente')),
-              );
-          }
-        },
-        body: SafeArea(
+      child: BlocBuilder<ProfileBloc, ProfileState>(
+        builder: (context, profileState) {
+          final role = profileState is ProfileLoadedState ? profileState.profile.role : null;
+          
+          return MainShell(
+            activeTab: MainTab.profile,
+            role: role,
+            onTabSelected: (tab) {
+              if (tab == MainTab.home) _goToHome();
+              if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);
+              if (tab == MainTab.coupons) {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    const SnackBar(content: Text('Disponible próximamente')),
+                  );
+              }
+            },
+            body: SafeArea(
           bottom: false,
           child: Column(
             children: [
@@ -149,9 +154,11 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  ),
+);
+}
 }
 
 // ---------------------------------------------------------------------------
