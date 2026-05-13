@@ -42,4 +42,5 @@ class AppConstants {
   static const String routeProfile = '/profile';
   static const String routeProfileEdit = '/profile/edit';
   static const String routeMyServices = '/my-services';
+  static const String routeServiceProposals = '/service-proposals';
 }
