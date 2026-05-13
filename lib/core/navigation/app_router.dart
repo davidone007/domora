@@ -69,9 +69,12 @@ import 'package:domora/features/proposals/data/repo/proposal_repository_impl.dar
 import 'package:domora/features/proposals/data/sources/proposal_remote_data_source.dart';
 import 'package:domora/features/proposals/domain/repo/proposal_repository.dart';
 import 'package:domora/features/proposals/domain/usecases/check_user_proposal_usecase.dart';
+import 'package:domora/features/proposals/domain/usecases/get_proposals_by_service_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/send_proposal_usecase.dart';
 import 'package:domora/features/proposals/ui/bloc/proposal_send_bloc.dart';
+import 'package:domora/features/proposals/ui/bloc/service_proposals_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/send_proposal_screen.dart';
+import 'package:domora/features/proposals/ui/screens/service_proposals_screen.dart';
 
 import 'package:domora/features/home/ui/pages/client_home_page.dart';
 import 'package:domora/features/home/ui/pages/provider_home_page.dart';
@@ -244,6 +247,18 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               CheckUserProposalUseCase(propRepo),
             ),
             child: SendProposalScreen(serviceId: serviceId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '${AppConstants.routeServiceProposals}/:serviceId',
+        builder: (context, state) {
+          final serviceId = state.pathParameters['serviceId']!;
+          return BlocProvider(
+            create: (_) => ServiceProposalsBloc(
+              getProposalsByServiceUseCase: GetProposalsByServiceUseCase(propRepo),
+            ),
+            child: ServiceProposalsScreen(serviceId: serviceId),
           );
         },
       ),

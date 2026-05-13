@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/widgets/custom_button.dart';
+import 'package:domora/core/utils/constants.dart';
 import 'package:domora/features/services/domain/entities/cleaning_service_detail.dart';
 import '../bloc/service_detail_bloc.dart';
 import '../widgets/map_display.dart';
@@ -182,7 +183,7 @@ class ServiceDetailScreen extends StatelessWidget {
                           child: CustomButton(
                             label: 'Ver propuestas',
                             onPressed: () {
-                              // TODO: Navegar a HU12
+                              context.push('${AppConstants.routeServiceProposals}/${state.serviceDetail!.service.id}');
                             },
                           ),
                         ),

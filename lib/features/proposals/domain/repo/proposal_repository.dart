@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:domora/core/error/failures.dart';
 import '../entities/proposal.dart';
+import '../entities/proposal_with_provider.dart';
 
 /// Contrato para la gestión de propuestas (cotizaciones).
 abstract class ProposalRepository {
@@ -9,4 +10,7 @@ abstract class ProposalRepository {
 
   /// Verifica si un proveedor ya envió una propuesta para un servicio específico.
   Future<Either<Failure, bool>> hasUserProposed(String serviceId, String providerId);
+
+  /// Obtiene todas las propuestas para un servicio específico, incluyendo datos del proveedor.
+  Future<Either<Failure, List<ProposalWithProvider>>> getProposalsByServiceId(String serviceId);
 }
