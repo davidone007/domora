@@ -63,6 +63,7 @@ class _ProviderPublicProfileScreenState extends State<ProviderPublicProfileScree
             final profile = state.profile!;
             final provider = profile.providerProfile!;
             final user = profile.user;
+            final stats = profile.stats;
 
             return SingleChildScrollView(
               child: Column(
@@ -79,6 +80,7 @@ class _ProviderPublicProfileScreenState extends State<ProviderPublicProfileScree
                         _StatsRow(
                           hourlyRate: provider.hourlyRate,
                           yearsExperience: provider.yearsExperience,
+                          averageRating: stats?.averageRating ?? 0.0,
                         ),
                         const SizedBox(height: 32),
                         Text(
@@ -97,17 +99,20 @@ class _ProviderPublicProfileScreenState extends State<ProviderPublicProfileScree
                           ),
                         ),
                         const SizedBox(height: 32),
-                        // Futuras secciones: Reseñas, Portfolio, etc.
                         _SectionTitle(title: 'Servicios Completados'),
-                        const _PlaceholderInfo(
+                        _PlaceholderInfo(
                           icon: Icons.check_circle_outline,
-                          text: 'Este proveedor ha completado 15 servicios con éxito.',
+                          text: stats != null && stats.completedServicesCount > 0
+                              ? 'Este proveedor ha completado ${stats.completedServicesCount} servicios con éxito.'
+                              : 'Este proveedor está comenzando y aún no tiene servicios completados.',
                         ),
                         const SizedBox(height: 24),
                         _SectionTitle(title: 'Calificaciones'),
-                        const _PlaceholderInfo(
+                        _PlaceholderInfo(
                           icon: Icons.star_border,
-                          text: 'Calificación promedio: 4.8 / 5.0 (basado en 12 reseñas).',
+                          text: stats != null && stats.totalReviewsCount > 0
+                              ? 'Calificación promedio: ${stats.averageRating.toStringAsFixed(1)} / 5.0 (basado en ${stats.totalReviewsCount} reseñas).'
+                              : 'Aún no tiene calificaciones registradas.',
                         ),
                         const SizedBox(height: 100),
                       ],
@@ -195,8 +200,13 @@ class _ProfileHeader extends StatelessWidget {
 class _StatsRow extends StatelessWidget {
   final double hourlyRate;
   final int yearsExperience;
+  final double averageRating;
 
-  const _StatsRow({required this.hourlyRate, required this.yearsExperience});
+  const _StatsRow({
+    required this.hourlyRate,
+    required this.yearsExperience,
+    required this.averageRating,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -235,9 +245,9 @@ class _StatsRow extends StatelessWidget {
             icon: Icons.work_outline,
           ),
           Container(height: 30, width: 1, color: AppTheme.border),
-          const _StatItem(
+          _StatItem(
             label: 'Rating',
-            value: '4.8',
+            value: averageRating > 0 ? averageRating.toStringAsFixed(1) : 'N/A',
             icon: Icons.star_outline,
           ),
         ],

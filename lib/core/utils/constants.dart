@@ -11,6 +11,9 @@ class AppConstants {
   static const String tableClientProfiles = 'client_profiles';
   static const String tableProviderProfiles = 'provider_profiles';
   static const String tableAddresses = 'addresses';
+  static const String tableBookings = 'bookings';
+  static const String tableReviews = 'reviews';
+  static const String tableQuotes = 'quotes';
 
   // ---------------------------------------------------------------------------
   // Buckets

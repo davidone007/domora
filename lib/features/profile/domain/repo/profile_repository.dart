@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:domora/core/error/failures.dart';
 import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
+import 'package:domora/features/profile/domain/entities/provider_stats.dart';
 
 abstract class ProfileRepository {
   /// Devuelve el perfil completo del usuario actual (HU4).
@@ -40,4 +41,7 @@ abstract class ProfileRepository {
 
   /// Devuelve el perfil completo de un proveedor por su ID de usuario.
   Future<Either<Failure, FullProfile>> getProviderProfileById(String userId);
+
+  /// Obtiene las estadísticas de un proveedor (rating, servicios completados).
+  Future<Either<Failure, ProviderStats>> getProviderStats(String providerId);
 }
