@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import '../bloc/service_proposals_bloc.dart';
 import '../widgets/proposal_card.dart';
@@ -104,10 +105,7 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
                   return ProposalCard(
                     proposalWithProvider: proposal,
                     onTap: () {
-                      // TODO: Navegar al perfil del aseador (HU13)
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Perfil de ${proposal.providerFirstName} (Próximamente)')),
-                      );
+                      context.push('/provider-profile/${proposal.proposal.providerId}');
                     },
                   );
                 },

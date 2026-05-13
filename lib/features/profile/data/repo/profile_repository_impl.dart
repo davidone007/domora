@@ -220,6 +220,50 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, FullProfile>> getProviderProfileById(String userId) async {
+    try {
+      final userMap = await _dataSource.getUser(userId);
+      if (userMap == null) {
+        return const Left(ServerFailure('Proveedor no encontrado'));
+      }
+
+      final role = await _dataSource.getRole(userId);
+      if (role != AppConstants.roleProvider) {
+        return const Left(ValidationFailure('El usuario no es un proveedor'));
+      }
+
+      ProviderProfile? providerProfile;
+      Address? primaryAddress;
+
+      final pp = await _dataSource.getProviderProfile(userId);
+      if (pp != null) {
+        providerProfile = ProfileMappers.providerProfileFromMap(pp);
+      }
+
+      final addr = await _dataSource.getPrimaryAddress(userId);
+      if (addr != null) primaryAddress = ProfileMappers.addressFromMap(addr);
+
+      return Right(
+        FullProfile(
+          user: ProfileMappers.userFromMap(userMap),
+          role: role!,
+          providerProfile: providerProfile,
+          primaryAddress: primaryAddress,
+        ),
+      );
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getProviderProfileById',
+          userId: userId,
+        ).toString(),
+      ));
+    }
+  }
+
   Map<String, dynamic> _pickAllowedFields(
     Map<String, dynamic> updates,
     Set<String> allowedFields,

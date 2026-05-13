@@ -36,10 +36,13 @@ import 'package:domora/features/profile/data/repo/profile_repository_impl.dart';
 import 'package:domora/features/profile/data/sources/profile_data_source.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 import 'package:domora/features/profile/domain/usecases/get_current_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/get_provider_profile_usecase.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/profile_signout_bloc.dart';
+import 'package:domora/features/profile/ui/bloc/provider_public_profile_bloc.dart';
 import 'package:domora/features/profile/ui/pages/profile_page.dart';
+import 'package:domora/features/profile/ui/screens/provider_public_profile_screen.dart';
 import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
@@ -259,6 +262,18 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               getProposalsByServiceUseCase: GetProposalsByServiceUseCase(propRepo),
             ),
             child: ServiceProposalsScreen(serviceId: serviceId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/provider-profile/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return BlocProvider(
+            create: (_) => ProviderPublicProfileBloc(
+              getProviderProfileUseCase: GetProviderProfileUseCase(profRepo),
+            ),
+            child: ProviderPublicProfileScreen(userId: userId),
           );
         },
       ),

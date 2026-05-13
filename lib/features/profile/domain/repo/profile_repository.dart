@@ -37,4 +37,7 @@ abstract class ProfileRepository {
     required AvatarFile avatarFile,
     required bool isProvider,
   });
+
+  /// Devuelve el perfil completo de un proveedor por su ID de usuario.
+  Future<Either<Failure, FullProfile>> getProviderProfileById(String userId);
 }
