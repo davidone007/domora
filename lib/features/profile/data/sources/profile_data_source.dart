@@ -33,6 +33,9 @@ abstract class ProfileDataSource {
     required AvatarFile avatarFile,
     required bool isProvider,
   });
+
+  Future<int> getCompletedServicesCount(String providerId);
+  Future<Map<String, dynamic>> getReviewsStats(String providerId);
 }
 
 class ProfileDataSourceImpl implements ProfileDataSource {
@@ -206,5 +209,45 @@ class ProfileDataSourceImpl implements ProfileDataSource {
     final publicUrl = _client.storage.from(AppConstants.bucketAvatars).getPublicUrl(path);
 
     return publicUrl;
+  }
+
+  @override
+  Future<int> getCompletedServicesCount(String providerId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    final response = await _client
+        .from(AppConstants.tableBookings)
+        .select('id')
+        .eq('provider_id', providerId)
+        .eq('status', 'completed');
+
+    return response.length;
+  }
+
+  @override
+  Future<Map<String, dynamic>> getReviewsStats(String providerId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    // Consultamos las reviews uniéndolas con bookings para filtrar por provider_id
+    final List<dynamic> response = await _client
+        .from(AppConstants.tableReviews)
+        .select('rating, bookings!inner(provider_id)')
+        .eq('bookings.provider_id', providerId);
+
+    if (response.isEmpty) {
+      return {'average_rating': 0.0, 'total_reviews': 0};
+    }
+
+    final ratings = response.map((r) => r['rating'] as int).toList();
+    final average = ratings.reduce((a, b) => a + b) / ratings.length;
+
+    return {
+      'average_rating': average,
+      'total_reviews': ratings.length,
+    };
   }
 }

@@ -12,6 +12,7 @@ import 'package:domora/features/profile/domain/entities/address.dart';
 import 'package:domora/features/profile/domain/entities/client_profile.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_profile.dart';
+import 'package:domora/features/profile/domain/entities/provider_stats.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
@@ -216,6 +217,78 @@ class ProfileRepositoryImpl implements ProfileRepository {
         e,
         stackTrace: stackTrace,
         context: ErrorContext(operation: 'uploadAvatar', userId: userId).toString(),
+      ));
+    }
+  }
+
+  @override
+  Future<Either<Failure, FullProfile>> getProviderProfileById(String userId) async {
+    try {
+      final userMap = await _dataSource.getUser(userId);
+      if (userMap == null) {
+        return const Left(ServerFailure('Proveedor no encontrado'));
+      }
+
+      final role = await _dataSource.getRole(userId);
+      if (role != AppConstants.roleProvider) {
+        return const Left(ValidationFailure('El usuario no es un proveedor'));
+      }
+
+      ProviderProfile? providerProfile;
+      Address? primaryAddress;
+
+      final pp = await _dataSource.getProviderProfile(userId);
+      if (pp != null) {
+        providerProfile = ProfileMappers.providerProfileFromMap(pp);
+      }
+
+      final addr = await _dataSource.getPrimaryAddress(userId);
+      if (addr != null) primaryAddress = ProfileMappers.addressFromMap(addr);
+
+      // Cargamos las estadísticas reales
+      final statsResult = await getProviderStats(userId);
+      final ProviderStats? stats = statsResult.fold((_) => null, (s) => s);
+
+      return Right(
+        FullProfile(
+          user: ProfileMappers.userFromMap(userMap),
+          role: role!,
+          providerProfile: providerProfile,
+          primaryAddress: primaryAddress,
+          stats: stats,
+        ),
+      );
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getProviderProfileById',
+          userId: userId,
+        ).toString(),
+      ));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ProviderStats>> getProviderStats(String providerId) async {
+    try {
+      final completedCount = await _dataSource.getCompletedServicesCount(providerId);
+      final reviewsData = await _dataSource.getReviewsStats(providerId);
+
+      return Right(ProviderStats(
+        averageRating: (reviewsData['average_rating'] as num).toDouble(),
+        totalReviewsCount: reviewsData['total_reviews'] as int,
+        completedServicesCount: completedCount,
+      ));
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getProviderStats',
+          userId: providerId,
+        ).toString(),
       ));
     }
   }

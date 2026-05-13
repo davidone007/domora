@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:domora/features/profile/domain/entities/address.dart';
 import 'package:domora/features/profile/domain/entities/client_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_profile.dart';
+import 'package:domora/features/profile/domain/entities/provider_stats.dart';
 import 'package:domora/features/profile/domain/entities/user.dart';
 
 /// Vista agregada del perfil para mostrar en la UI (HU4).
@@ -12,6 +13,7 @@ class FullProfile extends Equatable {
   final ClientProfile? clientProfile;
   final ProviderProfile? providerProfile;
   final Address? primaryAddress;
+  final ProviderStats? stats;
 
   const FullProfile({
     required this.user,
@@ -19,6 +21,7 @@ class FullProfile extends Equatable {
     this.clientProfile,
     this.providerProfile,
     this.primaryAddress,
+    this.stats,
   });
 
   bool get isProvider => role == 'provider';
@@ -30,5 +33,5 @@ class FullProfile extends Equatable {
 
   @override
   List<Object?> get props =>
-      [user, role, clientProfile, providerProfile, primaryAddress];
+      [user, role, clientProfile, providerProfile, primaryAddress, stats];
 }
