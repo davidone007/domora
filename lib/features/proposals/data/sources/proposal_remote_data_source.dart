@@ -6,7 +6,10 @@ import '../models/proposal_with_provider_model.dart';
 abstract class ProposalRemoteDataSource {
   Future<void> sendProposal(ProposalModel proposal);
   Future<bool> hasUserProposed(String serviceId, String providerId);
-  Future<List<ProposalWithProviderModel>> getProposalsByServiceId(String serviceId);
+  Future<List<ProposalWithProviderModel>> getProposalsByServiceId({
+    required String serviceId,
+    required String clientId,
+  });
 }
 
 class ProposalRemoteDataSourceImpl implements ProposalRemoteDataSource {
@@ -42,15 +45,21 @@ class ProposalRemoteDataSourceImpl implements ProposalRemoteDataSource {
   }
 
   @override
-  Future<List<ProposalWithProviderModel>> getProposalsByServiceId(String serviceId) async {
+  Future<List<ProposalWithProviderModel>> getProposalsByServiceId({
+    required String serviceId,
+    required String clientId,
+  }) async {
     if (!await _networkInfo.isConnected()) {
       throw const PostgrestException(message: 'No hay conexión a internet');
     }
 
+    // Usamos un join con la tabla 'services' para asegurar que el servicio
+    // pertenece al cliente que hace la consulta (Client Ownership Validation).
     final List<dynamic> response = await _client
         .from('quotes')
-        .select('*, users(first_name, last_name, provider_profiles(avatar_url, years_experience))')
+        .select('*, services!inner(client_id), users(first_name, last_name, provider_profiles(avatar_url, years_experience))')
         .eq('service_id', serviceId)
+        .eq('services.client_id', clientId)
         .order('created_at', ascending: false);
 
     return response.map((json) => ProposalWithProviderModel.fromJson(json as Map<String, dynamic>)).toList();

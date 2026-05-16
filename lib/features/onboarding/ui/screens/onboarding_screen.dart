@@ -21,9 +21,8 @@ import 'package:domora/features/onboarding/ui/bloc/onboarding_bloc.dart';
 /// del usuario (via _OnboardingRouteResolver en el router).
 class OnboardingScreen extends StatefulWidget {
   final String role;
-  final String userId;
 
-  const OnboardingScreen({super.key, required this.role, required this.userId});
+  const OnboardingScreen({super.key, required this.role});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -76,7 +75,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
       context.read<OnboardingBloc>().add(
             OnboardingSaveProviderEvent(
-              userId: widget.userId,
               firstName: _firstNameCtrl.text.trim(),
               lastName: _lastNameCtrl.text.trim(),
               phone: '$_dialCode ${_phoneCtrl.text.trim()}',
@@ -100,7 +98,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } else {
       context.read<OnboardingBloc>().add(
             OnboardingSaveClientEvent(
-              userId: widget.userId,
               firstName: _firstNameCtrl.text.trim(),
               lastName: _lastNameCtrl.text.trim(),
               phone: '$_dialCode ${_phoneCtrl.text.trim()}',

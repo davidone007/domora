@@ -50,9 +50,15 @@ class ProposalRepositoryImpl implements ProposalRepository {
   }
 
   @override
-  Future<Either<Failure, List<ProposalWithProvider>>> getProposalsByServiceId(String serviceId) async {
+  Future<Either<Failure, List<ProposalWithProvider>>> getProposalsByServiceId({
+    required String serviceId,
+    required String clientId,
+  }) async {
     try {
-      final models = await _remoteDataSource.getProposalsByServiceId(serviceId);
+      final models = await _remoteDataSource.getProposalsByServiceId(
+        serviceId: serviceId,
+        clientId: clientId,
+      );
       return Right(models);
     } catch (e, stackTrace) {
       return Left(_errorMapper.mapException(
@@ -60,6 +66,7 @@ class ProposalRepositoryImpl implements ProposalRepository {
         stackTrace: stackTrace,
         context: ErrorContext(
           operation: 'getProposalsByServiceId',
+          userId: clientId,
         ).toString(),
       ));
     }

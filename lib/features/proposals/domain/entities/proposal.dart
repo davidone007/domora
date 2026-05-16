@@ -22,6 +22,28 @@ class Proposal extends Equatable {
     this.createdAt,
   });
 
+  Proposal copyWith({
+    String? id,
+    String? serviceId,
+    String? providerId,
+    double? price,
+    double? estimatedHours,
+    String? message,
+    String? status,
+    DateTime? createdAt,
+  }) {
+    return Proposal(
+      id: id ?? this.id,
+      serviceId: serviceId ?? this.serviceId,
+      providerId: providerId ?? this.providerId,
+      price: price ?? this.price,
+      estimatedHours: estimatedHours ?? this.estimatedHours,
+      message: message ?? this.message,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   @override
   List<Object?> get props => [
         id,

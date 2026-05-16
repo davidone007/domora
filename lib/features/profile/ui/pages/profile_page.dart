@@ -50,115 +50,91 @@ class _ProfilePageState extends State<ProfilePage> {
           context.go(AppConstants.routeWelcome);
         }
       },
-      child: BlocBuilder<ProfileBloc, ProfileState>(
-        builder: (context, profileState) {
-          final role = profileState is ProfileLoadedState ? profileState.profile.role : null;
-          
-          return MainShell(
-            activeTab: MainTab.profile,
-            role: role,
-            onTabSelected: (tab) {
-              if (tab == MainTab.home) _goToHome();
-              if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);
-              if (tab == MainTab.coupons) {
-                ScaffoldMessenger.of(context)
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(
-                    const SnackBar(content: Text('Disponible próximamente')),
-                  );
-              }
-            },
-            body: SafeArea(
+      child: MainShell(
+        activeTab: MainTab.profile,
+        onTabSelected: (tab) {
+          if (tab == MainTab.home) _goToHome();
+          if (tab == MainTab.requests || tab == MainTab.coupons) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                const SnackBar(content: Text('Disponible próximamente')),
+              );
+          }
+        },
+        body: SafeArea(
           bottom: false,
           child: Column(
             children: [
-            // AppBar manual (no usamos Scaffold.appBar porque el MainShell ya
-            // posee el Scaffold raíz; añadir otro daría doble AppBar).
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: _goToHome,
-                    icon: const Icon(Icons.arrow_back, size: 22),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Mi perfil',
-                        style: Theme.of(context).textTheme.titleMedium,
+              // AppBar manual (no usamos Scaffold.appBar porque el MainShell ya
+              // posee el Scaffold raíz; añadir otro daría doble AppBar).
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: _goToHome,
+                      icon: const Icon(Icons.arrow_back, size: 22),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          'Mi perfil',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                       ),
                     ),
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        tooltip: 'Editar perfil',
-                        onPressed: () {
-                          // Pasamos el `FullProfile` actual como extra para prefijar el formulario.
-                          final state = context.read<ProfileBloc>().state;
-                          if (state is ProfileLoadedState) {
-                            context.go(AppConstants.routeProfileEdit, extra: state.profile);
-                          } else {
-                            context.go(AppConstants.routeProfileEdit);
-                          }
-                        },
-                        icon: const Icon(Icons.edit, size: 20),
-                      ),
-                      BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
-                        builder: (context, signOutState) {
-                          final isLoading = signOutState is ProfileSignOutLoadingState;
-                          return IconButton(
-                            tooltip: 'Cerrar sesión',
-                            onPressed: isLoading
-                                ? null
-                                : () => context
-                                    .read<ProfileSignOutBloc>()
-                                    .add(const ProfileSignOutSubmitEvent()),
-                            icon: const Icon(Icons.logout, size: 22),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+                    BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
+                      builder: (context, signOutState) {
+                        final isLoading =
+                            signOutState is ProfileSignOutLoadingState;
+                        return IconButton(
+                          tooltip: 'Cerrar sesión',
+                          onPressed: isLoading
+                              ? null
+                              : () => context
+                                  .read<ProfileSignOutBloc>()
+                                  .add(const ProfileSignOutSubmitEvent()),
+                          icon: const Icon(Icons.logout, size: 22),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: BlocBuilder<ProfileBloc, ProfileState>(
-                builder: (context, state) {
-                  if (state is ProfileLoadingState ||
-                      state is ProfileInitialState) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (state is ProfileErrorState) {
-                    return _ErrorView(
-                      message: state.message,
-                      onRetry: () => context
-                          .read<ProfileBloc>()
-                          .add(const ProfileRefreshEvent()),
-                    );
-                  }
-                  if (state is ProfileLoadedState) {
-                    return RefreshIndicator(
-                      onRefresh: () async => context
-                          .read<ProfileBloc>()
-                          .add(const ProfileRefreshEvent()),
-                      child: _ProfileContent(profile: state.profile),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
+              Expanded(
+                child: BlocBuilder<ProfileBloc, ProfileState>(
+                  builder: (context, state) {
+                    if (state is ProfileLoadingState ||
+                        state is ProfileInitialState) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (state is ProfileErrorState) {
+                      return _ErrorView(
+                        message: state.message,
+                        onRetry: () => context
+                            .read<ProfileBloc>()
+                            .add(const ProfileRefreshEvent()),
+                      );
+                    }
+                    if (state is ProfileLoadedState) {
+                      return RefreshIndicator(
+                        onRefresh: () async => context
+                            .read<ProfileBloc>()
+                            .add(const ProfileRefreshEvent()),
+                        child: _ProfileContent(profile: state.profile),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
               ),
-            ),
             ],
           ),
         ),
-      );
-    },
-  ),
-);
-}
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -184,15 +160,22 @@ class _ProfileContent extends StatelessWidget {
           ),
           child: Column(
             children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.edit_outlined, color: AppTheme.textSecondary, size: 20),
+                  onPressed: () => context.push(AppConstants.routeProfileEdit, extra: profile),
+                  tooltip: 'Editar Perfil',
+                ),
+              ),
               CircleAvatar(
                 radius: 50,
                 backgroundColor: AppTheme.primarySoft,
-                backgroundImage: (profile.avatarUrl != null &&
-                        profile.avatarUrl!.isNotEmpty)
-                    ? NetworkImage(profile.avatarUrl!)
-                    : null,
-                child: (profile.avatarUrl == null ||
-                        profile.avatarUrl!.isEmpty)
+                backgroundImage:
+                    (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty)
+                        ? NetworkImage(profile.avatarUrl!)
+                        : null,
+                child: (profile.avatarUrl == null || profile.avatarUrl!.isEmpty)
                     ? const Icon(Icons.person,
                         size: 56, color: AppTheme.primary)
                     : null,
@@ -203,8 +186,8 @@ class _ProfileContent extends StatelessWidget {
                   textAlign: TextAlign.center),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppTheme.primarySoft,
                   borderRadius: BorderRadius.circular(40),
@@ -298,26 +281,6 @@ class _ProfileContent extends StatelessWidget {
 
         // Acciones.
         const SizedBox(height: 28),
-        BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
-          builder: (context, state) {
-            final isLoading = state is ProfileSignOutLoadingState;
-            return OutlinedButton.icon(
-              icon: isLoading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.logout, size: 18),
-              label: const Text('Cerrar sesión'),
-              onPressed: isLoading
-                  ? null
-                  : () => context
-                      .read<ProfileSignOutBloc>()
-                      .add(const ProfileSignOutSubmitEvent()),
-            );
-          },
-        ),
       ],
     );
   }

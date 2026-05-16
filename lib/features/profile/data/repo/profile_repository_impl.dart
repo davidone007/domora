@@ -7,20 +7,22 @@ import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/features/profile/data/mappers/profile_mappers.dart';
 import 'package:domora/features/profile/data/sources/profile_data_source.dart';
-import 'package:domora/features/auth/domain/repo/auth_repo.dart';
 import 'package:domora/features/profile/domain/entities/address.dart';
 import 'package:domora/features/profile/domain/entities/client_profile.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_stats.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
+import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileDataSource _dataSource;
-  final AuthRepository _authRepository;
   final FailureMapper _errorMapper;
 
-  ProfileRepositoryImpl(this._dataSource, this._authRepository, this._errorMapper);
+  ProfileRepositoryImpl(this._dataSource, this._errorMapper);
 
   @override
   Future<Either<Failure, FullProfile>> getCurrentProfile() async {
@@ -36,7 +38,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         return const Left(ServerFailure('Usuario no encontrado'));
       }
 
-      final authEmail = _authRepository.currentUserEmail;
+      final authEmail = _dataSource.getCurrentUserEmail();
       if (authEmail != null && authEmail.isNotEmpty) {
         userMap['email'] = authEmail;
       }
@@ -85,110 +87,102 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<Either<Failure, Unit>> updateUserFields(String userId, Map<String, dynamic> updates) async {
+  Future<Either<Failure, Unit>> updateUserFields(UpdateUserFieldsParams params) async {
     try {
-      final allowedUpdates = _pickAllowedFields(updates, {'first_name', 'last_name', 'phone'});
-      if (allowedUpdates.isEmpty) {
+      // Traducción dominio → esquema de BD: solo ocurre aquí.
+      final dbMap = <String, dynamic>{
+        if (params.firstName != null) 'first_name': params.firstName,
+        if (params.lastName  != null) 'last_name':  params.lastName,
+        if (params.phone     != null) 'phone':       params.phone,
+      };
+
+      if (dbMap.isEmpty) {
         return const Left(ValidationFailure('No hay campos válidos para actualizar'));
       }
 
-      await _dataSource.updateUser(userId, allowedUpdates);
+      await _dataSource.updateUser(params.userId, dbMap);
       return const Right(unit);
     } catch (e, stackTrace) {
       return Left(_errorMapper.mapException(
         e,
         stackTrace: stackTrace,
-        context: ErrorContext(operation: 'updateUserFields', userId: userId).toString(),
+        context: ErrorContext(operation: 'updateUserFields', userId: params.userId).toString(),
       ));
     }
   }
 
   @override
-  Future<Either<Failure, Unit>> updateProfileFields(String userId, Map<String, dynamic> updates) async {
+  Future<Either<Failure, Unit>> updateClientProfileFields(UpdateClientProfileParams params) async {
     try {
-      final userUpdates = _pickAllowedFields(updates, {'first_name', 'last_name', 'phone'});
-      if (userUpdates.isNotEmpty) {
-        await _dataSource.updateUser(userId, userUpdates);
-        return const Right(unit);
-      }
+      // Traducción dominio → esquema de BD.
+      final dbMap = <String, dynamic>{
+        if (params.bio       != null) 'bio':        params.bio,
+        if (params.avatarUrl != null) 'avatar_url': params.avatarUrl,
+      };
 
-      final role = await _dataSource.getRole(userId);
-      if (role == AppConstants.roleClient) {
-        final clientUpdates = _pickAllowedFields(updates, {'avatar_url', 'bio'});
-        if (clientUpdates.isEmpty) {
-          return const Left(ValidationFailure('No hay campos válidos para actualizar'));
-        }
-        await _dataSource.updateClientProfile(userId, clientUpdates);
-      } else if (role == AppConstants.roleProvider) {
-        final providerUpdates = _pickAllowedFields(
-          updates,
-          {'years_experience', 'hourly_rate', 'is_available', 'bio', 'avatar_url'},
-        );
-        if (providerUpdates.isEmpty) {
-          return const Left(ValidationFailure('No hay campos válidos para actualizar'));
-        }
-        await _dataSource.updateProviderProfile(userId, providerUpdates);
-      } else {
-        return const Left(ServerFailure('No se pudo determinar el rol del usuario'));
-      }
-
-      return const Right(unit);
-    } catch (e, stackTrace) {
-      return Left(_errorMapper.mapException(
-        e,
-        stackTrace: stackTrace,
-        context: ErrorContext(operation: 'updateProfileFields', userId: userId).toString(),
-      ));
-    }
-  }
-
-  @override
-  Future<Either<Failure, Unit>> updatePrimaryAddress(String userId, Map<String, dynamic> updates) async {
-    try {
-      final addressUpdates = _pickAllowedFields(
-        updates,
-        {'address_line1', 'address_line2', 'department', 'city', 'neighborhood'},
-      );
-
-      if (addressUpdates.isEmpty) {
+      if (dbMap.isEmpty) {
         return const Left(ValidationFailure('No hay campos válidos para actualizar'));
       }
 
-      await _dataSource.updatePrimaryAddress(userId, addressUpdates);
+      await _dataSource.updateClientProfile(params.userId, dbMap);
       return const Right(unit);
     } catch (e, stackTrace) {
       return Left(_errorMapper.mapException(
         e,
         stackTrace: stackTrace,
-        context: ErrorContext(operation: 'updatePrimaryAddress', userId: userId).toString(),
+        context: ErrorContext(operation: 'updateClientProfileFields', userId: params.userId).toString(),
       ));
     }
   }
 
   @override
-  Future<Either<Failure, Unit>> updateEmail({
-    required String currentEmail,
-    required String currentPassword,
-    required String newEmail,
-  }) async {
-    final result = await _authRepository.updateEmail(
-      currentEmail: currentEmail,
-      currentPassword: currentPassword,
-      newEmail: newEmail,
-    );
-    return result.map((_) => unit);
+  Future<Either<Failure, Unit>> updateProviderProfileFields(UpdateProviderProfileParams params) async {
+    try {
+      // Traducción dominio → esquema de BD.
+      final dbMap = <String, dynamic>{
+        if (params.yearsExperience != null) 'years_experience': params.yearsExperience,
+        if (params.hourlyRate      != null) 'hourly_rate':      params.hourlyRate,
+        if (params.isAvailable     != null) 'is_available':     params.isAvailable,
+        if (params.bio             != null) 'bio':              params.bio,
+        if (params.avatarUrl       != null) 'avatar_url':       params.avatarUrl,
+      };
+
+      if (dbMap.isEmpty) {
+        return const Left(ValidationFailure('No hay campos válidos para actualizar'));
+      }
+
+      await _dataSource.updateProviderProfile(params.userId, dbMap);
+      return const Right(unit);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(operation: 'updateProviderProfileFields', userId: params.userId).toString(),
+      ));
+    }
   }
 
   @override
-  Future<Either<Failure, Unit>> updatePassword({
-    required String currentPassword,
-    required String newPassword,
-  }) async {
-    final result = await _authRepository.updatePassword(
-      currentPassword: currentPassword,
-      newPassword: newPassword,
-    );
-    return result.map((_) => unit);
+  Future<Either<Failure, Unit>> updatePrimaryAddress(UpdateProviderAddressParams params) async {
+    try {
+      // Traducción dominio → esquema de BD.
+      final dbMap = <String, dynamic>{
+        'address_line1': params.addressLine1,
+        if (params.addressLine2 != null) 'address_line2': params.addressLine2,
+        'department':  params.department,
+        'city':        params.city,
+        if (params.neighborhood != null) 'neighborhood': params.neighborhood,
+      };
+
+      await _dataSource.updatePrimaryAddress(params.userId, dbMap);
+      return const Right(unit);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(operation: 'updatePrimaryAddress', userId: params.userId).toString(),
+      ));
+    }
   }
 
   @override
@@ -293,12 +287,5 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
-  Map<String, dynamic> _pickAllowedFields(
-    Map<String, dynamic> updates,
-    Set<String> allowedFields,
-  ) {
-    return Map<String, dynamic>.fromEntries(
-      updates.entries.where((entry) => allowedFields.contains(entry.key) && entry.value != null),
-    );
-  }
+
 }

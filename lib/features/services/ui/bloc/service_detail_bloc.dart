@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:domora/features/auth/domain/repo/auth_repo.dart';
+import 'package:domora/features/auth/domain/usecases/get_current_session_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/check_user_proposal_usecase.dart';
 import '../../domain/entities/service_detail.dart';
 import '../../domain/usecases/get_service_detail_usecase.dart';
@@ -58,25 +58,34 @@ class ServiceDetailState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, serviceDetail, errorMessage, isProvider, currentUserId, hasProposed];
+  List<Object?> get props => [
+        status,
+        serviceDetail,
+        errorMessage,
+        isProvider,
+        currentUserId,
+        hasProposed
+      ];
 }
 
 // --- BLOC ---
 class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
   final GetServiceDetailUseCase _getServiceDetail;
-  final AuthRepository _authRepository;
+  final GetCurrentSessionUseCase _getCurrentSession;
   final CheckUserProposalUseCase _checkUserProposal;
 
-  ServiceDetailBloc(this._getServiceDetail, this._authRepository, this._checkUserProposal)
+  ServiceDetailBloc(
+      this._getServiceDetail, this._getCurrentSession, this._checkUserProposal)
       : super(const ServiceDetailState()) {
     on<FetchServiceDetailEvent>(_onFetch);
   }
 
-  Future<void> _onFetch(FetchServiceDetailEvent event, Emitter<ServiceDetailState> emit) async {
+  Future<void> _onFetch(
+      FetchServiceDetailEvent event, Emitter<ServiceDetailState> emit) async {
     emit(state.copyWith(status: ServiceDetailStatus.loading));
-    
-    // Fetch role and userId from session
-    final sessionResult = await _authRepository.getCurrentSession();
+
+    // Obtener sesión y rol a través del caso de uso
+    final sessionResult = await _getCurrentSession();
     String? userId;
     bool isProvider = false;
     bool hasProposed = false;
@@ -92,12 +101,13 @@ class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
     );
 
     if (isProvider && userId != null) {
-      final proposalResult = await _checkUserProposal.execute(event.serviceId, userId!);
+      final proposalResult =
+          await _checkUserProposal.execute(event.serviceId, userId!);
       proposalResult.fold((_) {}, (exists) => hasProposed = exists);
     }
 
     final result = await _getServiceDetail.execute(event.serviceId);
-    
+
     result.fold(
       (failure) => emit(state.copyWith(
         status: ServiceDetailStatus.error,

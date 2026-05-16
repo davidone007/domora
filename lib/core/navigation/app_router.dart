@@ -100,7 +100,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
   final OnboardingRepository onbRepo = OnboardingRepositoryImpl(onbDs, errorMapper);
 
   final ProfileDataSource profDs = ProfileDataSourceImpl(supabase, networkInfo: networkInfo);
-  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, authRepo, errorMapper);
+  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, errorMapper);
 
   final ServiceRemoteDataSource servDs = ServiceRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
   final ServiceRepository servRepo = ServiceRepositoryImpl(servDs, errorMapper);
@@ -147,6 +147,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               create: (_) => OnboardingBloc(
                 saveClient: SaveClientProfileUseCase(onbRepo),
                 saveProvider: SaveProviderProfileUseCase(onbRepo),
+                getCurrentSession: getCurrentSession,
               ),
             ),
             BlocProvider(
@@ -168,11 +169,10 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       GoRoute(
         path: '/publish-service',
         builder: (context, state) {
-          final userId = state.extra as String? ?? '';
           return BlocProvider(
             create: (_) => ServicePublishBloc(
-              PublishCleaningServiceUseCase(servRepo),
-              userId,
+              publishCleaningService: PublishCleaningServiceUseCase(servRepo),
+              getCurrentSession: getCurrentSession,
             ),
             child: const PublishServiceFlowScreen(),
           );
@@ -208,8 +208,8 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               UpdateProviderProfileUseCase(profRepo),
               UpdateProviderAddressUseCase(profRepo),
               UploadAvatarUseCase(profRepo),
-              UpdateEmailUseCase(profRepo),
-              UpdatePasswordUseCase(profRepo),
+              UpdateEmailUseCase(authRepo),
+              UpdatePasswordUseCase(authRepo),
             ),
             child: EditProfilePage(initialProfile: initialProfile),
           );
@@ -221,7 +221,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
           create: (_) => MyServicesBloc(
             GetMyServicesUseCase(servRepo),
             GetAllServicesUseCase(servRepo),
-            authRepo,
+            getCurrentSession,
           ),
           child: const MyServicesScreen(),
         ),
@@ -233,7 +233,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
           return BlocProvider(
             create: (_) => ServiceDetailBloc(
               GetServiceDetailUseCase(servRepo),
-              authRepo,
+              getCurrentSession,
               CheckUserProposalUseCase(propRepo),
             )..add(FetchServiceDetailEvent(id)),
             child: ServiceDetailScreen(serviceId: id),
@@ -248,6 +248,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
             create: (_) => ProposalSendBloc(
               SendProposalUseCase(propRepo),
               CheckUserProposalUseCase(propRepo),
+              getCurrentSession,
             ),
             child: SendProposalScreen(serviceId: serviceId),
           );
@@ -260,6 +261,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
           return BlocProvider(
             create: (_) => ServiceProposalsBloc(
               getProposalsByServiceUseCase: GetProposalsByServiceUseCase(propRepo),
+              getCurrentSession: getCurrentSession,
             ),
             child: ServiceProposalsScreen(serviceId: serviceId),
           );
@@ -304,7 +306,6 @@ class _OnboardingRouteResolver extends StatelessWidget {
           if (state is OnboardingRouteReadyState) {
             return OnboardingScreen(
               role: state.role,
-              userId: state.userId,
             );
           }
           // Mientras carga o en caso de error (antes de la redirección),

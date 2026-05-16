@@ -11,6 +11,10 @@ abstract class ProposalRepository {
   /// Verifica si un proveedor ya envió una propuesta para un servicio específico.
   Future<Either<Failure, bool>> hasUserProposed(String serviceId, String providerId);
 
-  /// Obtiene todas las propuestas para un servicio específico, incluyendo datos del proveedor.
-  Future<Either<Failure, List<ProposalWithProvider>>> getProposalsByServiceId(String serviceId);
+  /// Obtiene todas las propuestas para un servicio específico.
+  /// Requiere [clientId] para validar la propiedad del servicio.
+  Future<Either<Failure, List<ProposalWithProvider>>> getProposalsByServiceId({
+    required String serviceId,
+    required String clientId,
+  });
 }

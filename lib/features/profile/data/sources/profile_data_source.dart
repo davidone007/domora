@@ -8,6 +8,9 @@ import 'package:domora/core/entities/avatar_file.dart';
 
 abstract class ProfileDataSource {
   String? getCurrentUserId();
+
+  /// Devuelve el email del usuario autenticado desde la sesión local de Supabase.
+  String? getCurrentUserEmail();
   Future<Map<String, dynamic>?> getUser(String userId);
   Future<String?> getRole(String userId);
   Future<Map<String, dynamic>?> getClientProfile(String userId);
@@ -46,6 +49,9 @@ class ProfileDataSourceImpl implements ProfileDataSource {
 
   @override
   String? getCurrentUserId() => _client.auth.currentUser?.id;
+
+  @override
+  String? getCurrentUserEmail() => _client.auth.currentUser?.email;
 
   @override
   Future<Map<String, dynamic>?> getUser(String userId) async {
