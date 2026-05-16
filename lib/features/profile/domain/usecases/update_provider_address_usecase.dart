@@ -3,6 +3,8 @@ import 'package:dartz/dartz.dart';
 import 'package:domora/core/error/failures.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 
+/// Parámetros de dominio para actualizar la dirección principal de un proveedor.
+/// Sin claves de BD — solo conceptos de negocio.
 class UpdateProviderAddressParams {
   final String userId;
   final String addressLine1;
@@ -21,20 +23,13 @@ class UpdateProviderAddressParams {
   });
 }
 
+/// UseCase para actualizar la dirección principal de un proveedor.
 class UpdateProviderAddressUseCase {
   final ProfileRepository repository;
 
   UpdateProviderAddressUseCase(this.repository);
 
   Future<Either<Failure, Unit>> call(UpdateProviderAddressParams params) async {
-    final updates = <String, dynamic>{
-      'address_line1': params.addressLine1,
-      if (params.addressLine2 != null) 'address_line2': params.addressLine2,
-      'department': params.department,
-      'city': params.city,
-      if (params.neighborhood != null) 'neighborhood': params.neighborhood,
-    };
-
-    return repository.updatePrimaryAddress(params.userId, updates);
+    return repository.updatePrimaryAddress(params);
   }
 }

@@ -1,6 +1,7 @@
 import 'package:domora/core/entities/avatar_file.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:domora/features/auth/domain/usecases/get_current_session_usecase.dart';
 import '../../domain/entities/cleaning_service_request.dart';
 import '../../domain/entities/cleaning_service_detail.dart';
 import '../../domain/entities/service_address.dart';
@@ -76,7 +77,6 @@ class ServicePublishState extends Equatable {
   final String? errorMessage;
   
   // Borrador de la solicitud
-  final String clientId;
   final String title;
   final String? description;
   final DateTime preferredDate;
@@ -89,7 +89,6 @@ class ServicePublishState extends Equatable {
   final int primaryImageIndex;
 
   const ServicePublishState({
-    required this.clientId,
     this.currentStep = 0,
     this.status = ServicePublishStatus.initial,
     this.errorMessage,
@@ -103,9 +102,8 @@ class ServicePublishState extends Equatable {
     this.primaryImageIndex = 0,
   });
 
-  factory ServicePublishState.initial(String userId) {
+  factory ServicePublishState.initial() {
     return ServicePublishState(
-      clientId: userId,
       preferredDate: DateTime.now().add(const Duration(days: 1)),
       address: const ServiceAddress(addressLine1: '', city: 'Cali'),
       details: const CleaningServiceDetail(),
@@ -126,7 +124,6 @@ class ServicePublishState extends Equatable {
     int? primaryImageIndex,
   }) {
     return ServicePublishState(
-      clientId: clientId,
       currentStep: currentStep ?? this.currentStep,
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -141,7 +138,7 @@ class ServicePublishState extends Equatable {
     );
   }
 
-  CleaningServiceRequest toRequest() {
+  CleaningServiceRequest toRequest(String clientId) {
     return CleaningServiceRequest(
       clientId: clientId,
       title: title,
@@ -157,7 +154,6 @@ class ServicePublishState extends Equatable {
 
   @override
   List<Object?> get props => [
-        clientId,
         currentStep,
         status,
         errorMessage,
@@ -175,9 +171,14 @@ class ServicePublishState extends Equatable {
 // --- BLOC ---
 class ServicePublishBloc extends Bloc<ServicePublishEvent, ServicePublishState> {
   final PublishCleaningServiceUseCase _publishCleaningService;
+  final GetCurrentSessionUseCase _getCurrentSession;
 
-  ServicePublishBloc(this._publishCleaningService, String userId)
-      : super(ServicePublishState.initial(userId)) {
+  ServicePublishBloc({
+    required PublishCleaningServiceUseCase publishCleaningService,
+    required GetCurrentSessionUseCase getCurrentSession,
+  })  : _publishCleaningService = publishCleaningService,
+        _getCurrentSession = getCurrentSession,
+        super(ServicePublishState.initial()) {
     on<ServicePublishUpdateDraftEvent>(_onUpdateDraft);
     on<ServicePublishAddImageEvent>(_onAddImage);
     on<ServicePublishRemoveImageEvent>(_onRemoveImage);
@@ -230,8 +231,24 @@ class ServicePublishBloc extends Bloc<ServicePublishEvent, ServicePublishState> 
 
   Future<void> _onSubmit(ServicePublishSubmitEvent event, Emitter<ServicePublishState> emit) async {
     emit(state.copyWith(status: ServicePublishStatus.loading));
+
+    // Obtener userId de la sesión
+    final sessionResult = await _getCurrentSession();
     
-    final result = await _publishCleaningService(state.toRequest());
+    final userId = sessionResult.fold(
+      (_) => null,
+      (auth) => auth?.userId,
+    );
+
+    if (userId == null) {
+      emit(state.copyWith(
+        status: ServicePublishStatus.error,
+        errorMessage: 'Sesión no válida o expirada',
+      ));
+      return;
+    }
+    
+    final result = await _publishCleaningService(state.toRequest(userId));
     
     result.fold(
       (failure) => emit(state.copyWith(

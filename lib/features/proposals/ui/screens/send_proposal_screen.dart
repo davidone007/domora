@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/widgets/custom_button.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
@@ -25,15 +24,11 @@ class _SendProposalScreenState extends State<SendProposalScreen> {
   @override
   void initState() {
     super.initState();
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId != null) {
-      context.read<ProposalSendBloc>().add(
-            CheckProposalStatusEvent(
-              serviceId: widget.serviceId,
-              providerId: userId,
-            ),
-          );
-    }
+    context.read<ProposalSendBloc>().add(
+          CheckProposalStatusEvent(
+            serviceId: widget.serviceId,
+          ),
+        );
   }
 
   @override
@@ -47,12 +42,11 @@ class _SendProposalScreenState extends State<SendProposalScreen> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
-
+    // Ya no extraemos el ID aquí. El BLoC validará la identidad internamente.
+    // Usamos un ID vacío temporal que el BLoC ignorará al inyectar el real de la sesión.
     final proposal = Proposal(
       serviceId: widget.serviceId,
-      providerId: userId,
+      providerId: '', 
       price: double.parse(_priceController.text),
       estimatedHours: _hoursController.text.isNotEmpty
           ? double.parse(_hoursController.text)

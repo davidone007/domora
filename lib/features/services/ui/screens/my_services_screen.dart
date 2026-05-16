@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/widgets/main_shell.dart';
@@ -23,11 +22,8 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
   }
 
   void _fetchServices() {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-      // Dejamos que el Bloc obtenga el rol real de la base de datos (AuthRepo)
-      context.read<MyServicesBloc>().add(FetchMyServicesEvent(user.id));
-    }
+    // Ya no extraemos el ID aquí. El BLoC lo obtendrá de la sesión oficial.
+    context.read<MyServicesBloc>().add(const FetchMyServicesEvent());
   }
 
   @override
@@ -36,8 +32,8 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
       builder: (context, state) {
         final isProvider = state.role == AppConstants.roleProvider;
         final title = isProvider ? 'Servicios Disponibles' : 'Mis Solicitudes';
-        final emptyMessage = isProvider 
-            ? 'No hay servicios disponibles en este momento' 
+        final emptyMessage = isProvider
+            ? 'No hay servicios disponibles en este momento'
             : 'Aún no has publicado solicitudes';
 
         return MainShell(
@@ -54,7 +50,8 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                 Expanded(
                   child: BlocBuilder<MyServicesBloc, MyServicesState>(
                     builder: (context, state) {
-                      if (state.status == MyServicesStatus.loading && state.allServices.isEmpty) {
+                      if (state.status == MyServicesStatus.loading &&
+                          state.allServices.isEmpty) {
                         return const Center(child: CircularProgressIndicator());
                       }
 
@@ -65,10 +62,12 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
+                                const Icon(Icons.error_outline,
+                                    size: 48, color: AppTheme.error),
                                 const SizedBox(height: 16),
                                 Text(
-                                  state.errorMessage ?? 'Ocurrió un error al cargar los servicios',
+                                  state.errorMessage ??
+                                      'Ocurrió un error al cargar los servicios',
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 ),
@@ -83,19 +82,26 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                         );
                       }
 
-                      if (state.allServices.isEmpty && state.status == MyServicesStatus.success) {
+                      if (state.allServices.isEmpty &&
+                          state.status == MyServicesStatus.success) {
                         return Center(
                           child: Padding(
                             padding: const EdgeInsets.all(24),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.description_outlined, size: 64, color: AppTheme.textTertiary.withOpacity(0.5)),
+                                Icon(Icons.description_outlined,
+                                    size: 64,
+                                    color:
+                                        AppTheme.textTertiary.withOpacity(0.5)),
                                 const SizedBox(height: 16),
                                 Text(
                                   emptyMessage,
                                   textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.textSecondary),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(color: AppTheme.textSecondary),
                                 ),
                               ],
                             ),
@@ -106,7 +112,8 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                       final services = state.filteredServices;
 
                       if (services.isEmpty && state.selectedStatus != null) {
-                        return const Center(child: Text('No hay servicios con este estado'));
+                        return const Center(
+                            child: Text('No hay servicios con este estado'));
                       }
 
                       return RefreshIndicator(
@@ -118,7 +125,8 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                             return ServiceCard(
                               service: services[index],
                               onTap: () {
-                                context.push('/service-detail/${services[index].id}');
+                                context.push(
+                                    '/service-detail/${services[index].id}');
                               },
                             );
                           },
@@ -173,7 +181,8 @@ class _StatusFilterList extends StatelessWidget {
                   backgroundColor: AppTheme.background,
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.white : AppTheme.textSecondary,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),

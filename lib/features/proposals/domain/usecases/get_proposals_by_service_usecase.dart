@@ -8,7 +8,13 @@ class GetProposalsByServiceUseCase {
 
   GetProposalsByServiceUseCase(this._repository);
 
-  Future<Either<Failure, List<ProposalWithProvider>>> execute(String serviceId) {
-    return _repository.getProposalsByServiceId(serviceId);
+  Future<Either<Failure, List<ProposalWithProvider>>> execute({
+    required String serviceId,
+    required String clientId,
+  }) {
+    return _repository.getProposalsByServiceId(
+      serviceId: serviceId,
+      clientId: clientId,
+    );
   }
 }

@@ -204,17 +204,14 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
 
   Future<void> _onUpdateProfileFields(UpdateProfileFieldsEvent event, Emitter<ProfileEditState> emit) async {
     emit(const ProfileEditLoading());
-    final updates = <String, dynamic>{};
-    if (event.firstName != null) updates['first_name'] = event.firstName;
-    if (event.lastName != null) updates['last_name'] = event.lastName;
-    if (event.phone != null) updates['phone'] = event.phone;
-
-    if (updates.isEmpty) {
-      emit(const ProfileEditFailure('No hay campos para actualizar'));
-      return;
-    }
-
-    final res = await _updateProfile(event.userId, updates);
+    final res = await _updateProfile(
+      UpdateUserFieldsParams(
+        userId: event.userId,
+        firstName: event.firstName,
+        lastName: event.lastName,
+        phone: event.phone,
+      ),
+    );
     res.fold(
       (f) => emit(ProfileEditFailure(f.message)),
       (_) => emit(const ProfileEditSuccess('Perfil actualizado')),

@@ -1,11 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/utils/constants.dart';
 import '../../domain/entities/service.dart';
 import '../../domain/usecases/get_my_services_usecase.dart';
 import '../../domain/usecases/get_all_services_usecase.dart';
-import '../../../auth/domain/repo/auth_repo.dart';
+import '../../../auth/domain/usecases/get_current_session_usecase.dart';
 
 // --- EVENTS ---
 abstract class MyServicesEvent extends Equatable {
@@ -15,11 +14,10 @@ abstract class MyServicesEvent extends Equatable {
 }
 
 class FetchMyServicesEvent extends MyServicesEvent {
-  final String userId;
-  final String? role; 
-  const FetchMyServicesEvent(this.userId, {this.role});
+  final String? role;
+  const FetchMyServicesEvent({this.role});
   @override
-  List<Object?> get props => [userId, role];
+  List<Object?> get props => [role];
 }
 
 class FilterMyServicesEvent extends MyServicesEvent {
@@ -62,57 +60,80 @@ class MyServicesState extends Equatable {
       status: status ?? this.status,
       allServices: allServices ?? this.allServices,
       filteredServices: filteredServices ?? this.filteredServices,
-      selectedStatus: clearStatus ? null : (selectedStatus ?? this.selectedStatus),
+      selectedStatus:
+          clearStatus ? null : (selectedStatus ?? this.selectedStatus),
       errorMessage: errorMessage ?? this.errorMessage,
       role: role ?? this.role,
     );
   }
 
   @override
-  List<Object?> get props => [status, allServices, filteredServices, selectedStatus, errorMessage, role];
+  List<Object?> get props => [
+        status,
+        allServices,
+        filteredServices,
+        selectedStatus,
+        errorMessage,
+        role
+      ];
 }
 
 // --- BLOC ---
 class MyServicesBloc extends Bloc<MyServicesEvent, MyServicesState> {
   final GetMyServicesUseCase _getMyServices;
   final GetAllServicesUseCase _getAllServices;
-  final AuthRepository _authRepository;
+  final GetCurrentSessionUseCase _getCurrentSession;
 
   MyServicesBloc(
     this._getMyServices,
     this._getAllServices,
-    this._authRepository,
+    this._getCurrentSession,
   ) : super(const MyServicesState()) {
     on<FetchMyServicesEvent>(_onFetch);
     on<FilterMyServicesEvent>(_onFilter);
   }
 
-  Future<void> _onFetch(FetchMyServicesEvent event, Emitter<MyServicesState> emit) async {
+  Future<void> _onFetch(
+      FetchMyServicesEvent event, Emitter<MyServicesState> emit) async {
     emit(state.copyWith(status: MyServicesStatus.loading));
 
-    String? role = event.role;
+    // 1. Obtener la sesión oficial (Fuente de Verdad)
+    final sessionResult = await _getCurrentSession();
     
-    // 1. Intentar obtener el rol desde metadatos de Supabase (es rápido y suele estar disponible)
-    if (role == null) {
-      final user = Supabase.instance.client.auth.currentUser;
-      role = user?.userMetadata?['role'] as String?;
-    }
+    String? userId;
+    String? role = event.role;
 
-    // 2. Si aún no tenemos el rol, lo buscamos en la base de datos (fuente de verdad definitiva)
-    if (role == null) {
-      final sessionResult = await _authRepository.getCurrentSession();
-      role = sessionResult.fold(
-        (_) => AppConstants.roleClient, // Por defecto cliente en caso de error
-        (res) => res?.role ?? AppConstants.roleClient,
-      );
+    // Resolvemos identidad y rol desde la sesión
+    sessionResult.fold(
+      (failure) {
+        emit(state.copyWith(
+          status: MyServicesStatus.error,
+          errorMessage: "No se pudo validar la sesión: ${failure.message}",
+        ));
+      },
+      (auth) {
+        userId = auth?.userId;
+        role ??= auth?.role;
+      },
+    );
+
+    // Si no hay usuario en la sesión, no podemos continuar
+    if (userId == null) {
+      if (state.status != MyServicesStatus.error) {
+        emit(state.copyWith(
+          status: MyServicesStatus.error,
+          errorMessage: "Sesión no válida o expirada",
+        ));
+      }
+      return;
     }
 
     emit(state.copyWith(role: role));
-    
-    final result = role == AppConstants.roleProvider 
+
+    final result = role == AppConstants.roleProvider
         ? await _getAllServices.execute()
-        : await _getMyServices.execute(event.userId);
-    
+        : await _getMyServices.execute(userId!);
+
     result.fold(
       (failure) => emit(state.copyWith(
         status: MyServicesStatus.error,

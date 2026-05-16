@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:domora/features/auth/domain/usecases/get_current_session_usecase.dart';
 import '../../domain/entities/proposal_with_provider.dart';
 import '../../domain/usecases/get_proposals_by_service_usecase.dart';
 
@@ -62,10 +63,13 @@ class ServiceProposalsState extends Equatable {
 // BLoC
 class ServiceProposalsBloc extends Bloc<ServiceProposalsEvent, ServiceProposalsState> {
   final GetProposalsByServiceUseCase _getProposalsByServiceUseCase;
+  final GetCurrentSessionUseCase _getCurrentSession;
 
   ServiceProposalsBloc({
     required GetProposalsByServiceUseCase getProposalsByServiceUseCase,
+    required GetCurrentSessionUseCase getCurrentSession,
   })  : _getProposalsByServiceUseCase = getProposalsByServiceUseCase,
+        _getCurrentSession = getCurrentSession,
         super(const ServiceProposalsState()) {
     on<FetchServiceProposalsEvent>(_onFetchServiceProposals);
     on<SortProposalsByPriceEvent>(_onSortProposalsByPrice);
@@ -77,12 +81,27 @@ class ServiceProposalsBloc extends Bloc<ServiceProposalsEvent, ServiceProposalsS
   ) async {
     emit(state.copyWith(status: ServiceProposalsStatus.loading));
 
-    final result = await _getProposalsByServiceUseCase.execute(event.serviceId);
+    // Validamos identidad del cliente para asegurar propiedad del servicio (HU12).
+    final sessionResult = await _getCurrentSession();
+    final userId = sessionResult.fold((_) => null, (auth) => auth?.userId);
+
+    if (userId == null) {
+      emit(state.copyWith(
+        status: ServiceProposalsStatus.error,
+        errorMessage: 'Sesión no válida o expirada',
+      ));
+      return;
+    }
+
+    final result = await _getProposalsByServiceUseCase.execute(
+      serviceId: event.serviceId,
+      clientId: userId,
+    );
 
     result.fold(
       (failure) => emit(state.copyWith(
         status: ServiceProposalsStatus.error,
-        errorMessage: 'Error al cargar las propuestas',
+        errorMessage: failure.message,
       )),
       (proposals) => emit(state.copyWith(
         status: ServiceProposalsStatus.success,

@@ -31,7 +31,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
 
   void _onServiceTap(String name) {
     if (name == 'Limpieza') {
-      context.push('/publish-service', extra: widget.userId);
+      context.push('/publish-service');
       return;
     }
     ScaffoldMessenger.of(context)

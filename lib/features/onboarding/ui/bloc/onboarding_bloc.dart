@@ -7,6 +7,7 @@ import 'package:domora/features/onboarding/domain/params/client_onboarding_param
 import 'package:domora/features/onboarding/domain/params/provider_onboarding_params.dart';
 import 'package:domora/features/onboarding/domain/usecases/save_client_profile_usecase.dart';
 import 'package:domora/features/onboarding/domain/usecases/save_provider_profile_usecase.dart';
+import 'package:domora/features/auth/domain/usecases/get_current_session_usecase.dart';
 
 // EVENTS
 abstract class OnboardingEvent extends Equatable {
@@ -16,14 +17,12 @@ abstract class OnboardingEvent extends Equatable {
 }
 
 class OnboardingSaveClientEvent extends OnboardingEvent {
-  final String userId;
   final String firstName;
   final String lastName;
   final String phone;
   final AvatarFile? avatar;
 
   const OnboardingSaveClientEvent({
-    required this.userId,
     required this.firstName,
     required this.lastName,
     required this.phone,
@@ -31,11 +30,10 @@ class OnboardingSaveClientEvent extends OnboardingEvent {
   });
 
   @override
-  List<Object?> get props => [userId, firstName, lastName, phone, avatar];
+  List<Object?> get props => [firstName, lastName, phone, avatar];
 }
 
 class OnboardingSaveProviderEvent extends OnboardingEvent {
-  final String userId;
   final String firstName;
   final String lastName;
   final String phone;
@@ -50,7 +48,6 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
   final String? neighborhood;
 
   const OnboardingSaveProviderEvent({
-    required this.userId,
     required this.firstName,
     required this.lastName,
     required this.phone,
@@ -67,7 +64,6 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
 
   @override
   List<Object?> get props => [
-    userId,
     firstName,
     lastName,
     phone,
@@ -119,12 +115,15 @@ class OnboardingFailState extends OnboardingState {
 class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
   final SaveClientProfileUseCase _saveClient;
   final SaveProviderProfileUseCase _saveProvider;
+  final GetCurrentSessionUseCase _getCurrentSession;
 
   OnboardingBloc({
     required SaveClientProfileUseCase saveClient,
     required SaveProviderProfileUseCase saveProvider,
+    required GetCurrentSessionUseCase getCurrentSession,
   })  : _saveClient = saveClient,
         _saveProvider = saveProvider,
+        _getCurrentSession = getCurrentSession,
         super(const OnboardingInitialState()) {
     on<OnboardingSaveClientEvent>(_onSaveClient);
     on<OnboardingSaveProviderEvent>(_onSaveProvider);
@@ -135,9 +134,23 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     Emitter<OnboardingState> emit,
   ) async {
     emit(const OnboardingLoadingState());
+
+    // Obtener userId de la sesión
+    final sessionResult = await _getCurrentSession();
+    
+    final userId = sessionResult.fold(
+      (_) => null,
+      (auth) => auth?.userId,
+    );
+
+    if (userId == null) {
+      emit(const OnboardingFailState('No se pudo validar la sesión para guardar el perfil'));
+      return;
+    }
+
     final result = await _saveClient(
       ClientOnboardingParams(
-        userId: event.userId,
+        userId: userId,
         firstName: event.firstName,
         lastName: event.lastName,
         phone: event.phone,
@@ -155,9 +168,23 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     Emitter<OnboardingState> emit,
   ) async {
     emit(const OnboardingLoadingState());
+
+    // Obtener userId de la sesión
+    final sessionResult = await _getCurrentSession();
+    
+    final userId = sessionResult.fold(
+      (_) => null,
+      (auth) => auth?.userId,
+    );
+
+    if (userId == null) {
+      emit(const OnboardingFailState('No se pudo validar la sesión para guardar el perfil'));
+      return;
+    }
+
     final result = await _saveProvider(
       ProviderOnboardingParams(
-        userId: event.userId,
+        userId: userId,
         firstName: event.firstName,
         lastName: event.lastName,
         phone: event.phone,

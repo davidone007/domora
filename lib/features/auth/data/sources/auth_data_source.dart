@@ -176,10 +176,19 @@ class AuthDataSourceImpl implements AuthDataSource {
 
   @override
   Future<String?> getUserRole(String userId) async {
+    // 1. Intentar obtener el rol desde los metadatos del usuario actual si coincide el ID.
+    // Esto es más rápido y ahorra una consulta a la base de datos.
+    final current = _client.auth.currentUser;
+    if (current != null && current.id == userId) {
+      final metaRole = current.userMetadata?['role'] as String?;
+      if (metaRole != null) return metaRole;
+    }
+
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
+    // 2. Si no está en metadatos o no es el usuario actual, buscar en la base de datos.
     final result = await _client
         .from(AppConstants.tableUserRoles)
         .select('roles(name)')

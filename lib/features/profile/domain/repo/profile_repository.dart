@@ -4,32 +4,26 @@ import 'package:domora/core/error/failures.dart';
 import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_stats.dart';
+import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
 
 abstract class ProfileRepository {
   /// Devuelve el perfil completo del usuario actual (HU4).
   Future<Either<Failure, FullProfile>> getCurrentProfile();
 
-  /// Actualiza campos del usuario en la tabla `users` (por ejemplo: nombres, apellidos, teléfono).
-  Future<Either<Failure, Unit>> updateUserFields(String userId, Map<String, dynamic> updates);
+  /// Actualiza los campos básicos del usuario (nombre, apellido, teléfono).
+  Future<Either<Failure, Unit>> updateUserFields(UpdateUserFieldsParams params);
 
-  /// Actualiza campos del perfil específico (client o provider) asociados al usuario.
-  Future<Either<Failure, Unit>> updateProfileFields(String userId, Map<String, dynamic> updates);
+  /// Actualiza los campos del perfil de un cliente (bio, avatarUrl).
+  Future<Either<Failure, Unit>> updateClientProfileFields(UpdateClientProfileParams params);
+
+  /// Actualiza los campos del perfil de un proveedor (experiencia, tarifa, etc.).
+  Future<Either<Failure, Unit>> updateProviderProfileFields(UpdateProviderProfileParams params);
 
   /// Actualiza la dirección principal del usuario.
-  Future<Either<Failure, Unit>> updatePrimaryAddress(String userId, Map<String, dynamic> updates);
-
-  /// Reautentica con el correo y contraseña actual antes de cambiar el correo en Auth.
-  Future<Either<Failure, Unit>> updateEmail({
-    required String currentEmail,
-    required String currentPassword,
-    required String newEmail,
-  });
-
-  /// Reautentica con la contraseña actual y actualiza la contraseña en Auth.
-  Future<Either<Failure, Unit>> updatePassword({
-    required String currentPassword,
-    required String newPassword,
-  });
+  Future<Either<Failure, Unit>> updatePrimaryAddress(UpdateProviderAddressParams params);
 
   /// Sube la foto de perfil a Supabase Storage y actualiza la DB.
   /// Retorna la URL pública de la imagen.
