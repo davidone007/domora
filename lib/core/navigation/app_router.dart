@@ -54,8 +54,16 @@ import 'package:domora/features/profile/ui/pages/edit_profile_page.dart';
 
 import 'package:domora/features/services/data/repo/service_repository_impl.dart';
 import 'package:domora/features/services/data/sources/service_remote_data_source.dart';
+import 'package:domora/features/services/data/repo/address_repository_impl.dart';
+import 'package:domora/features/services/data/sources/address_remote_data_source.dart';
+import 'package:domora/features/services/data/sources/location_data_source.dart';
 import 'package:domora/features/services/domain/repo/service_repository.dart';
+import 'package:domora/features/services/domain/repo/address_repository.dart';
 import 'package:domora/features/services/domain/usecases/publish_cleaning_service_usecase.dart';
+import 'package:domora/features/services/domain/usecases/get_current_location_usecase.dart';
+import 'package:domora/features/services/domain/usecases/autocomplete_address_usecase.dart';
+import 'package:domora/features/services/domain/usecases/reverse_geocode_usecase.dart';
+import 'package:domora/features/services/ui/bloc/address_picker_bloc.dart';
 import 'package:domora/features/services/ui/bloc/service_publish_bloc.dart';
 import 'package:domora/features/services/ui/screens/publish_service_flow_screen.dart';
 
@@ -103,6 +111,11 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
 
   final ServiceRemoteDataSource servDs = ServiceRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
   final ServiceRepository servRepo = ServiceRepositoryImpl(servDs, errorMapper);
+  final AddressRemoteDataSource addressRemoteDs =
+      AddressRemoteDataSourceImpl(networkInfo: networkInfo);
+  final LocationDataSource locationDs = LocationDataSourceImpl();
+  final AddressRepository addressRepo =
+      AddressRepositoryImpl(addressRemoteDs, locationDs, errorMapper);
 
   final ProposalRemoteDataSource propDs =
       ProposalRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
@@ -168,11 +181,22 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       GoRoute(
         path: '/publish-service',
         builder: (context, state) {
-          return BlocProvider(
-            create: (_) => ServicePublishBloc(
-              publishCleaningService: PublishCleaningServiceUseCase(servRepo),
-              getCurrentSession: getCurrentSession,
-            ),
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => ServicePublishBloc(
+                  publishCleaningService: PublishCleaningServiceUseCase(servRepo),
+                  getCurrentSession: getCurrentSession,
+                ),
+              ),
+              BlocProvider(
+                create: (_) => AddressPickerBloc(
+                  getCurrentLocation: GetCurrentLocationUseCase(addressRepo),
+                  autocomplete: AutocompleteAddressUseCase(addressRepo),
+                  reverseGeocode: ReverseGeocodeUseCase(addressRepo),
+                ),
+              ),
+            ],
             child: const PublishServiceFlowScreen(),
           );
         },
