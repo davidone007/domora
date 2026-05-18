@@ -59,6 +59,13 @@ import 'package:domora/features/services/domain/repo/service_repository.dart';
 import 'package:domora/features/services/domain/usecases/publish_cleaning_service_usecase.dart';
 import 'package:domora/features/services/ui/bloc/service_publish_bloc.dart';
 import 'package:domora/features/services/ui/screens/publish_service_flow_screen.dart';
+import 'package:domora/features/services/data/repo/location_repository_impl.dart';
+import 'package:domora/features/services/data/sources/location_data_source.dart';
+import 'package:domora/features/services/domain/repo/location_repository.dart';
+import 'package:domora/features/services/domain/usecases/get_current_location_usecase.dart';
+import 'package:domora/features/services/domain/usecases/reverse_geocode_usecase.dart';
+import 'package:domora/features/services/ui/bloc/location_bloc.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:domora/features/services/domain/usecases/get_my_services_usecase.dart';
 import 'package:domora/features/services/domain/usecases/get_all_services_usecase.dart';
@@ -104,6 +111,9 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
 
   final ServiceRemoteDataSource servDs = ServiceRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
   final ServiceRepository servRepo = ServiceRepositoryImpl(servDs, errorMapper);
+
+  final LocationDataSource locationDs = LocationDataSourceImpl(http.Client());
+  final LocationRepository locationRepo = LocationRepositoryImpl(locationDs, errorMapper);
 
   final ProposalRemoteDataSource propDs =
       ProposalRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
@@ -169,11 +179,21 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       GoRoute(
         path: '/publish-service',
         builder: (context, state) {
-          return BlocProvider(
-            create: (_) => ServicePublishBloc(
-              publishCleaningService: PublishCleaningServiceUseCase(servRepo),
-              getCurrentSession: getCurrentSession,
-            ),
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => ServicePublishBloc(
+                  publishCleaningService: PublishCleaningServiceUseCase(servRepo),
+                  getCurrentSession: getCurrentSession,
+                ),
+              ),
+              BlocProvider(
+                create: (_) => LocationBloc(
+                  getCurrentLocation: GetCurrentLocationUseCase(locationRepo),
+                  reverseGeocode: ReverseGeocodeUseCase(locationRepo),
+                ),
+              ),
+            ],
             child: const PublishServiceFlowScreen(),
           );
         },

@@ -110,13 +110,10 @@ class AuthDataSourceImpl implements AuthDataSource {
     }
 
     await _client.auth.updateUser(UserAttributes(email: nextEmail));
-
-    final userId = _client.auth.currentUser?.id;
-    if (userId != null && userId.isNotEmpty) {
-      await _client.from(AppConstants.tableUsers)
-          .update({'email': nextEmail})
-          .eq('id', userId);
-    }
+    // El trigger on_auth_user_updated en la BD sincroniza automáticamente
+    // public.users.email cuando auth.users.email cambia. No se actualiza
+    // la tabla aquí para evitar inconsistencias si Supabase requiere
+    // confirmación del correo antes de aplicar el cambio.
   }
 
   @override

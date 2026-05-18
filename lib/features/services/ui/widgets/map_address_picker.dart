@@ -28,6 +28,16 @@ class _MapAddressPickerState extends State<MapAddressPicker> {
     _currentPosition = widget.initialPosition ?? const LatLng(3.4516, -76.5320);
   }
 
+  @override
+  void didUpdateWidget(MapAddressPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newPos = widget.initialPosition;
+    if (newPos != null && newPos != oldWidget.initialPosition) {
+      setState(() => _currentPosition = newPos);
+      _mapController.move(newPos, 16.0);
+    }
+  }
+
   void _onTap(TapPosition tapPosition, LatLng latLng) {
     setState(() {
       _currentPosition = latLng;

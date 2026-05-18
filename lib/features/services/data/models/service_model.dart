@@ -19,7 +19,13 @@ class ServiceModel extends Service {
     int count = 0;
     if (json['quotes'] != null) {
       if (json['quotes'] is List) {
-        count = (json['quotes'] as List).length;
+        final list = json['quotes'] as List;
+        // quotes(count) → [{"count": N}]; distinguish from a plain list of rows
+        if (list.isNotEmpty && list.first is Map && (list.first as Map).containsKey('count')) {
+          count = (list.first as Map)['count'] as int? ?? 0;
+        } else {
+          count = list.length;
+        }
       } else if (json['quotes'] is Map && json['quotes']['count'] != null) {
         count = json['quotes']['count'] as int;
       }

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:domora/core/utils/colombia_locations.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/utils/validators.dart';
+import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/widgets/avatar_picker.dart';
 import 'package:domora/core/widgets/custom_button.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
@@ -47,6 +48,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _neighborhoodCtrl = TextEditingController();
   String? _selectedDepartment;
   String? _selectedCity;
+
+  // Zonas de atención del proveedor
+  List<String> _coverageCities = [];
+  String? _coverageDeptForAdd;
+  String? _coverageCityForAdd;
 
   bool get _isProvider => widget.role == AppConstants.roleProvider;
 
@@ -93,6 +99,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _neighborhoodCtrl.text.trim().isEmpty
                       ? null
                       : _neighborhoodCtrl.text.trim(),
+              coverageCities: _coverageCities,
             ),
           );
     } else {
@@ -320,6 +327,110 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   controller: _neighborhoodCtrl,
                                   label: 'Barrio (opcional)',
                                 ),
+                              ),
+                            ],
+                          ),
+                          const _SectionHeader(
+                            title: 'Zonas de atención',
+                            icon: Icons.map_outlined,
+                          ),
+                          Text(
+                            'Selecciona las ciudades donde ofreces tu servicio.',
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(color: AppTheme.textSecondary),
+                          ),
+                          const SizedBox(height: 12),
+                          if (_coverageCities.isNotEmpty)
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: _coverageCities
+                                  .map(
+                                    (city) => Chip(
+                                      label: Text(city),
+                                      deleteIcon: const Icon(Icons.close, size: 16),
+                                      onDeleted: () => setState(
+                                        () => _coverageCities.remove(city),
+                                      ),
+                                      backgroundColor: AppTheme.primarySoft,
+                                      labelStyle: const TextStyle(
+                                        color: AppTheme.primaryDark,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _coverageDeptForAdd,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Departamento (zona)',
+                              prefixIcon:
+                                  Icon(Icons.map_outlined, size: 20),
+                            ),
+                            items: ColombiaLocations.departmentList
+                                .map(
+                                  (dept) => DropdownMenuItem(
+                                    value: dept,
+                                    child: Text(dept),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) => setState(() {
+                              _coverageDeptForAdd = v;
+                              _coverageCityForAdd = null;
+                            }),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: _coverageCityForAdd,
+                                  isExpanded: true,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Ciudad (zona)',
+                                    prefixIcon: Icon(
+                                      Icons.location_city_outlined,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  items: _coverageDeptForAdd == null
+                                      ? const []
+                                      : ColombiaLocations.citiesFor(
+                                              _coverageDeptForAdd!)
+                                          .map(
+                                            (c) => DropdownMenuItem(
+                                              value: c,
+                                              child: Text(c),
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged: _coverageDeptForAdd == null
+                                      ? null
+                                      : (v) => setState(
+                                            () => _coverageCityForAdd = v,
+                                          ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.add_circle,
+                                  color: AppTheme.primary,
+                                  size: 32,
+                                ),
+                                tooltip: 'Agregar ciudad',
+                                onPressed: _coverageCityForAdd != null &&
+                                        !_coverageCities
+                                            .contains(_coverageCityForAdd)
+                                    ? () => setState(() {
+                                          _coverageCities
+                                              .add(_coverageCityForAdd!);
+                                          _coverageCityForAdd = null;
+                                        })
+                                    : null,
                               ),
                             ],
                           ),

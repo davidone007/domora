@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
+import '../../bloc/location_bloc.dart';
 import '../../bloc/service_publish_bloc.dart';
 import '../../widgets/map_address_picker.dart';
 import '../../../domain/entities/service_address.dart';
@@ -13,10 +14,23 @@ class Step4Location extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
-    return BlocBuilder<ServicePublishBloc, ServicePublishState>(
-      builder: (context, state) {
-        final address = state.address;
+
+    return BlocListener<LocationBloc, LocationState>(
+      listener: (context, locState) {
+        if (locState is LocationLoadedState) {
+          _update(context, locState.address);
+        } else if (locState is LocationErrorState) {
+          final msg = locState.permanentlyDenied
+              ? 'Permiso denegado permanentemente. Habilita la ubicación en la configuración.'
+              : locState.message;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg), backgroundColor: AppTheme.error),
+          );
+        }
+      },
+      child: BlocBuilder<ServicePublishBloc, ServicePublishState>(
+        builder: (context, state) {
+          final address = state.address;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -32,8 +46,27 @@ class Step4Location extends StatelessWidget {
                 'Confirma tu dirección y ubica el punto exacto en el mapa.',
                 style: theme.textTheme.bodyLarge?.copyWith(color: AppTheme.textSecondary),
               ),
-              const SizedBox(height: 32),
-              
+              const SizedBox(height: 16),
+              BlocBuilder<LocationBloc, LocationState>(
+                builder: (context, locState) {
+                  final isLoading = locState is LocationLoadingState;
+                  return OutlinedButton.icon(
+                    onPressed: isLoading
+                        ? null
+                        : () => context.read<LocationBloc>().add(const LocationFetchEvent()),
+                    icon: isLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.my_location),
+                    label: Text(isLoading ? 'Obteniendo ubicación...' : 'Usar mi ubicación'),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+
               MapAddressPicker(
                 initialPosition: address.latitude != null && address.longitude != null
                     ? LatLng(address.latitude!, address.longitude!)
@@ -82,6 +115,7 @@ class Step4Location extends StatelessWidget {
           ),
         );
       },
+    ),
     );
   }
 

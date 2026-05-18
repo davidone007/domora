@@ -14,6 +14,7 @@ class ProviderOnboardingParams {
   final String department;
   final String city;
   final String? neighborhood;
+  final List<String> coverageCities;
 
   const ProviderOnboardingParams({
     required this.userId,
@@ -29,5 +30,6 @@ class ProviderOnboardingParams {
     required this.department,
     required this.city,
     this.neighborhood,
+    this.coverageCities = const [],
   });
 }

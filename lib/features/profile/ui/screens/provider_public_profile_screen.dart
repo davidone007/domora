@@ -99,6 +99,28 @@ class _ProviderPublicProfileScreenState extends State<ProviderPublicProfileScree
                           ),
                         ),
                         const SizedBox(height: 32),
+                        if (provider.coverageCities.isNotEmpty) ...[
+                          _SectionTitle(title: 'Zonas de atención'),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: provider.coverageCities
+                                .map(
+                                  (city) => Chip(
+                                    label: Text(city),
+                                    backgroundColor: AppTheme.primarySoft,
+                                    labelStyle: const TextStyle(
+                                      color: AppTheme.primaryDark,
+                                      fontSize: 13,
+                                    ),
+                                    side: BorderSide.none,
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                          const SizedBox(height: 32),
+                        ],
                         _SectionTitle(title: 'Servicios Completados'),
                         _PlaceholderInfo(
                           icon: Icons.check_circle_outline,
