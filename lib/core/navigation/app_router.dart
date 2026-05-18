@@ -18,11 +18,10 @@ import 'package:domora/features/auth/domain/usecases/login_usecase.dart';
 import 'package:domora/features/auth/domain/usecases/signout_usecase.dart';
 import 'package:domora/features/auth/domain/usecases/signup_usecase.dart';
 
-import 'package:domora/features/login/ui/bloc/login_bloc.dart';
-import 'package:domora/features/login/ui/screens/login_screen.dart';
-
-import 'package:domora/features/signup/ui/bloc/signup_bloc.dart';
-import 'package:domora/features/signup/ui/screens/signup_screen.dart';
+import 'package:domora/features/auth/ui/auth_blocs/login_bloc.dart';
+import 'package:domora/features/auth/ui/auth_screens/login_screen.dart';
+import 'package:domora/features/auth/ui/auth_blocs/signup_bloc.dart';
+import 'package:domora/features/auth/ui/auth_screens/signup_screen.dart';
 
 import 'package:domora/features/onboarding/data/repo/onboarding_repo_impl.dart';
 import 'package:domora/features/onboarding/data/sources/onboarding_data_source.dart';
@@ -91,7 +90,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
   // Singletons de la capa de datos / dominio.
   final errorMapper = ErrorMapperSingleton.instance;
 
-  final AuthDataSource authDs = AuthDataSourceImpl(supabase, networkInfo: networkInfo);
+  final AuthDataSource authDs = AuthDataSourceImpl(supabase, networkInfo);
   final AuthRepository authRepo = AuthRepositoryImpl(authDs, errorMapper);
   final getCurrentSession = GetCurrentSessionUseCase(authRepo);
   final signOut = SignOutUseCase(authRepo);

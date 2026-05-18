@@ -39,7 +39,7 @@ class AuthDataSourceImpl implements AuthDataSource {
   final SupabaseClient _client;
   final NetworkInfo _networkInfo;
 
-  AuthDataSourceImpl(this._client, {required NetworkInfo networkInfo}) : _networkInfo = networkInfo;
+  AuthDataSourceImpl(this._client, this._networkInfo);
 
   @override
   Session? get currentSession => _client.auth.currentSession;
