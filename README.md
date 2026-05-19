@@ -24,6 +24,27 @@ Domora busca cerrar la brecha entre la demanda y la oferta en la industria de se
 
 ---
 
+## ✅ Sprint 2 — Historias de usuario implementadas ( Marketplace Core )
+
+| HU   | Descripción | Código clave |
+|------|-------------|--------------|
+| HU7  | Publicar servicio de limpieza (Flujo multi-paso) | `features/services/ui/screens/publish_service_flow_screen.dart` |
+| HU8  | Subir múltiples imágenes del servicio (Storage) | `features/services/data/sources/service_remote_data_source.dart` |
+| HU9  | Ver mis servicios / Servicios disponibles por rol | `features/services/ui/screens/my_services_screen.dart` |
+| HU10 | Detalle completo de servicio con mapa y galería | `features/services/ui/screens/service_detail_screen.dart` |
+| HU11 | Enviar propuesta / cotización por proveedores | `features/proposals/ui/screens/send_proposal_screen.dart` |
+| HU12 | Ver y comparar propuestas recibidas (Cliente) | `features/proposals/ui/screens/service_proposals_screen.dart` |
+| HU13 | Perfil público de aseador con métricas reales | `features/profile/ui/screens/provider_public_profile_screen.dart` |
+
+---
+
+## 📺 Demo del Sprint 2
+
+Puedes ver el video con el flujo completo del Sprint 2 aquí:
+> [Click aquí para ver la Demo en YouTube](https://youtu.be/WVu1ePMchL8)
+
+---
+
 ## 👥 Equipo de desarrollo
 
 - Andrés Felipe Cabezas Guerrero
@@ -322,13 +343,13 @@ Cierre de sesión → /welcome
 
 ---
 
-## 🧪 Próximos pasos (Sprint 2)
+## 🧪 Próximos pasos (Sprint 3)
 
-- Edición de perfil (PUT/PATCH reutilizando validadores existentes)
-- Publicación de solicitudes de servicio (HU5)
-- Envío y gestión de cotizaciones (HU6)
-- Sistema de calificaciones y reseñas (HU7)
-- Notificaciones push
+- Aceptar propuesta y creación de Booking (HU14)
+- Pasarela de pagos (HU15)
+- Historial de servicios completados (HU16)
+- Sistema de calificación post-servicio (HU17)
+- Notificaciones push en tiempo real (HU18)
 
 ---
 
