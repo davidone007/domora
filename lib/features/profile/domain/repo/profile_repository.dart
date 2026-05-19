@@ -38,4 +38,17 @@ abstract class ProfileRepository {
 
   /// Obtiene las estadísticas de un proveedor (rating, servicios completados).
   Future<Either<Failure, ProviderStats>> getProviderStats(String providerId);
+
+  /// Actualiza el correo del usuario autenticado (reautentica antes de cambiar).
+  Future<Either<Failure, void>> updateEmail({
+    required String currentEmail,
+    required String currentPassword,
+    required String newEmail,
+  });
+
+  /// Actualiza la contraseña del usuario autenticado (reautentica antes de cambiar).
+  Future<Either<Failure, void>> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
 }

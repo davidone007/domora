@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
-import '../../domain/entities/cleaning_service_request.dart';
 import '../../domain/entities/service.dart';
+import 'publish_service_request_model.dart';
 
 class ServiceModel extends Service {
   const ServiceModel({
@@ -45,7 +45,7 @@ class ServiceModel extends Service {
     );
   }
 
-  static Map<String, dynamic> toJson(CleaningServiceRequest request, String addressId) {
+  static Map<String, dynamic> toJson(PublishServiceRequestModel request, String addressId) {
     return {
       'client_id': request.clientId,
       'address_id': addressId,

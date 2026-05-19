@@ -1,15 +1,14 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:domora/core/error/failures.dart';
-import 'package:domora/features/auth/domain/repo/auth_repo.dart';
+import '../repo/profile_repository.dart';
 
 /// UseCase para actualizar el email del usuario autenticado.
-/// Habla directamente con [AuthRepository] porque cambiar el email
-/// es una operación de autenticación, no de perfil.
+/// Delega en [ProfileRepository] que internamente coordina con la capa de auth.
 class UpdateEmailUseCase {
-  final AuthRepository _authRepository;
+  final ProfileRepository _profileRepository;
 
-  UpdateEmailUseCase(this._authRepository);
+  UpdateEmailUseCase(this._profileRepository);
 
   Future<Either<Failure, Unit>> call({
     required String currentEmail,
@@ -20,7 +19,7 @@ class UpdateEmailUseCase {
       return const Left(ValidationFailure('No se puede cambiar por el mismo correo'));
     }
 
-    return (await _authRepository.updateEmail(
+    return (await _profileRepository.updateEmail(
       currentEmail: currentEmail,
       currentPassword: currentPassword,
       newEmail: newEmail,

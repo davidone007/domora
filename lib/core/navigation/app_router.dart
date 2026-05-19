@@ -108,7 +108,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
   final OnboardingRepository onbRepo = OnboardingRepositoryImpl(onbDs, errorMapper);
 
   final ProfileDataSource profDs = ProfileDataSourceImpl(supabase, networkInfo: networkInfo);
-  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, errorMapper);
+  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, authRepo, errorMapper);
 
   final ServiceRemoteDataSource servDs = ServiceRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
   final ServiceRepository servRepo = ServiceRepositoryImpl(servDs, errorMapper);
@@ -232,8 +232,8 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               UpdateProviderProfileUseCase(profRepo),
               UpdateProviderAddressUseCase(profRepo),
               UploadAvatarUseCase(profRepo),
-              UpdateEmailUseCase(authRepo),
-              UpdatePasswordUseCase(authRepo),
+              UpdateEmailUseCase(profRepo),
+              UpdatePasswordUseCase(profRepo),
             ),
             child: EditProfilePage(initialProfile: initialProfile),
           );
