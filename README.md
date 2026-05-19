@@ -1,67 +1,364 @@
-# Domora - Service Provider Marketplace
+# Domora — Marketplace de Servicios Profesionales
 
-Domora is a mobile application built with Flutter that connects users with professional service providers. Designed as an on-demand marketplace (Uber-like model), it facilitates seamless interactions between people looking for specific services and experts ready to provide them.
-
-## 🚀 Overview
-
-Domora aims to bridge the gap between demand and supply in the local service industry. Whether it's home maintenance, professional consulting, or personal care, Domora provides a reliable platform for booking and managing services.
-
-## ✨ Key Features
-
-### For Users (Clients)
-*   **Service Discovery:** Browse and search for various service categories.
-*   **Real-time Booking:** Request services on-demand or schedule them for later.
-*   **Provider Profiles:** View ratings, reviews, and portfolios of available providers.
-*   **Seamless Payments:** Integrated payment options for secure transactions.
-
-### For Providers
-*   **Service Management:** List services, set prices, and define availability.
-*   **Request Dashboard:** Accept or decline service requests in real-time.
-*   **Earnings Tracking:** Keep track of completed jobs and revenue.
-*   **In-app Communication:** Chat with clients to coordinate service details.
-
-## 🛠 Tech Stack
-
-*   **Framework:** [Flutter](https://flutter.dev/)
-*   **Language:** [Dart](https://dart.dev/)
-*   **Status:** Initial Development Phase
-
-## 📦 Installation & Setup
-
-To get a local copy up and running, follow these steps:
-
-### Prerequisites
-*   Flutter SDK installed on your machine.
-*   Dart SDK.
-*   An Android/iOS emulator or a physical device.
-
-### Steps
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-username/domora.git
-   cd domora
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Run the application:**
-   ```bash
-   flutter run
-   ```
-
-## 🧪 Testing
-
-Run the automated tests to ensure project stability:
-```bash
-flutter test
-```
-
-## 📄 License
-
-This project is currently for internal development at ICESI University.
+Domora es una aplicación móvil construida con Flutter que conecta usuarios con proveedores de servicios profesionales. Diseñada como un marketplace on-demand (modelo tipo Uber), facilita interacciones fluidas entre personas que buscan servicios específicos y expertos dispuestos a brindarlos.
 
 ---
-*Created as part of the Mobile Applications final project.*
+
+## 🚀 Visión general
+
+Domora busca cerrar la brecha entre la demanda y la oferta en la industria de servicios locales. Ya sea mantenimiento del hogar, consultoría profesional o cuidado personal, Domora proporciona una plataforma confiable para reservar y gestionar servicios, con un fuerte enfoque en la **seguridad domiciliaria** mediante verificación de identidad de los proveedores y reputación comunitaria.
+
+---
+
+## ✅ Sprint 1 — Historias de usuario implementadas
+
+| HU  | Descripción | Código clave |
+|-----|-------------|--------------|
+| —   | Carrusel de bienvenida | `features/welcome` |
+| HU1 | Registro de usuario con selección de rol | `features/signup`, `features/auth/domain/usecases/signup_usecase.dart` |
+| HU2 | Inicio de sesión con redirección por rol | `features/login`, `features/auth/domain/usecases/login_usecase.dart` |
+| HU3 | Onboarding inicial (completar perfil) | `features/onboarding` |
+| HU4 | Visualización de perfil (cliente/proveedor) | `features/profile` |
+
+> El **carrusel de bienvenida** es presentacional: aparece a usuarios sin sesión antes del login. No persiste datos en la base de datos.
+
+---
+
+## ✅ Sprint 2 — Historias de usuario implementadas ( Marketplace Core )
+
+| HU   | Descripción | Código clave |
+|------|-------------|--------------|
+| HU7  | Publicar servicio de limpieza (Flujo multi-paso) | `features/services/ui/screens/publish_service_flow_screen.dart` |
+| HU8  | Subir múltiples imágenes del servicio (Storage) | `features/services/data/sources/service_remote_data_source.dart` |
+| HU9  | Ver mis servicios / Servicios disponibles por rol | `features/services/ui/screens/my_services_screen.dart` |
+| HU10 | Detalle completo de servicio con mapa y galería | `features/services/ui/screens/service_detail_screen.dart` |
+| HU11 | Enviar propuesta / cotización por proveedores | `features/proposals/ui/screens/send_proposal_screen.dart` |
+| HU12 | Ver y comparar propuestas recibidas (Cliente) | `features/proposals/ui/screens/service_proposals_screen.dart` |
+| HU13 | Perfil público de aseador con métricas reales | `features/profile/ui/screens/provider_public_profile_screen.dart` |
+
+---
+
+## 📺 Demo del Sprint 2
+
+Puedes ver el video con el flujo completo del Sprint 2 aquí:
+> [Click aquí para ver la Demo en YouTube](https://youtu.be/WVu1ePMchL8)
+
+---
+
+## 👥 Equipo de desarrollo
+
+- Andrés Felipe Cabezas Guerrero
+- Nicolás Cuéllar Molina
+- Davide Flamini Cazarán
+- Miguel Angel Martínez Vidal
+- Daron Andrés Mercado García
+- Samuel Jose Rengifo Morales
+
+---
+
+## 🎨 Identidad visual
+
+La app utiliza la paleta de marca **verde / blanco / negro** y la tipografía **DM Sans** (vía `google_fonts`). Toda la apariencia se centraliza en `lib/core/theme/app_theme.dart`:
+
+| Token | Valor | Uso |
+|-------|-------|-----|
+| `primary` | `#4FBF67` | Botones, foco de inputs, acentos |
+| `primarySoft` | `#E8F7EC` | Fondos suaves, badges, círculos de iconos |
+| `textPrimary` | `#1C1C1E` | Títulos |
+| `textSecondary` | `#6E6E73` | Descripciones |
+| `surfaceDark` | `#1C1C1E` | Header del dashboard, bottom nav |
+| `border` | `#E3E3E8` | Bordes de inputs y cards |
+| `error` | `#E5484D` | Mensajes de error |
+
+### Componentes globales reutilizables
+
+| Componente | Ubicación | Propósito |
+|------------|-----------|-----------|
+| `CustomTextField` | `core/widgets/` | Input con label flotante dentro del borde |
+| `CustomButton` | `core/widgets/` | Botón con estado de carga y variantes |
+| `RoleSelector` | `core/widgets/` | Selector visual Cliente/Proveedor |
+| `AvatarPicker` | `core/widgets/` | Selección de foto (cámara / galería) |
+| `LoadingOverlay` | `core/widgets/` | Capa de carga semitransparente |
+| `MainShell` | `core/widgets/` | Wrapper con bottom nav y pestaña activa elevada |
+| `DashboardHeader` | `home/ui/widgets/` | Header oscuro con grid + logo + campana |
+| `ServiceCard` | `home/ui/widgets/` | Tarjeta circular para servicios |
+| `NewsChipFilter` | `home/ui/widgets/` | Filtro horizontal de chips |
+| `PromoBanner` | `home/ui/widgets/` | Banner promocional con gradiente |
+
+---
+
+## 🛠 Stack tecnológico
+
+| Capa | Tecnología |
+|------|------------|
+| **Framework** | Flutter |
+| **Lenguaje** | Dart |
+| **Arquitectura** | Clean Architecture (Domain / Data / Presentation) |
+| **Manejo de estado** | BLoC |
+| **Backend** | Supabase (Auth, PostgreSQL, Storage) |
+| **Manejo de errores** | Either (dartz) |
+| **Navegación** | go_router |
+| **Tipografía** | google_fonts (DM Sans) |
+
+---
+
+## 🗂️ Estructura del proyecto
+
+```
+lib/
+├── main.dart                         # Punto de entrada
+├── core/
+│   ├── navigation/
+│   │   ├── main_screen.dart          # Splash + decisión de ruta inicial
+│   │   └── app_router.dart           # GoRouter + inyección de BLoCs
+│   ├── theme/
+│   │   └── app_theme.dart            # Paleta verde/blanco/negro + DM Sans
+│   ├── error/
+│   │   └── failures.dart             # Failure tipados (dartz Either)
+│   ├── utils/
+│   │   ├── constants.dart            # Tablas, rutas, roles, storage keys
+│   │   └── validators.dart           # Validadores de formularios (es-CO)
+│   └── widgets/
+│       ├── custom_text_field.dart
+│       ├── custom_button.dart
+│       ├── role_selector.dart
+│       ├── avatar_picker.dart
+│       ├── loading_overlay.dart
+│       ├── simple_form.dart
+│       └── main_shell.dart
+└── features/
+    ├── auth/                         # Lógica compartida de autenticación
+    │   ├── data/{repo,sources}
+    │   └── domain/{repo,usecases}
+    ├── login/ui/{bloc,screens}
+    ├── signup/ui/{bloc,screens}
+    ├── welcome/ui/{models,screens}   # Carrusel presentacional
+    ├── onboarding/
+    │   ├── data/{repo,sources}
+    │   ├── domain/{repo,usecases}
+    │   └── ui/{bloc,screens}
+    ├── profile/
+    │   ├── data/{repository,source}
+    │   ├── domain/{model,repository}
+    │   └── ui/{bloc,pages}
+    └── home/ui/pages/
+        ├── client_home_page.dart
+        └── provider_home_page.dart
+```
+
+---
+
+## 🚀 Puesta en marcha
+
+### 1. Prerrequisitos
+
+- Flutter SDK instalado.
+- Dart SDK.
+- Un emulador Android/iOS o dispositivo físico.
+- Proyecto en [Supabase](https://supabase.com).
+
+### 2. Clonar el repositorio
+
+```bash
+git clone https://github.com/davidone007/domora
+cd domora
+```
+
+### 3. Instalar dependencias
+
+```bash
+flutter pub get
+```
+
+### 4. Configuración de Supabase y Variables de Entorno
+
+1. En el **SQL Editor** de Supabase, ejecute el archivo `supabase_schema.sql` (incluido en la raíz del proyecto). Este script configura:
+   - Tablas: `roles`, `users`, `user_roles`, `client_profiles`, `provider_profiles`, `addresses`.
+   - Políticas RLS (Row Level Security) para protección de datos.
+   - Bucket `avatars` en Storage para fotos de perfil.
+   - Trigger `handle_new_user()` para sincronización automática.
+2. Cree un archivo `.env` en la raíz del proyecto y agregue sus credenciales:
+
+```env
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_ANON_KEY=tu-publishable-key
+```
+
+> 💡 **Nota:** El archivo `.env` está excluido del control de versiones por seguridad. Asegúrese de que `assets: - .env` esté presente en su `pubspec.yaml`.
+
+### 5. Ejecutar la aplicación
+
+```bash
+flutter run
+```
+
+---
+
+## 🔑 Decisiones de diseño
+
+### Arquitectura
+
+- **Domain layer** sin dependencias externas: solo entidades, contratos abstractos (`AuthRepository`, `OnboardingRepository`, `ProfileRepository`) y casos de uso (`LoginUseCase`, `SignupUseCase`, etc.).
+- **Data layer** con `*DataSource` (acceso directo a Supabase) y `*RepositoryImpl` que traduce excepciones a `Failure`.
+- **Presentation** con un BLoC por flujo (`LoginBloc`, `SignupBloc`, `OnboardingBloc`, `ProfileBloc`), cada uno con eventos y estados inmutables (`Equatable`).
+- Manejo de errores con `Either<Failure, T>` (dartz).
+
+### Sesión persistente (HU2)
+
+Se aprovecha la persistencia integrada de `supabase_flutter`, que almacena los tokens de forma segura (`flutter_secure_storage` por debajo). Al iniciar la app, `MainScreen` evalúa `Supabase.instance.client.auth.currentSession` y decide la ruta de destino.
+
+### Rol y onboarding
+
+- El rol se guarda en `user_roles` al registrarse (HU1). Se lee mediante un join `user_roles → roles(name)` al iniciar sesión.
+- El estado de onboarding se persiste en la columna `users.onboarding_completed`, lo que evita depender de almacenamiento local y funciona en cualquier dispositivo del mismo usuario.
+
+### Onboarding adaptable (HU3)
+
+`OnboardingScreen` recibe el rol mediante `_OnboardingRouteResolver` y muestra un formulario distinto:
+
+| Rol | Campos que guarda | Tablas afectadas |
+|-----|-------------------|------------------|
+| **Cliente** | nombres, apellidos, teléfono, avatar | `users`, `client_profiles` |
+| **Proveedor** | datos básicos + años de experiencia, tarifa, bio, dirección | `users`, `provider_profiles`, `addresses` |
+
+### Perfil (HU4)
+
+`ProfileRepositoryImpl` agrega datos de `users`, `roles`, perfil específico y dirección principal en una entidad `FullProfile`. La UI en `profile_page.dart` se adapta automáticamente mostrando información de contacto y, si es proveedor, experiencia, tarifa, disponibilidad y ubicación.
+
+### Bottom navigation
+
+`MainShell` provee un bottom nav oscuro de 4 pestañas:
+- **Inicio** → dashboard actual
+- **Solicitudes** → placeholder "Próximamente"
+- **Cupones** → placeholder "Próximamente"
+- **Perfil** → `/profile`
+
+La pestaña activa se eleva como un círculo blanco con icono verde.
+
+---
+
+## 🧭 Guía de Navegación y Flujos
+
+Para navegar y probar las funcionalidades de Domora, siga estos flujos principales:
+
+### A. Flujo de Usuario Nuevo (Registro y Onboarding)
+1. **Carrusel de Bienvenida:** Al abrir la app por primera vez, verá un carrusel informativo. Deslice hasta el final o presione "Siguiente" para llegar a la pantalla de **Login**.
+2. **Registro:** En la pantalla de Login, presione el enlace **"Regístrate"** en la parte inferior.
+3. **Selección de Rol:** Elija si desea registrarse como **Cliente** (para buscar servicios) o **Proveedor** (para ofrecerlos).
+4. **Formulario de Registro:** Ingrese sus datos (correo y contraseña). Al completar el registro, será redirigido automáticamente al **Onboarding**.
+5. **Onboarding (Perfil):** Complete la información de su perfil.
+   - Si es **Cliente**: Se le pedirá nombre, teléfono y foto de perfil.
+   - Si es **Proveedor**: Además de lo anterior, deberá ingresar años de experiencia, tarifa por hora, biografía y dirección.
+6. **Dashboard:** Una vez finalizado el onboarding, accederá al Dashboard principal adaptado a su rol.
+
+### B. Flujo de Usuario Existente (Login)
+1. Ingrese sus credenciales en la pantalla de **Login**.
+2. La aplicación detectará automáticamente si ya completó su perfil:
+   - Si está incompleto, lo llevará al **Onboarding**.
+   - Si está completo, lo llevará directamente al **Dashboard**.
+
+### C. Navegación en el Dashboard y Perfil
+1. **Dashboard:** Visualice los servicios disponibles y promociones (sección interactiva).
+2. **Menú Inferior (Bottom Nav):** Use la barra de navegación para moverse entre:
+   - **Inicio (Dashboard)**.
+   - **Solicitudes y Cupones** (Próximamente).
+   - **Perfil:** Acceda a su información completa.
+3. **Cerrar Sesión:** Dentro de la pestaña de **Perfil**, encontrará el botón para cerrar sesión, lo que lo devolverá a la pantalla de Bienvenida.
+
+---
+
+## 🔄 Resumen visual de navegación
+
+```
+WelcomeScreen (carrusel)
+      │
+      ├── "Comenzar"/"Siguiente"/"Omitir" → /login
+      ▼
+LoginScreen
+      │
+      ├── "Regístrate" → /signup (push)
+      ├── Login exitoso → onboarding o dashboard según rol
+      └── Flecha atrás → /welcome (si no hay pop)
+      ▼
+SignupScreen
+      │
+      ├── Registro exitoso → /onboarding
+      └── Flecha atrás → pop() a login
+      ▼
+OnboardingScreen → MainScreen → dashboard según rol
+      │
+      ├── Cliente → ClientHomePage
+      └── Proveedor → ProviderHomePage
+      ▼
+MainShell (bottom navigation)
+      │
+      ├── Inicio → dashboard actual
+      ├── Perfil → ProfilePage
+      ├── Solicitudes/Cupones → "Próximamente" snackbar
+      │
+      ▼
+Cierre de sesión → /welcome
+```
+
+---
+
+## 🐘 Modelo de datos (Supabase)
+
+### Tablas principales
+
+| Tabla | Propósito |
+|-------|-----------|
+| `roles` | Catálogo de roles (`client`, `provider`) |
+| `users` | Datos básicos y flag `onboarding_completed` |
+| `user_roles` | Relación N:N entre usuarios y roles |
+| `client_profiles` | Datos específicos de clientes (`avatar_url`, `bio`) |
+| `provider_profiles` | Datos específicos de proveedores (experiencia, tarifa, disponibilidad, bio, avatar) |
+| `addresses` | Direcciones de servicio (principalmente para proveedores) |
+
+### Políticas RLS
+
+- `anon` tiene permisos `USAGE` en el esquema `public` y `SELECT`/`INSERT` limitados
+- `authenticated` tiene permisos completos (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) sobre sus propios registros
+- Cada usuario solo puede ver/modificar sus propios datos (excepto `roles` que es de solo lectura)
+
+### Bucket de storage
+
+- `avatars`: bucket público para fotos de perfil
+- Políticas que permiten a usuarios autenticados subir/actualizar/eliminar sus propias imágenes
+
+---
+
+## 📦 Dependencias principales
+
+| Paquete | Versión | Propósito |
+|---------|---------|-----------|
+| `supabase_flutter` | ^2.0.0 | Backend, autenticación y storage |
+| `flutter_bloc` | ^8.1.3 | Manejo de estado |
+| `equatable` | ^2.0.5 | Comparación de objetos |
+| `go_router` | ^13.0.0 | Navegación declarativa |
+| `dartz` | ^0.10.1 | Either para manejo de errores |
+| `google_fonts` | ^6.2.1 | Tipografía DM Sans |
+| `image_picker` | ^1.0.0 | Selección de avatar |
+| `intl` | ^0.18.0 | Formateo de moneda y fechas |
+
+---
+
+## Próximos pasos (Sprint 3)
+
+Puedes consultar el detalle de las tareas y criterios de aceptación en el **[Backlog del Sprint 3](Sprint3Backlog.md)**.
+
+- Aceptar propuesta y creación de Booking (HU14)
+- Pasarela de pagos (HU15)
+- Historial de servicios completados (HU16)
+- Sistema de calificación post-servicio (HU17)
+- Notificaciones push en tiempo real (HU18)
+
+---
+
+## 📄 Licencia
+
+Proyecto desarrollado como parte del curso **Aplicaciones Móviles** en la **Universidad ICESI**.
+
+---
+
+*Creado por el equipo de Domora — Sprint 1.*
