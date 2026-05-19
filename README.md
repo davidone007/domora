@@ -343,7 +343,9 @@ Cierre de sesión → /welcome
 
 ---
 
-## 🧪 Próximos pasos (Sprint 3)
+## Próximos pasos (Sprint 3)
+
+Puedes consultar el detalle de las tareas y criterios de aceptación en el **[Backlog del Sprint 3](Sprint3Backlog.md)**.
 
 - Aceptar propuesta y creación de Booking (HU14)
 - Pasarela de pagos (HU15)
