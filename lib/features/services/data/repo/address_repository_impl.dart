@@ -24,7 +24,11 @@ class AddressRepositoryImpl implements AddressRepository {
   @override
   Future<Either<Failure, GeoCoordinates>> getCurrentLocation() async {
     try {
-      final coords = await _locationDataSource.getCurrentCoordinates();
+      final raw = await _locationDataSource.getCurrentCoordinates();
+      final coords = GeoCoordinates(
+        latitude: raw.latitude,
+        longitude: raw.longitude,
+      );
       return Right(coords);
     } catch (e, stackTrace) {
       if (e is Failure) {

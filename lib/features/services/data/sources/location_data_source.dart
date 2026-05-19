@@ -1,14 +1,14 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:domora/core/error/failures.dart';
-import '../../domain/entities/geo_coordinates.dart';
+import '../models/location_model.dart';
 
 abstract class LocationDataSource {
-  Future<GeoCoordinates> getCurrentCoordinates();
+  Future<LocationModel> getCurrentCoordinates();
 }
 
 class LocationDataSourceImpl implements LocationDataSource {
   @override
-  Future<GeoCoordinates> getCurrentCoordinates() async {
+  Future<LocationModel> getCurrentCoordinates() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw PermissionFailure(
@@ -35,7 +35,7 @@ class LocationDataSourceImpl implements LocationDataSource {
       desiredAccuracy: LocationAccuracy.high,
     );
 
-    return GeoCoordinates(
+    return LocationModel(
       latitude: position.latitude,
       longitude: position.longitude,
     );

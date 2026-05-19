@@ -158,6 +158,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (state is ProfileEditSuccess) {
       // Handle specific success messages to update UI accordingly
+      final isCredentialsUpdate =
+          state.message.toLowerCase().contains('correo') ||
+          state.message.toLowerCase().contains('contraseña');
+
       if (state.message.toLowerCase().contains('correo')) {
         setState(() {
           _emailCtrl.text = _newEmailCtrl.text.trim().toLowerCase();
@@ -177,9 +181,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
 
       context.showSuccessSnackBar(state.message);
-      Future.delayed(const Duration(milliseconds: 1500), () {
-        if (context.mounted) context.read<ProfileEditBloc>().add(const ProfileEditResetEvent());
-      });
+
+      if (isCredentialsUpdate) {
+        // Credentials updates stay on the page; only reset BLoC state.
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (context.mounted) context.read<ProfileEditBloc>().add(const ProfileEditResetEvent());
+        });
+      } else {
+        // Field updates (personal info, provider info, location): pop back so
+        // ProfilePage reloads the data via its await-push + ProfileRefreshEvent.
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (context.mounted) context.pop();
+        });
+      }
     }
   }
 
