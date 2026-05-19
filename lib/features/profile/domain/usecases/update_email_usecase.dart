@@ -15,14 +15,23 @@ class UpdateEmailUseCase {
     required String currentPassword,
     required String newEmail,
   }) async {
-    if (currentEmail.trim().toLowerCase() == newEmail.trim().toLowerCase()) {
-      return const Left(ValidationFailure('No se puede cambiar por el mismo correo'));
+    final normalizedCurrent = currentEmail.trim().toLowerCase();
+    final normalizedNew = newEmail.trim().toLowerCase();
+
+    if (normalizedCurrent.isEmpty || normalizedNew.isEmpty) {
+      return const Left(ValidationFailure('El correo no es válido'));
+    }
+
+    if (normalizedCurrent == normalizedNew) {
+      return const Left(
+          ValidationFailure('No se puede cambiar por el mismo correo'));
     }
 
     return (await _profileRepository.updateEmail(
       currentEmail: currentEmail,
       currentPassword: currentPassword,
       newEmail: newEmail,
-    )).map((_) => unit);
+    ))
+        .map((_) => unit);
   }
 }

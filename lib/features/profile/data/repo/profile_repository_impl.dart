@@ -292,6 +292,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       ));
     }
   }
+
   @override
   Future<Either<Failure, void>> updateEmail({
     required String currentEmail,
@@ -313,6 +314,4 @@ class ProfileRepositoryImpl implements ProfileRepository {
         currentPassword: currentPassword,
         newPassword: newPassword,
       );
-
-
 }

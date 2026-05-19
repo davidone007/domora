@@ -87,8 +87,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (_isProvider && profile.providerProfile != null) {
         _providerBioCtrl.text = profile.providerProfile?.bio ?? '';
-        _yearsExperienceCtrl.text = (profile.providerProfile?.yearsExperience ?? 0).toString();
-        _hourlyRateCtrl.text = (profile.providerProfile?.hourlyRate ?? 0).toString();
+        _yearsExperienceCtrl.text =
+            (profile.providerProfile?.yearsExperience ?? 0).toString();
+        _hourlyRateCtrl.text =
+            (profile.providerProfile?.hourlyRate ?? 0).toString();
         _providerIsAvailable = profile.providerProfile?.isAvailable ?? true;
         _currentAvatarUrl = profile.providerProfile?.avatarUrl;
         final address = profile.primaryAddress;
@@ -96,7 +98,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _addressLine1Ctrl.text = address.addressLine1;
           _addressLine2Ctrl.text = address.addressLine2 ?? '';
           _neighborhoodCtrl.text = address.neighborhood ?? '';
-          _selectedDepartment = address.department.isNotEmpty ? address.department : null;
+          _selectedDepartment =
+              address.department.isNotEmpty ? address.department : null;
           _selectedCity = address.city.isNotEmpty ? address.city : null;
         }
       } else if (!_isProvider && profile.clientProfile != null) {
@@ -131,15 +134,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (state is ProfileEditFailure) {
       // If an avatar upload just succeeded, ignore immediately-following failures
       final now = DateTime.now();
-      if (_lastAvatarSuccessAt != null && now.difference(_lastAvatarSuccessAt!).inSeconds < 3) {
-        if (context.mounted) context.read<ProfileEditBloc>().add(const ProfileEditResetEvent());
+      if (_lastAvatarSuccessAt != null &&
+          now.difference(_lastAvatarSuccessAt!).inSeconds < 3) {
+        if (context.mounted)
+          context.read<ProfileEditBloc>().add(const ProfileEditResetEvent());
         return;
       }
 
       context.showErrorSnackBar(state.message);
       // Reset state after showing error
       Future.delayed(const Duration(milliseconds: 1500), () {
-        if (context.mounted) context.read<ProfileEditBloc>().add(const ProfileEditResetEvent());
+        if (context.mounted)
+          context.read<ProfileEditBloc>().add(const ProfileEditResetEvent());
       });
       return;
     }
@@ -151,18 +157,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _lastAvatarSuccessAt = DateTime.now();
       context.showSuccessSnackBar('Foto de perfil actualizada');
       Future.delayed(const Duration(milliseconds: 1500), () {
-        if (context.mounted) context.read<ProfileEditBloc>().add(const ProfileEditResetEvent());
+        if (context.mounted)
+          context.read<ProfileEditBloc>().add(const ProfileEditResetEvent());
       });
       return;
     }
 
     if (state is ProfileEditSuccess) {
-      // Handle specific success messages to update UI accordingly
       final isCredentialsUpdate =
-          state.message.toLowerCase().contains('correo') ||
-          state.message.toLowerCase().contains('contraseña');
+          state.kind == ProfileEditSuccessKind.emailUpdated ||
+              state.kind == ProfileEditSuccessKind.passwordUpdated;
 
-      if (state.message.toLowerCase().contains('correo')) {
+      if (state.kind == ProfileEditSuccessKind.emailUpdated) {
         setState(() {
           _emailCtrl.text = _newEmailCtrl.text.trim().toLowerCase();
           _newEmailCtrl.clear();
@@ -171,7 +177,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
       }
 
-      if (state.message.toLowerCase().contains('contraseña')) {
+      if (state.kind == ProfileEditSuccessKind.passwordUpdated) {
         setState(() {
           _newPasswordCtrl.clear();
           _confirmPasswordCtrl.clear();
@@ -185,7 +191,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (isCredentialsUpdate) {
         // Credentials updates stay on the page; only reset BLoC state.
         Future.delayed(const Duration(milliseconds: 1500), () {
-          if (context.mounted) context.read<ProfileEditBloc>().add(const ProfileEditResetEvent());
+          if (context.mounted)
+            context.read<ProfileEditBloc>().add(const ProfileEditResetEvent());
         });
       } else {
         // Field updates (personal info, provider info, location): pop back so
@@ -202,7 +209,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     context.read<ProfileEditBloc>().add(
           UpdateProfileFieldsEvent(
             userId: _userId,
-            firstName: _firstNameCtrl.text.isNotEmpty ? _firstNameCtrl.text : null,
+            firstName:
+                _firstNameCtrl.text.isNotEmpty ? _firstNameCtrl.text : null,
             lastName: _lastNameCtrl.text.isNotEmpty ? _lastNameCtrl.text : null,
             phone: _phoneCtrl.text.isNotEmpty ? _phoneCtrl.text : null,
           ),
@@ -230,7 +238,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             yearsExperience: yearsExp > 0 ? yearsExp : null,
             hourlyRate: hourlyRate > 0 ? hourlyRate : null,
             isAvailable: _providerIsAvailable,
-            bio: _providerBioCtrl.text.isNotEmpty ? _providerBioCtrl.text : null,
+            bio:
+                _providerBioCtrl.text.isNotEmpty ? _providerBioCtrl.text : null,
           ),
         );
   }
@@ -359,9 +368,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         children: [
                           AvatarPicker(
                             image: _selectedAvatar,
-                            imageUrl: _currentAvatarUrl ?? (_isProvider
-                                ? widget.initialProfile?.providerProfile?.avatarUrl
-                                : widget.initialProfile?.clientProfile?.avatarUrl),
+                            imageUrl: _currentAvatarUrl ??
+                                (_isProvider
+                                    ? widget.initialProfile?.providerProfile
+                                        ?.avatarUrl
+                                    : widget.initialProfile?.clientProfile
+                                        ?.avatarUrl),
                             onChanged: _handleAvatarSelected,
                           ),
                           const SizedBox(height: 8),
@@ -443,8 +455,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   label: 'Años de Experiencia',
                                   prefixIcon: Icons.school_outlined,
                                   keyboardType: TextInputType.number,
-                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                    validator: Validators.yearsExperience,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly
+                                  ],
+                                  validator: Validators.yearsExperience,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -453,11 +467,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   controller: _hourlyRateCtrl,
                                   label: 'Tarifa/Hora',
                                   prefixIcon: Icons.attach_money_outlined,
-                                  keyboardType: const TextInputType.numberWithOptions(
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
                                     decimal: true,
                                   ),
                                   validator: (v) =>
-                                      Validators.validateNumberField(v, 'Tarifa'),
+                                      Validators.validateNumberField(
+                                          v, 'Tarifa'),
                                 ),
                               ),
                             ],
@@ -465,8 +481,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           CheckboxListTile(
                             title: const Text('Disponible para trabajos'),
                             value: _providerIsAvailable,
-                            onChanged: (value) =>
-                                setState(() => _providerIsAvailable = value ?? true),
+                            onChanged: (value) => setState(
+                                () => _providerIsAvailable = value ?? true),
                             contentPadding: EdgeInsets.zero,
                           ),
                           CustomTextField(
@@ -562,7 +578,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                           .toList(),
                                   onChanged: _selectedDepartment == null
                                       ? null
-                                      : (value) => setState(() => _selectedCity = value),
+                                      : (value) =>
+                                          setState(() => _selectedCity = value),
                                   validator: (v) => Validators.validateNotEmpty(
                                     v,
                                     fieldName: 'La ciudad',
@@ -635,7 +652,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               ? Icons.expand_less_outlined
                               : Icons.expand_more_outlined,
                         ),
-                        onTap: () => setState(() => _showEmailEditor = !_showEmailEditor),
+                        onTap: () => setState(
+                            () => _showEmailEditor = !_showEmailEditor),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 8,
@@ -652,8 +670,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             label: 'Nuevo Correo',
                             prefixIcon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
-                            validator: (v) => Validators.differentEmail(v, _emailCtrl.text),
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            validator: (v) =>
+                                Validators.differentEmail(v, _emailCtrl.text),
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             onChanged: (_) => setState(() {}),
                           ),
                           CustomTextField(
@@ -697,8 +717,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               ? Icons.expand_less_outlined
                               : Icons.expand_more_outlined,
                         ),
-                        onTap: () =>
-                            setState(() => _showPasswordEditor = !_showPasswordEditor),
+                        onTap: () => setState(
+                            () => _showPasswordEditor = !_showPasswordEditor),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 8,
@@ -722,8 +742,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             label: 'Nueva Contraseña',
                             prefixIcon: Icons.lock_outlined,
                             isPassword: true,
-                            validator: (v) => Validators.differentPassword(v, _currentPasswordCtrl.text),
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            validator: (v) => Validators.differentPassword(
+                                v, _currentPasswordCtrl.text),
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             onChanged: (_) => setState(() {}),
                           ),
                           CustomTextField(
@@ -731,8 +753,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             label: 'Confirmar Nueva Contraseña',
                             prefixIcon: Icons.lock_outlined,
                             isPassword: true,
-                            validator: (v) => Validators.confirmPassword(v, _newPasswordCtrl.text),
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            validator: (v) => Validators.confirmPassword(
+                                v, _newPasswordCtrl.text),
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             onChanged: (_) => setState(() {}),
                           ),
                           const SizedBox(height: 16),
@@ -740,8 +764,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             children: [
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed: () =>
-                                      setState(() => _showPasswordEditor = false),
+                                  onPressed: () => setState(
+                                      () => _showPasswordEditor = false),
                                   child: const Text('Cancelar'),
                                 ),
                               ),
