@@ -51,6 +51,11 @@ class ProfileMappers {
   }
 
   static ProviderProfile providerProfileFromMap(Map<String, dynamic> map) {
+    final rawCities = map['coverage_cities'];
+    final coverageCities = rawCities is List
+        ? List<String>.from(rawCities)
+        : const <String>[];
+
     return ProviderProfile(
       id: map['id'] as String,
       userId: map['user_id'] as String,
@@ -59,6 +64,7 @@ class ProfileMappers {
       isAvailable: (map['is_available'] as bool?) ?? true,
       bio: map['bio'] as String?,
       avatarUrl: map['avatar_url'] as String?,
+      coverageCities: coverageCities,
     );
   }
 }

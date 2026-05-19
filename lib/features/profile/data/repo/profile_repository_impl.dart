@@ -5,6 +5,7 @@ import 'package:domora/core/error/error_context.dart';
 import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/entities/avatar_file.dart';
+import 'package:domora/features/auth/domain/repo/auth_repo.dart';
 import 'package:domora/features/profile/data/mappers/profile_mappers.dart';
 import 'package:domora/features/profile/data/sources/profile_data_source.dart';
 import 'package:domora/features/profile/domain/entities/address.dart';
@@ -20,9 +21,14 @@ import 'package:domora/features/profile/domain/usecases/update_provider_address_
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileDataSource _dataSource;
+  final AuthRepository _authRepository;
   final FailureMapper _errorMapper;
 
-  ProfileRepositoryImpl(this._dataSource, this._errorMapper);
+  ProfileRepositoryImpl(
+    this._dataSource,
+    this._authRepository,
+    this._errorMapper,
+  );
 
   @override
   Future<Either<Failure, FullProfile>> getCurrentProfile() async {
@@ -287,5 +293,25 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, void>> updateEmail({
+    required String currentEmail,
+    required String currentPassword,
+    required String newEmail,
+  }) =>
+      _authRepository.updateEmail(
+        currentEmail: currentEmail,
+        currentPassword: currentPassword,
+        newEmail: newEmail,
+      );
 
+  @override
+  Future<Either<Failure, void>> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) =>
+      _authRepository.updatePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
 }

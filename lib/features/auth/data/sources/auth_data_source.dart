@@ -7,8 +7,10 @@ import 'package:domora/core/network/network_info.dart';
 /// Fuente de datos para autenticación. Encapsula toda la interacción con
 /// Supabase Auth y la tabla `user_roles`.
 abstract class AuthDataSource {
-  Future<AuthResponse> signUp({required String email, required String password});
-  Future<AuthResponse> signIn({required String email, required String password});
+  Future<AuthResponse> signUp(
+      {required String email, required String password});
+  Future<AuthResponse> signIn(
+      {required String email, required String password});
   Future<void> signOut();
 
   /// Asocia el rol al usuario buscando primero el `role_id` por nombre.
@@ -32,7 +34,8 @@ abstract class AuthDataSource {
   });
 
   /// Actualiza la contraseña del usuario a través de Supabase Auth.
-  Future<void> updatePassword({required String currentPassword, required String newPassword});
+  Future<void> updatePassword(
+      {required String currentPassword, required String newPassword});
 }
 
 class AuthDataSourceImpl implements AuthDataSource {
@@ -92,35 +95,30 @@ class AuthDataSourceImpl implements AuthDataSource {
 
     final authEmail = _client.auth.currentUser?.email?.trim().toLowerCase();
     final emailToUse = (authEmail == null || authEmail.isEmpty)
-      ? currentEmail.trim().toLowerCase()
-      : authEmail;
+        ? currentEmail.trim().toLowerCase()
+        : authEmail;
     final nextEmail = newEmail.trim().toLowerCase();
     if (emailToUse.isEmpty || nextEmail.isEmpty) {
       throw const AuthException('El correo no es válido');
     }
 
-    if (emailToUse == nextEmail) {
-      throw const AuthException('No se puede cambiar por el mismo correo');
-    }
-
     try {
-      await _client.auth.signInWithPassword(email: emailToUse, password: currentPassword);
+      await _client.auth
+          .signInWithPassword(email: emailToUse, password: currentPassword);
     } on AuthException {
       throw const AuthException('Contraseña incorrecta');
     }
 
     await _client.auth.updateUser(UserAttributes(email: nextEmail));
-
-    final userId = _client.auth.currentUser?.id;
-    if (userId != null && userId.isNotEmpty) {
-      await _client.from(AppConstants.tableUsers)
-          .update({'email': nextEmail})
-          .eq('id', userId);
-    }
+    // El trigger on_auth_user_updated en la BD sincroniza automáticamente
+    // public.users.email cuando auth.users.email cambia. No se actualiza
+    // la tabla aquí para evitar inconsistencias si Supabase requiere
+    // confirmación del correo antes de aplicar el cambio.
   }
 
   @override
-  Future<void> updatePassword({required String currentPassword, required String newPassword}) async {
+  Future<void> updatePassword(
+      {required String currentPassword, required String newPassword}) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
@@ -135,7 +133,8 @@ class AuthDataSourceImpl implements AuthDataSource {
     }
 
     try {
-      await _client.auth.signInWithPassword(email: email, password: currentPassword);
+      await _client.auth
+          .signInWithPassword(email: email, password: currentPassword);
     } on AuthException {
       throw const AuthException('Contraseña incorrecta');
     }

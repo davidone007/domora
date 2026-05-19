@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
-import '../../domain/entities/cleaning_service_request.dart';
 import '../../domain/entities/service.dart';
+import 'publish_service_request_model.dart';
 
 class ServiceModel extends Service {
   const ServiceModel({
@@ -19,7 +19,13 @@ class ServiceModel extends Service {
     int count = 0;
     if (json['quotes'] != null) {
       if (json['quotes'] is List) {
-        count = (json['quotes'] as List).length;
+        final list = json['quotes'] as List;
+        // quotes(count) → [{"count": N}]; distinguish from a plain list of rows
+        if (list.isNotEmpty && list.first is Map && (list.first as Map).containsKey('count')) {
+          count = (list.first as Map)['count'] as int? ?? 0;
+        } else {
+          count = list.length;
+        }
       } else if (json['quotes'] is Map && json['quotes']['count'] != null) {
         count = json['quotes']['count'] as int;
       }
@@ -39,7 +45,7 @@ class ServiceModel extends Service {
     );
   }
 
-  static Map<String, dynamic> toJson(CleaningServiceRequest request, String addressId) {
+  static Map<String, dynamic> toJson(PublishServiceRequestModel request, String addressId) {
     return {
       'client_id': request.clientId,
       'address_id': addressId,

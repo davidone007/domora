@@ -41,7 +41,7 @@ class ErrorDialog extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          color: AppTheme.error.withOpacity(0.1),
+          color: AppTheme.error.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: const Icon(

@@ -67,6 +67,7 @@ import 'package:domora/features/services/ui/bloc/address_picker_bloc.dart';
 import 'package:domora/features/services/ui/bloc/service_publish_bloc.dart';
 import 'package:domora/features/services/ui/screens/publish_service_flow_screen.dart';
 
+
 import 'package:domora/features/services/domain/usecases/get_my_services_usecase.dart';
 import 'package:domora/features/services/domain/usecases/get_all_services_usecase.dart';
 import 'package:domora/features/services/domain/usecases/get_service_detail_usecase.dart';
@@ -107,7 +108,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
   final OnboardingRepository onbRepo = OnboardingRepositoryImpl(onbDs, errorMapper);
 
   final ProfileDataSource profDs = ProfileDataSourceImpl(supabase, networkInfo: networkInfo);
-  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, errorMapper);
+  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, authRepo, errorMapper);
 
   final ServiceRemoteDataSource servDs = ServiceRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
   final ServiceRepository servRepo = ServiceRepositoryImpl(servDs, errorMapper);
@@ -231,8 +232,8 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               UpdateProviderProfileUseCase(profRepo),
               UpdateProviderAddressUseCase(profRepo),
               UploadAvatarUseCase(profRepo),
-              UpdateEmailUseCase(authRepo),
-              UpdatePasswordUseCase(authRepo),
+              UpdateEmailUseCase(profRepo),
+              UpdatePasswordUseCase(profRepo),
             ),
             child: EditProfilePage(initialProfile: initialProfile),
           );

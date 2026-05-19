@@ -47,14 +47,15 @@ class _ProfilePageState extends State<ProfilePage> {
             ..hideCurrentSnackBar()
             ..showSnackBar(SnackBar(content: Text(state.message)));
         } else if (state is ProfileSignOutSuccessState) {
-          context.go(AppConstants.routeWelcome);
+          context.go(AppConstants.routeLogin);
         }
       },
       child: MainShell(
         activeTab: MainTab.profile,
         onTabSelected: (tab) {
           if (tab == MainTab.home) _goToHome();
-          if (tab == MainTab.requests || tab == MainTab.coupons) {
+          if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);
+          if (tab == MainTab.coupons) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(
@@ -164,7 +165,12 @@ class _ProfileContent extends StatelessWidget {
                 alignment: Alignment.topRight,
                 child: IconButton(
                   icon: const Icon(Icons.edit_outlined, color: AppTheme.textSecondary, size: 20),
-                  onPressed: () => context.push(AppConstants.routeProfileEdit, extra: profile),
+                  onPressed: () async {
+                    await context.push(AppConstants.routeProfileEdit, extra: profile);
+                    if (context.mounted) {
+                      context.read<ProfileBloc>().add(const ProfileRefreshEvent());
+                    }
+                  },
                   tooltip: 'Editar Perfil',
                 ),
               ),

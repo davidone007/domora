@@ -1,15 +1,14 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:domora/core/error/failures.dart';
-import 'package:domora/features/auth/domain/repo/auth_repo.dart';
+import '../repo/profile_repository.dart';
 
 /// UseCase para actualizar la contraseña del usuario autenticado.
-/// Habla directamente con [AuthRepository] porque cambiar la contraseña
-/// es una operación de autenticación, no de perfil.
+/// Delega en [ProfileRepository] que internamente coordina con la capa de auth.
 class UpdatePasswordUseCase {
-  final AuthRepository _authRepository;
+  final ProfileRepository _profileRepository;
 
-  UpdatePasswordUseCase(this._authRepository);
+  UpdatePasswordUseCase(this._profileRepository);
 
   Future<Either<Failure, Unit>> call({
     required String currentPassword,
@@ -19,7 +18,7 @@ class UpdatePasswordUseCase {
       return const Left(ValidationFailure('No se puede cambiar por la misma contraseña'));
     }
 
-    return (await _authRepository.updatePassword(
+    return (await _profileRepository.updatePassword(
       currentPassword: currentPassword,
       newPassword: newPassword,
     )).map((_) => unit);

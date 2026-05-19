@@ -10,6 +10,27 @@ class SaveProviderProfileUseCase {
   SaveProviderProfileUseCase(this._repository);
 
   Future<Either<Failure, void>> call(ProviderOnboardingParams params) {
+    if (params.addressLine1.trim().isEmpty) {
+      return Future.value(
+        const Left(ValidationFailure('La dirección es obligatoria')),
+      );
+    }
+    if (params.department.trim().isEmpty) {
+      return Future.value(
+        const Left(ValidationFailure('El departamento es obligatorio')),
+      );
+    }
+    if (params.city.trim().isEmpty) {
+      return Future.value(
+        const Left(ValidationFailure('La ciudad es obligatoria')),
+      );
+    }
+    if (params.hourlyRate <= 0) {
+      return Future.value(
+        const Left(ValidationFailure('La tarifa por hora debe ser mayor a 0')),
+      );
+    }
+
     return _repository.saveProviderProfile(params);
   }
 }

@@ -59,6 +59,7 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
           department: params.department,
           city: params.city,
           neighborhood: params.neighborhood,
+          coverageCities: params.coverageCities,
         ),
       );
       return const Right(null);

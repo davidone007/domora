@@ -74,8 +74,12 @@ create table if not exists public.provider_profiles (
   hourly_rate      decimal(10,2) default 0,
   is_available     boolean not null default true,
   bio              varchar(1000),
-  avatar_url       varchar(500)
+  avatar_url       varchar(500),
+  coverage_cities  text[] default '{}'
 );
+
+-- Migration (if table already exists):
+-- alter table public.provider_profiles add column if not exists coverage_cities text[] default '{}';
 
 -- ============================================================================
 -- ADDRESSES

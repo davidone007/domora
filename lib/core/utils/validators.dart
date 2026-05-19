@@ -113,6 +113,21 @@ class Validators {
     return null;
   }
 
+  /// Línea de dirección obligatoria (mínimo 5 caracteres).
+  static String? addressLine(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'La dirección es obligatoria';
+    if (v.length < 5) return 'Ingresa una dirección más detallada';
+    return null;
+  }
+
+  /// Ciudad obligatoria.
+  static String? city(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'La ciudad es obligatoria';
+    return null;
+  }
+
   /// Bio opcional pero con máximo de caracteres.
   static String? bio(String? value, {int max = 500}) {
     final v = value?.trim() ?? '';
