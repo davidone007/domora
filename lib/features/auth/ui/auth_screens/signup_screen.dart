@@ -7,7 +7,7 @@ import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/utils/validators.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
 import 'package:domora/core/widgets/role_selector.dart';
-import 'package:domora/features/signup/ui/bloc/signup_bloc.dart';
+import 'package:domora/features/auth/ui/auth_blocs/signup_bloc.dart';
 
 /// Pantalla de registro (HU1).
 ///

@@ -6,7 +6,7 @@ import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/utils/validators.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
-import 'package:domora/features/login/ui/bloc/login_bloc.dart';
+import 'package:domora/features/auth/ui/auth_blocs/login_bloc.dart';
 
 /// Pantalla de inicio de sesión (HU2).
 ///

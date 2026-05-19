@@ -1,15 +1,14 @@
 import 'package:dartz/dartz.dart';
 import 'package:domora/core/error/failures.dart';
-import '../entities/device_position.dart';
-import '../repo/location_repository.dart';
+import '../entities/geo_coordinates.dart';
+import '../repo/address_repository.dart';
 
-/// Caso de uso: obtiene la posición GPS actual del dispositivo.
 class GetCurrentLocationUseCase {
-  final LocationRepository _repository;
+  final AddressRepository repository;
 
-  GetCurrentLocationUseCase(this._repository);
+  GetCurrentLocationUseCase(this.repository);
 
-  Future<Either<Failure, DevicePosition>> call() async {
-    return _repository.getCurrentPosition();
+  Future<Either<Failure, GeoCoordinates>> call() {
+    return repository.getCurrentLocation();
   }
 }

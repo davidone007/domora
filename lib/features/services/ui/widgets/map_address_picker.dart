@@ -5,11 +5,13 @@ import 'package:domora/core/theme/app_theme.dart';
 
 class MapAddressPicker extends StatefulWidget {
   final LatLng? initialPosition;
+  final LatLng? position;
   final ValueChanged<LatLng> onPositionChanged;
 
   const MapAddressPicker({
     super.key,
     this.initialPosition,
+    this.position,
     required this.onPositionChanged,
   });
 
@@ -29,12 +31,11 @@ class _MapAddressPickerState extends State<MapAddressPicker> {
   }
 
   @override
-  void didUpdateWidget(MapAddressPicker oldWidget) {
+  void didUpdateWidget(covariant MapAddressPicker oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final newPos = widget.initialPosition;
-    if (newPos != null && newPos != oldWidget.initialPosition) {
-      setState(() => _currentPosition = newPos);
-      _mapController.move(newPos, 16.0);
+    if (widget.position != null && widget.position != oldWidget.position) {
+      _currentPosition = widget.position!;
+      _mapController.move(_currentPosition, _mapController.camera.zoom);
     }
   }
 

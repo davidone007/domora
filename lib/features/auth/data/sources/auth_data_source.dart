@@ -39,7 +39,7 @@ class AuthDataSourceImpl implements AuthDataSource {
   final SupabaseClient _client;
   final NetworkInfo _networkInfo;
 
-  AuthDataSourceImpl(this._client, {required NetworkInfo networkInfo}) : _networkInfo = networkInfo;
+  AuthDataSourceImpl(this._client, this._networkInfo);
 
   @override
   Session? get currentSession => _client.auth.currentSession;
@@ -94,14 +94,6 @@ class AuthDataSourceImpl implements AuthDataSource {
     final emailToUse = (authEmail == null || authEmail.isEmpty)
       ? currentEmail.trim().toLowerCase()
       : authEmail;
-    final nextEmail = newEmail.trim().toLowerCase();
-    if (emailToUse.isEmpty || nextEmail.isEmpty) {
-      throw const AuthException('El correo no es válido');
-    }
-
-    if (emailToUse == nextEmail) {
-      throw const AuthException('No se puede cambiar por el mismo correo');
-    }
 
     try {
       await _client.auth.signInWithPassword(email: emailToUse, password: currentPassword);
@@ -109,7 +101,7 @@ class AuthDataSourceImpl implements AuthDataSource {
       throw const AuthException('Contraseña incorrecta');
     }
 
-    await _client.auth.updateUser(UserAttributes(email: nextEmail));
+    await _client.auth.updateUser(UserAttributes(email: newEmail.trim().toLowerCase()));
     // El trigger on_auth_user_updated en la BD sincroniza automáticamente
     // public.users.email cuando auth.users.email cambia. No se actualiza
     // la tabla aquí para evitar inconsistencias si Supabase requiere
