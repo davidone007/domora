@@ -11,7 +11,11 @@ class LocationDataSourceImpl implements LocationDataSource {
   Future<GeoCoordinates> getCurrentCoordinates() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      throw const ValidationFailure('Activa los servicios de ubicacion para continuar');
+      throw PermissionFailure(
+        message: 'Activa los servicios de ubicacion para continuar',
+        permissionType: PermissionType.location,
+        permanentlyDenied: false,
+      );
     }
 
     var permission = await Geolocator.checkPermission();

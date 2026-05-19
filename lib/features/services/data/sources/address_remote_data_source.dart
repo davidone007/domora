@@ -5,13 +5,15 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:domora/core/network/network_info.dart';
-import '../models/address_suggestion_model.dart';
-import '../../domain/entities/service_address.dart';
 
 abstract class AddressRemoteDataSource {
-  Future<List<AddressSuggestionModel>> autocomplete(String query);
+  /// Devuelve las features crudas de Geoapify. El mapeo a modelos
+  /// es responsabilidad del [AddressRepositoryImpl].
+  Future<List<Map<String, dynamic>>> autocomplete(String query);
 
-  Future<ServiceAddress> reverseGeocode({
+  /// Devuelve el JSON crudo de Geoapify reverse-geocode.
+  /// El mapeo a [ServiceAddress] es responsabilidad del RepositoryImpl.
+  Future<Map<String, dynamic>> reverseGeocode({
     required double latitude,
     required double longitude,
   });
@@ -33,7 +35,7 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
   }
 
   @override
-  Future<List<AddressSuggestionModel>> autocomplete(String query) async {
+  Future<List<Map<String, dynamic>>> autocomplete(String query) async {
     if (!await _networkInfo.isConnected()) {
       throw const HttpException('No hay conexión a internet');
     }
@@ -56,17 +58,14 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final features = (data['features'] as List?) ?? [];
-
-      return features
-          .map((item) => AddressSuggestionModel.fromGeoapifyJson(item as Map<String, dynamic>))
-          .toList();
+      return features.cast<Map<String, dynamic>>();
     } finally {
       client.close();
     }
   }
 
   @override
-  Future<ServiceAddress> reverseGeocode({
+  Future<Map<String, dynamic>> reverseGeocode({
     required double latitude,
     required double longitude,
   }) async {
@@ -89,53 +88,10 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException('Geoapify reverse error: ${response.statusCode}');
       }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final features = (data['features'] as List?) ?? [];
-      if (features.isEmpty) {
-        return const ServiceAddress(addressLine1: '', city: '');
-      }
-
-      final properties = (features.first as Map<String, dynamic>)['properties']
-              as Map<String, dynamic>? ??
-          {};
-
-      final addressLine1 = _readAddressLine1(properties);
-      final city = _readCity(properties);
-
-      return ServiceAddress(
-        addressLine1: addressLine1,
-        addressLine2: properties['address_line2']?.toString(),
-        city: city,
-        neighborhood: _readNeighborhood(properties),
-        latitude: (properties['lat'] as num?)?.toDouble(),
-        longitude: (properties['lon'] as num?)?.toDouble(),
-      );
+      return jsonDecode(response.body) as Map<String, dynamic>;
     } finally {
       client.close();
     }
   }
 
-  String _readAddressLine1(Map<String, dynamic> properties) {
-    return properties['address_line1']?.toString() ??
-        properties['street']?.toString() ??
-        properties['formatted']?.toString() ??
-        '';
-  }
-
-  String _readCity(Map<String, dynamic> properties) {
-    return properties['city']?.toString() ??
-        properties['town']?.toString() ??
-        properties['village']?.toString() ??
-        properties['county']?.toString() ??
-        '';
-  }
-
-  String? _readNeighborhood(Map<String, dynamic> properties) {
-    return properties['neighbourhood']?.toString() ??
-        properties['neighborhood']?.toString() ??
-        properties['suburb']?.toString() ??
-        properties['district']?.toString() ??
-        properties['quarter']?.toString();
-  }
 }
