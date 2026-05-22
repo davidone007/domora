@@ -239,6 +239,19 @@ La pestaña activa se eleva como un círculo blanco con icono verde.
 
 ## 🧭 Guía de Navegación y Flujos
 
+### Usuarios de Prueba
+1. **Cliente**
+
+USER: s.rengifo@andesschool.edu.co
+
+PASSWORD: password123
+
+2. **Proveedor**
+
+USER: proveedor@gmail.com
+
+PASSWORD: proveedor1
+
 Para navegar y probar las funcionalidades de Domora, siga estos flujos principales:
 
 ### A. Flujo de Usuario Nuevo (Registro y Onboarding)
@@ -264,6 +277,22 @@ Para navegar y probar las funcionalidades de Domora, siga estos flujos principal
    - **Solicitudes y Cupones** (Próximamente).
    - **Perfil:** Acceda a su información completa.
 3. **Cerrar Sesión:** Dentro de la pestaña de **Perfil**, encontrará el botón para cerrar sesión, lo que lo devolverá a la pantalla de Bienvenida.
+
+### D. Flujo de Marketplace (Sprint 2)
+Para probar las funcionalidades de publicación y cotización:
+
+1. **Publicar un Servicio (Cliente):**
+   - Desde el **Inicio** del Cliente, presione la tarjeta de **"Limpieza"**.
+   - Complete el flujo de 5 pasos: Detalles del lugar, Subida de fotos, Programación de fecha/hora, Ubicación en el mapa y Confirmación.
+2. **Gestionar Solicitudes (Ambos):**
+   - En el menú inferior, vaya a la pestaña **"Solicitudes"**.
+   - Si es **Cliente**: Verá "Mis Solicitudes" con el estado y conteo de propuestas.
+   - Si es **Proveedor**: Verá "Servicios Disponibles" para encontrar oportunidades de trabajo.
+3. **Enviar y Ver Propuestas:**
+   - **Proveedor**: Entre al detalle de un servicio disponible y presione **"Cotizar"** para enviar precio y mensaje.
+   - **Cliente**: Entre al detalle de su solicitud publicada y presione **"Ver propuestas"** para comparar las ofertas de los aseadores.
+4. **Ver Perfil del Aseador (Cliente):**
+   - Dentro de la lista de propuestas de un servicio, toque el nombre o la foto de un proveedor para ver su **Perfil Público** con su experiencia, tarifa y estadísticas reales.
 
 ---
 
