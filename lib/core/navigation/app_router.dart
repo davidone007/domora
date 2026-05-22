@@ -79,6 +79,7 @@ import 'package:domora/features/services/ui/screens/service_detail_screen.dart';
 import 'package:domora/features/proposals/data/repo/proposal_repository_impl.dart';
 import 'package:domora/features/proposals/data/sources/proposal_remote_data_source.dart';
 import 'package:domora/features/proposals/domain/repo/proposal_repository.dart';
+import 'package:domora/features/proposals/domain/usecases/accept_proposal_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/check_user_proposal_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/get_proposals_by_service_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/send_proposal_usecase.dart';
@@ -286,6 +287,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
             create: (_) => ServiceProposalsBloc(
               getProposalsByServiceUseCase: GetProposalsByServiceUseCase(propRepo),
               getCurrentSession: getCurrentSession,
+              acceptProposalUseCase: AcceptProposalUseCase(propRepo),
             ),
             child: ServiceProposalsScreen(serviceId: serviceId),
           );

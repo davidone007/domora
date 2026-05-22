@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
+import '../../domain/entities/proposal_with_provider.dart';
 import '../bloc/service_proposals_bloc.dart';
 import '../widgets/proposal_card.dart';
 
@@ -40,9 +42,31 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
           ),
         ],
       ),
-      body: BlocBuilder<ServiceProposalsBloc, ServiceProposalsState>(
+      body: BlocConsumer<ServiceProposalsBloc, ServiceProposalsState>(
+        listener: (context, state) {
+          if (state.status == ServiceProposalsStatus.acceptSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Propuesta aceptada con éxito. El servicio está en progreso.'),
+                backgroundColor: AppTheme.primary,
+              ),
+            );
+            // Refrescamos para ver los nuevos estados (Aceptada/Rechazada)
+            context.read<ServiceProposalsBloc>().add(FetchServiceProposalsEvent(widget.serviceId));
+          }
+
+          if (state.status == ServiceProposalsStatus.error && state.errorMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage!),
+                backgroundColor: AppTheme.error,
+              ),
+            );
+          }
+        },
         builder: (context, state) {
-          if (state.status == ServiceProposalsStatus.loading) {
+          if (state.status == ServiceProposalsStatus.loading ||
+              state.status == ServiceProposalsStatus.accepting) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -93,6 +117,8 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
               );
             }
 
+            final bool hasAcceptedProposal = state.proposals.any((p) => p.proposal.status == 'accepted');
+
             return RefreshIndicator(
               onRefresh: () async {
                 context.read<ServiceProposalsBloc>().add(FetchServiceProposalsEvent(widget.serviceId));
@@ -104,6 +130,8 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
                   final proposal = state.proposals[index];
                   return ProposalCard(
                     proposalWithProvider: proposal,
+                    showAcceptButton: !hasAcceptedProposal,
+                    onAccept: () => _showConfirmDialog(context, proposal),
                     onTap: () {
                       context.push('/provider-profile/${proposal.proposal.providerId}');
                     },
@@ -115,6 +143,36 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
 
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+
+  void _showConfirmDialog(BuildContext context, ProposalWithProvider proposal) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Aceptar Propuesta'),
+        content: Text(
+          '¿Estás seguro que deseas aceptar la propuesta de ${proposal.providerFirstName} por un valor de ${NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0).format(proposal.proposal.price)}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar', style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              context.read<ServiceProposalsBloc>().add(AcceptProposalRequestedEvent(proposal.proposal));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            child: const Text('Sí, Aceptar'),
+          ),
+        ],
       ),
     );
   }

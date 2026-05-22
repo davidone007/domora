@@ -1,8 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:domora/features/auth/domain/usecases/get_current_session_usecase.dart';
+import '../../domain/entities/proposal.dart';
 import '../../domain/entities/proposal_with_provider.dart';
 import '../../domain/usecases/get_proposals_by_service_usecase.dart';
+import '../../domain/usecases/accept_proposal_usecase.dart';
 
 // Events
 abstract class ServiceProposalsEvent extends Equatable {
@@ -30,8 +32,17 @@ class SortProposalsByPriceEvent extends ServiceProposalsEvent {
   List<Object?> get props => [ascending];
 }
 
+class AcceptProposalRequestedEvent extends ServiceProposalsEvent {
+  final Proposal proposal;
+
+  const AcceptProposalRequestedEvent(this.proposal);
+
+  @override
+  List<Object?> get props => [proposal];
+}
+
 // States
-enum ServiceProposalsStatus { initial, loading, success, error }
+enum ServiceProposalsStatus { initial, loading, success, error, accepting, acceptSuccess }
 
 class ServiceProposalsState extends Equatable {
   final ServiceProposalsStatus status;
@@ -64,15 +75,19 @@ class ServiceProposalsState extends Equatable {
 class ServiceProposalsBloc extends Bloc<ServiceProposalsEvent, ServiceProposalsState> {
   final GetProposalsByServiceUseCase _getProposalsByServiceUseCase;
   final GetCurrentSessionUseCase _getCurrentSession;
+  final AcceptProposalUseCase _acceptProposalUseCase;
 
   ServiceProposalsBloc({
     required GetProposalsByServiceUseCase getProposalsByServiceUseCase,
     required GetCurrentSessionUseCase getCurrentSession,
+    required AcceptProposalUseCase acceptProposalUseCase,
   })  : _getProposalsByServiceUseCase = getProposalsByServiceUseCase,
         _getCurrentSession = getCurrentSession,
+        _acceptProposalUseCase = acceptProposalUseCase,
         super(const ServiceProposalsState()) {
     on<FetchServiceProposalsEvent>(_onFetchServiceProposals);
     on<SortProposalsByPriceEvent>(_onSortProposalsByPrice);
+    on<AcceptProposalRequestedEvent>(_onAcceptProposalRequested);
   }
 
   Future<void> _onFetchServiceProposals(
@@ -122,5 +137,22 @@ class ServiceProposalsBloc extends Bloc<ServiceProposalsEvent, ServiceProposalsS
         : b.proposal.price.compareTo(a.proposal.price));
 
     emit(state.copyWith(proposals: sortedProposals));
+  }
+
+  Future<void> _onAcceptProposalRequested(
+    AcceptProposalRequestedEvent event,
+    Emitter<ServiceProposalsState> emit,
+  ) async {
+    emit(state.copyWith(status: ServiceProposalsStatus.accepting));
+
+    final result = await _acceptProposalUseCase.execute(event.proposal);
+
+    result.fold(
+      (failure) => emit(state.copyWith(
+        status: ServiceProposalsStatus.error,
+        errorMessage: failure.message,
+      )),
+      (_) => emit(state.copyWith(status: ServiceProposalsStatus.acceptSuccess)),
+    );
   }
 }
