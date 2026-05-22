@@ -48,27 +48,35 @@ class ServiceProposalsState extends Equatable {
   final ServiceProposalsStatus status;
   final List<ProposalWithProvider> proposals;
   final String? errorMessage;
+  final String? acceptedBookingId;
+  final double? acceptedAmount;
 
   const ServiceProposalsState({
     this.status = ServiceProposalsStatus.initial,
     this.proposals = const [],
     this.errorMessage,
+    this.acceptedBookingId,
+    this.acceptedAmount,
   });
 
   ServiceProposalsState copyWith({
     ServiceProposalsStatus? status,
     List<ProposalWithProvider>? proposals,
     String? errorMessage,
+    String? acceptedBookingId,
+    double? acceptedAmount,
   }) {
     return ServiceProposalsState(
       status: status ?? this.status,
       proposals: proposals ?? this.proposals,
       errorMessage: errorMessage ?? this.errorMessage,
+      acceptedBookingId: acceptedBookingId ?? this.acceptedBookingId,
+      acceptedAmount: acceptedAmount ?? this.acceptedAmount,
     );
   }
 
   @override
-  List<Object?> get props => [status, proposals, errorMessage];
+  List<Object?> get props => [status, proposals, errorMessage, acceptedBookingId, acceptedAmount];
 }
 
 // BLoC
@@ -150,9 +158,14 @@ class ServiceProposalsBloc extends Bloc<ServiceProposalsEvent, ServiceProposalsS
     result.fold(
       (failure) => emit(state.copyWith(
         status: ServiceProposalsStatus.error,
-        errorMessage: failure.message,
+        errorMessage: 'Error al aceptar la propuesta',
       )),
-      (_) => emit(state.copyWith(status: ServiceProposalsStatus.acceptSuccess)),
-    );
-  }
-}
+      (bookingId) => emit(state.copyWith(
+        status: ServiceProposalsStatus.acceptSuccess,
+        acceptedBookingId: bookingId,
+        acceptedAmount: event.proposal.price,
+      )),
+      );
+      }
+      }
+

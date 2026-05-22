@@ -80,6 +80,11 @@ import 'package:domora/features/proposals/data/repo/proposal_repository_impl.dar
 import 'package:domora/features/proposals/data/sources/proposal_remote_data_source.dart';
 import 'package:domora/features/proposals/domain/repo/proposal_repository.dart';
 import 'package:domora/features/proposals/domain/usecases/accept_proposal_usecase.dart';
+import 'package:domora/features/proposals/domain/usecases/process_payment_usecase.dart';
+import 'package:domora/features/proposals/data/repo/payment_repository_impl.dart';
+import 'package:domora/features/proposals/data/sources/payment_remote_data_source.dart';
+import 'package:domora/features/proposals/ui/bloc/payment_bloc.dart';
+import 'package:domora/features/proposals/ui/screens/payment_selection_screen.dart';
 import 'package:domora/features/proposals/domain/usecases/check_user_proposal_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/get_proposals_by_service_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/send_proposal_usecase.dart';
@@ -302,6 +307,28 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               getProviderProfileUseCase: GetProviderProfileUseCase(profRepo),
             ),
             child: ProviderPublicProfileScreen(userId: userId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/payment/:bookingId',
+        builder: (context, state) {
+          final bookingId = state.pathParameters['bookingId']!;
+          final extra = state.extra as Map<String, dynamic>;
+          final amount = (extra['amount'] as num).toDouble();
+
+          final payDs = PaymentRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
+          final payRepo = PaymentRepositoryImpl(payDs, errorMapper);
+
+          return BlocProvider(
+            create: (_) => PaymentBloc(
+              processPaymentUseCase: ProcessPaymentUseCase(payRepo),
+              getCurrentSession: getCurrentSession,
+            ),
+            child: PaymentSelectionScreen(
+              bookingId: bookingId,
+              amount: amount,
+            ),
           );
         },
       ),

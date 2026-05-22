@@ -8,7 +8,7 @@ class AcceptProposalUseCase {
 
   AcceptProposalUseCase(this._repository);
 
-  Future<Either<Failure, Unit>> execute(Proposal proposal) {
+  Future<Either<Failure, String>> execute(Proposal proposal) {
     return _repository.acceptProposal(proposal);
   }
 }

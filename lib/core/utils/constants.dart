@@ -14,6 +14,7 @@ class AppConstants {
   static const String tableBookings = 'bookings';
   static const String tableReviews = 'reviews';
   static const String tableQuotes = 'quotes';
+  static const String tablePayments = 'payments';
 
   // ---------------------------------------------------------------------------
   // Buckets
