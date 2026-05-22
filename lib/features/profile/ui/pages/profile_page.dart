@@ -50,89 +50,88 @@ class _ProfilePageState extends State<ProfilePage> {
           context.go(AppConstants.routeLogin);
         }
       },
-      child: MainShell(
-        activeTab: MainTab.profile,
-        onTabSelected: (tab) {
-          if (tab == MainTab.home) _goToHome();
-          if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);
-          if (tab == MainTab.coupons) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                const SnackBar(content: Text('Disponible próximamente')),
-              );
+      child: BlocBuilder<ProfileBloc, ProfileState>(
+        builder: (context, state) {
+          String? currentRole;
+          if (state is ProfileLoadedState) {
+            currentRole = state.profile.role;
           }
-        },
-        body: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              // AppBar manual (no usamos Scaffold.appBar porque el MainShell ya
-              // posee el Scaffold raíz; añadir otro daría doble AppBar).
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: _goToHome,
-                      icon: const Icon(Icons.arrow_back, size: 22),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          'Mi perfil',
-                          style: Theme.of(context).textTheme.titleMedium,
+
+          return MainShell(
+            activeTab: MainTab.profile,
+            role: currentRole,
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  // AppBar manual (no usamos Scaffold.appBar porque el MainShell ya
+                  // posee el Scaffold raíz; añadir otro daría doble AppBar).
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: _goToHome,
+                          icon: const Icon(Icons.arrow_back, size: 22),
                         ),
-                      ),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              'Mi perfil',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ),
+                        BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
+                          builder: (context, signOutState) {
+                            final isLoading =
+                                signOutState is ProfileSignOutLoadingState;
+                            return IconButton(
+                              tooltip: 'Cerrar sesión',
+                              onPressed: isLoading
+                                  ? null
+                                  : () => context
+                                      .read<ProfileSignOutBloc>()
+                                      .add(const ProfileSignOutSubmitEvent()),
+                              icon: const Icon(Icons.logout, size: 22),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
-                      builder: (context, signOutState) {
-                        final isLoading =
-                            signOutState is ProfileSignOutLoadingState;
-                        return IconButton(
-                          tooltip: 'Cerrar sesión',
-                          onPressed: isLoading
-                              ? null
-                              : () => context
-                                  .read<ProfileSignOutBloc>()
-                                  .add(const ProfileSignOutSubmitEvent()),
-                          icon: const Icon(Icons.logout, size: 22),
-                        );
+                  ),
+                  Expanded(
+                    child: Builder(
+                      builder: (context) {
+                        if (state is ProfileLoadingState ||
+                            state is ProfileInitialState) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (state is ProfileErrorState) {
+                          return _ErrorView(
+                            message: state.message,
+                            onRetry: () => context
+                                .read<ProfileBloc>()
+                                .add(const ProfileRefreshEvent()),
+                          );
+                        }
+                        if (state is ProfileLoadedState) {
+                          return RefreshIndicator(
+                            onRefresh: () async => context
+                                .read<ProfileBloc>()
+                                .add(const ProfileRefreshEvent()),
+                            child: _ProfileContent(profile: state.profile),
+                          );
+                        }
+                        return const SizedBox.shrink();
                       },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: BlocBuilder<ProfileBloc, ProfileState>(
-                  builder: (context, state) {
-                    if (state is ProfileLoadingState ||
-                        state is ProfileInitialState) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (state is ProfileErrorState) {
-                      return _ErrorView(
-                        message: state.message,
-                        onRetry: () => context
-                            .read<ProfileBloc>()
-                            .add(const ProfileRefreshEvent()),
-                      );
-                    }
-                    if (state is ProfileLoadedState) {
-                      return RefreshIndicator(
-                        onRefresh: () async => context
-                            .read<ProfileBloc>()
-                            .add(const ProfileRefreshEvent()),
-                        child: _ProfileContent(profile: state.profile),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

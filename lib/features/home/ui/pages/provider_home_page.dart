@@ -38,17 +38,6 @@ class _ProviderHomePageState extends State<ProviderHomePage> {
     return MainShell(
       activeTab: MainTab.home,
       role: AppConstants.roleProvider, // Añadido rol explícito
-      onTabSelected: (tab) {
-        if (tab == MainTab.profile) context.go(AppConstants.routeProfile);
-        if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);
-        if (tab == MainTab.coupons) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(content: Text('Disponible próximamente')),
-            );
-        }
-      },
       body: Column(
         children: [
           DashboardHeader(

@@ -80,6 +80,13 @@ import 'package:domora/features/proposals/data/repo/proposal_repository_impl.dar
 import 'package:domora/features/proposals/data/sources/proposal_remote_data_source.dart';
 import 'package:domora/features/proposals/domain/repo/proposal_repository.dart';
 import 'package:domora/features/proposals/domain/usecases/accept_proposal_usecase.dart';
+import 'package:domora/features/proposals/domain/usecases/get_client_booking_history_usecase.dart';
+import 'package:domora/features/proposals/domain/usecases/get_provider_active_bookings_usecase.dart';
+import 'package:domora/features/proposals/domain/usecases/complete_booking_usecase.dart';
+import 'package:domora/features/proposals/data/repo/booking_repository_impl.dart';
+import 'package:domora/features/proposals/data/sources/booking_remote_data_source.dart';
+import 'package:domora/features/proposals/ui/bloc/booking_activity_bloc.dart';
+import 'package:domora/features/proposals/ui/screens/booking_activity_screen.dart';
 import 'package:domora/features/proposals/domain/usecases/process_payment_usecase.dart';
 import 'package:domora/features/proposals/data/repo/payment_repository_impl.dart';
 import 'package:domora/features/proposals/data/sources/payment_remote_data_source.dart';
@@ -329,6 +336,23 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               bookingId: bookingId,
               amount: amount,
             ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/activity',
+        builder: (context, state) {
+          final bookDs = BookingRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
+          final bookRepo = BookingRepositoryImpl(bookDs, errorMapper);
+
+          return BlocProvider(
+            create: (_) => BookingActivityBloc(
+              getClientHistory: GetClientBookingHistoryUseCase(bookRepo),
+              getProviderActive: GetProviderActiveBookingsUseCase(bookRepo),
+              completeBooking: CompleteBookingUseCase(bookRepo),
+              getCurrentSession: getCurrentSession,
+            ),
+            child: const BookingActivityScreen(),
           );
         },
       ),
