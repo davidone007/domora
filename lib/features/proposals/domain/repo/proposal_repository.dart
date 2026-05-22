@@ -19,5 +19,5 @@ abstract class ProposalRepository {
   });
 
   /// Acepta una propuesta, creando un booking y actualizando los estados de las entidades relacionadas.
-  Future<Either<Failure, Unit>> acceptProposal(Proposal proposal);
+  Future<Either<Failure, String>> acceptProposal(Proposal proposal);
 }

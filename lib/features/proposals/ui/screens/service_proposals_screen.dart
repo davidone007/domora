@@ -47,12 +47,16 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
           if (state.status == ServiceProposalsStatus.acceptSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Propuesta aceptada con éxito. El servicio está en progreso.'),
+                content: Text('Propuesta aceptada con éxito. Procede con el pago.'),
                 backgroundColor: AppTheme.primary,
               ),
             );
-            // Refrescamos para ver los nuevos estados (Aceptada/Rechazada)
-            context.read<ServiceProposalsBloc>().add(FetchServiceProposalsEvent(widget.serviceId));
+
+            // Navegamos al pago
+            context.push(
+              '/payment/${state.acceptedBookingId}',
+              extra: {'amount': state.acceptedAmount},
+            );
           }
 
           if (state.status == ServiceProposalsStatus.error && state.errorMessage != null) {

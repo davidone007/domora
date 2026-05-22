@@ -4,16 +4,20 @@
 -- This function ensures that booking creation and status updates are atomic.
 -- ============================================================================
 
+-- Eliminamos la versión anterior si existe para evitar errores de cambio de tipo de retorno
+drop function if exists public.accept_quote(uuid, uuid, uuid, uuid, decimal);
+
 create or replace function public.accept_quote(
   p_quote_id uuid,
   p_service_id uuid,
   p_client_id uuid,
   p_provider_id uuid,
   p_price decimal
-) returns void as $$
+) returns uuid as $$
+declare
+  v_booking_id uuid;
 begin
   -- 1. Crear el booking
-  -- Nota: La tabla 'bookings' debe existir previamente (definida en el schema del Sprint 2)
   insert into public.bookings (
     quote_id, 
     service_id, 
@@ -33,7 +37,8 @@ begin
     p_price,
     now(),
     now()
-  );
+  )
+  returning id into v_booking_id;
 
   -- 2. Aceptar la propuesta actual
   update public.quotes 
@@ -57,6 +62,8 @@ begin
     status = 'in_progress', 
     updated_at = now() 
   where id = p_service_id;
+
+  return v_booking_id;
 end;
 $$ language plpgsql security definer;
 

@@ -73,11 +73,11 @@ class ProposalRepositoryImpl implements ProposalRepository {
   }
 
   @override
-  Future<Either<Failure, Unit>> acceptProposal(Proposal proposal) async {
+  Future<Either<Failure, String>> acceptProposal(Proposal proposal) async {
     try {
       final model = ProposalModel.fromEntity(proposal);
-      await _remoteDataSource.acceptProposal(model);
-      return const Right(unit);
+      final bookingId = await _remoteDataSource.acceptProposal(model);
+      return Right(bookingId);
     } catch (e, stackTrace) {
       return Left(_errorMapper.mapException(
         e,
