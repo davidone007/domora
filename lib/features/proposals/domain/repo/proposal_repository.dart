@@ -17,4 +17,7 @@ abstract class ProposalRepository {
     required String serviceId,
     required String clientId,
   });
+
+  /// Acepta una propuesta, creando un booking y actualizando los estados de las entidades relacionadas.
+  Future<Either<Failure, Unit>> acceptProposal(Proposal proposal);
 }

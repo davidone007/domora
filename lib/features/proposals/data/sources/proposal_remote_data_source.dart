@@ -10,6 +10,7 @@ abstract class ProposalRemoteDataSource {
     required String serviceId,
     required String clientId,
   });
+  Future<void> acceptProposal(ProposalModel proposal);
 }
 
 class ProposalRemoteDataSourceImpl implements ProposalRemoteDataSource {
@@ -63,5 +64,20 @@ class ProposalRemoteDataSourceImpl implements ProposalRemoteDataSource {
         .order('created_at', ascending: false);
 
     return response.map((json) => ProposalWithProviderModel.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  @override
+  Future<void> acceptProposal(ProposalModel proposal) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const PostgrestException(message: 'No hay conexión a internet');
+    }
+
+    await _client.rpc('accept_quote', params: {
+      'p_quote_id': proposal.id,
+      'p_service_id': proposal.serviceId,
+      'p_client_id': _client.auth.currentUser!.id,
+      'p_provider_id': proposal.providerId,
+      'p_price': proposal.price,
+    });
   }
 }

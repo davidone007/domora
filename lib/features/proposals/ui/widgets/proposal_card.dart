@@ -6,11 +6,15 @@ import '../../domain/entities/proposal_with_provider.dart';
 class ProposalCard extends StatelessWidget {
   final ProposalWithProvider proposalWithProvider;
   final VoidCallback? onTap;
+  final VoidCallback? onAccept;
+  final bool showAcceptButton;
 
   const ProposalCard({
     super.key,
     required this.proposalWithProvider,
     this.onTap,
+    this.onAccept,
+    this.showAcceptButton = false,
   });
 
   @override
@@ -152,6 +156,28 @@ class ProposalCard extends StatelessWidget {
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
                         color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+                if (showAcceptButton && proposal.status == 'pending') ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: onAccept,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Aceptar Propuesta',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
