@@ -52,17 +52,6 @@ class _ClientHomePageState extends State<ClientHomePage> {
     return MainShell(
       activeTab: MainTab.home,
       role: AppConstants.roleClient, // Añadido rol explícito
-      onTabSelected: (tab) {
-        if (tab == MainTab.profile) context.go(AppConstants.routeProfile);
-        if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);
-        if (tab == MainTab.coupons) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(content: Text('Disponible próximamente')),
-            );
-        }
-      },
       body: Column(
         children: [
           // Header oscuro pegado al top.
