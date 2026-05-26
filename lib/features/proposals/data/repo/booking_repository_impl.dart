@@ -89,6 +89,14 @@ class BookingRepositoryImpl implements BookingRepository {
       final clientProfile = userData['client_profiles'];
       final providerProfile = userData['provider_profiles'];
       
+      final reviews = json['reviews'];
+      bool hasReview = false;
+      if (reviews is List && reviews.isNotEmpty) {
+        hasReview = true;
+      } else if (reviews is Map) {
+        hasReview = true;
+      }
+
       String? avatarUrl;
       if (clientProfile is Map && clientProfile['avatar_url'] != null) {
         avatarUrl = clientProfile['avatar_url'];
@@ -105,6 +113,7 @@ class BookingRepositoryImpl implements BookingRepository {
         service: service,
         otherPartyName: name,
         otherPartyAvatarUrl: avatarUrl,
+        hasReview: hasReview,
       );
     }).toList();
   }

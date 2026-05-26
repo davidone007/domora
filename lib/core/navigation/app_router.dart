@@ -87,6 +87,12 @@ import 'package:domora/features/proposals/data/repo/booking_repository_impl.dart
 import 'package:domora/features/proposals/data/sources/booking_remote_data_source.dart';
 import 'package:domora/features/proposals/ui/bloc/booking_activity_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/booking_activity_screen.dart';
+import 'package:domora/features/proposals/domain/usecases/send_review_usecase.dart';
+import 'package:domora/features/proposals/domain/usecases/check_booking_review_usecase.dart';
+import 'package:domora/features/proposals/data/repo/review_repository_impl.dart';
+import 'package:domora/features/proposals/data/sources/review_remote_data_source.dart';
+import 'package:domora/features/proposals/ui/bloc/review_bloc.dart';
+import 'package:domora/features/proposals/ui/screens/rating_screen.dart';
 import 'package:domora/features/proposals/domain/usecases/process_payment_usecase.dart';
 import 'package:domora/features/proposals/data/repo/payment_repository_impl.dart';
 import 'package:domora/features/proposals/data/sources/payment_remote_data_source.dart';
@@ -353,6 +359,30 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               getCurrentSession: getCurrentSession,
             ),
             child: const BookingActivityScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/rate-service/:bookingId',
+        builder: (context, state) {
+          final bookingId = state.pathParameters['bookingId']!;
+          final extra = state.extra as Map<String, dynamic>;
+          final serviceTitle = extra['serviceTitle'] as String;
+          final providerName = extra['providerName'] as String;
+
+          final revDs = ReviewRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
+          final revRepo = ReviewRepositoryImpl(revDs, errorMapper);
+
+          return BlocProvider(
+            create: (_) => ReviewBloc(
+              sendReviewUseCase: SendReviewUseCase(revRepo),
+              checkReviewUseCase: CheckBookingReviewUseCase(revRepo),
+            )..add(CheckReviewStatusEvent(bookingId)),
+            child: RatingScreen(
+              bookingId: bookingId,
+              serviceTitle: serviceTitle,
+              providerName: providerName,
+            ),
           );
         },
       ),

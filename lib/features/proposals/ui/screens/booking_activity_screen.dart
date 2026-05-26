@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
@@ -151,6 +152,10 @@ class _BookingActivityCard extends StatelessWidget {
     final currencyFormat = NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0);
     final dateFormat = DateFormat('dd MMM yyyy, hh:mm a');
 
+    final bool canRate = !isProvider && 
+                        item.booking.status == 'completed' && 
+                        !item.hasReview;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -216,6 +221,24 @@ class _BookingActivityCard extends StatelessWidget {
             CustomButton(
               label: 'Finalizar Servicio',
               onPressed: onComplete,
+            ),
+          ],
+          if (canRate) ...[
+            const SizedBox(height: 16),
+            CustomButton(
+              label: 'Calificar Servicio',
+              onPressed: () async {
+                final result = await context.push(
+                  '/rate-service/${item.booking.id}',
+                  extra: {
+                    'serviceTitle': item.service.title,
+                    'providerName': item.otherPartyName,
+                  },
+                );
+                if (result == true && context.mounted) {
+                  context.read<BookingActivityBloc>().add(const FetchBookingActivityEvent());
+                }
+              },
             ),
           ],
         ],

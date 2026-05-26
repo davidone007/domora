@@ -7,14 +7,16 @@ class BookingWithService extends Equatable {
   final Service service;
   final String otherPartyName;
   final String? otherPartyAvatarUrl;
+  final bool hasReview;
 
   const BookingWithService({
     required this.booking,
     required this.service,
     required this.otherPartyName,
     this.otherPartyAvatarUrl,
+    this.hasReview = false,
   });
 
   @override
-  List<Object?> get props => [booking, service, otherPartyName, otherPartyAvatarUrl];
+  List<Object?> get props => [booking, service, otherPartyName, otherPartyAvatarUrl, hasReview];
 }
