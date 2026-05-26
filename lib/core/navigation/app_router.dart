@@ -3,104 +3,44 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:domora/core/error/error_mapper_singleton.dart';
+import 'package:domora/injection_container.dart';
 import 'package:domora/core/network/network_info.dart';
-import 'package:domora/core/navigation/bloc/onboarding_route_bloc.dart';
-import 'package:domora/core/navigation/bloc/splash_bloc.dart';
+import 'package:domora/features/app/ui/bloc/onboarding_route_bloc.dart';
+import 'package:domora/features/app/ui/bloc/splash_bloc.dart';
 import 'package:domora/core/navigation/main_screen.dart';
 import 'package:domora/core/utils/constants.dart';
-
-import 'package:domora/features/auth/data/repo/auth_repo_impl.dart';
-import 'package:domora/features/auth/data/sources/auth_data_source.dart';
-import 'package:domora/features/auth/domain/repo/auth_repo.dart';
-import 'package:domora/features/auth/domain/usecases/get_current_session_usecase.dart';
-import 'package:domora/features/auth/domain/usecases/login_usecase.dart';
-import 'package:domora/features/auth/domain/usecases/signout_usecase.dart';
-import 'package:domora/features/auth/domain/usecases/signup_usecase.dart';
 
 import 'package:domora/features/auth/ui/auth_blocs/login_bloc.dart';
 import 'package:domora/features/auth/ui/auth_screens/login_screen.dart';
 import 'package:domora/features/auth/ui/auth_blocs/signup_bloc.dart';
 import 'package:domora/features/auth/ui/auth_screens/signup_screen.dart';
 
-import 'package:domora/features/onboarding/data/repo/onboarding_repo_impl.dart';
-import 'package:domora/features/onboarding/data/sources/onboarding_data_source.dart';
-import 'package:domora/features/onboarding/domain/repo/onboarding_repo.dart';
-import 'package:domora/features/onboarding/domain/usecases/save_client_profile_usecase.dart';
-import 'package:domora/features/onboarding/domain/usecases/save_provider_profile_usecase.dart';
 import 'package:domora/features/onboarding/ui/bloc/onboarding_bloc.dart';
 import 'package:domora/features/onboarding/ui/screens/onboarding_screen.dart';
 
-import 'package:domora/features/profile/data/repo/profile_repository_impl.dart';
-import 'package:domora/features/profile/data/sources/profile_data_source.dart';
-import 'package:domora/features/profile/domain/repo/profile_repository.dart';
-import 'package:domora/features/profile/domain/usecases/get_current_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/get_provider_profile_usecase.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/profile_signout_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/provider_public_profile_bloc.dart';
 import 'package:domora/features/profile/ui/pages/profile_page.dart';
 import 'package:domora/features/profile/ui/screens/provider_public_profile_screen.dart';
-import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/upload_avatar_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_email_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_password_usecase.dart';
 import 'package:domora/features/profile/ui/bloc/profile_edit_bloc.dart';
 import 'package:domora/features/profile/ui/pages/edit_profile_page.dart';
 
-import 'package:domora/features/services/data/repo/service_repository_impl.dart';
-import 'package:domora/features/services/data/sources/service_remote_data_source.dart';
-import 'package:domora/features/services/data/repo/address_repository_impl.dart';
-import 'package:domora/features/services/data/sources/address_remote_data_source.dart';
-import 'package:domora/features/services/data/sources/location_data_source.dart';
-import 'package:domora/features/services/domain/repo/service_repository.dart';
-import 'package:domora/features/services/domain/repo/address_repository.dart';
-import 'package:domora/features/services/domain/usecases/publish_cleaning_service_usecase.dart';
-import 'package:domora/features/services/domain/usecases/get_current_location_usecase.dart';
-import 'package:domora/features/services/domain/usecases/autocomplete_address_usecase.dart';
-import 'package:domora/features/services/domain/usecases/reverse_geocode_usecase.dart';
 import 'package:domora/features/services/ui/bloc/address_picker_bloc.dart';
 import 'package:domora/features/services/ui/bloc/service_publish_bloc.dart';
 import 'package:domora/features/services/ui/screens/publish_service_flow_screen.dart';
-
-
-import 'package:domora/features/services/domain/usecases/get_my_services_usecase.dart';
-import 'package:domora/features/services/domain/usecases/get_all_services_usecase.dart';
-import 'package:domora/features/services/domain/usecases/get_service_detail_usecase.dart';
 import 'package:domora/features/services/ui/bloc/my_services_bloc.dart';
 import 'package:domora/features/services/ui/bloc/service_detail_bloc.dart';
 import 'package:domora/features/services/ui/screens/my_services_screen.dart';
 import 'package:domora/features/services/ui/screens/service_detail_screen.dart';
 
-import 'package:domora/features/proposals/data/repo/proposal_repository_impl.dart';
-import 'package:domora/features/proposals/data/sources/proposal_remote_data_source.dart';
-import 'package:domora/features/proposals/domain/repo/proposal_repository.dart';
-import 'package:domora/features/proposals/domain/usecases/accept_proposal_usecase.dart';
-import 'package:domora/features/proposals/domain/usecases/get_client_booking_history_usecase.dart';
-import 'package:domora/features/proposals/domain/usecases/get_provider_active_bookings_usecase.dart';
-import 'package:domora/features/proposals/domain/usecases/complete_booking_usecase.dart';
-import 'package:domora/features/proposals/data/repo/booking_repository_impl.dart';
-import 'package:domora/features/proposals/data/sources/booking_remote_data_source.dart';
 import 'package:domora/features/proposals/ui/bloc/booking_activity_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/booking_activity_screen.dart';
-import 'package:domora/features/proposals/domain/usecases/send_review_usecase.dart';
-import 'package:domora/features/proposals/domain/usecases/check_booking_review_usecase.dart';
-import 'package:domora/features/proposals/data/repo/review_repository_impl.dart';
-import 'package:domora/features/proposals/data/sources/review_remote_data_source.dart';
 import 'package:domora/features/proposals/ui/bloc/review_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/rating_screen.dart';
-import 'package:domora/features/proposals/domain/usecases/process_payment_usecase.dart';
-import 'package:domora/features/proposals/data/repo/payment_repository_impl.dart';
-import 'package:domora/features/proposals/data/sources/payment_remote_data_source.dart';
 import 'package:domora/features/proposals/ui/bloc/payment_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/payment_selection_screen.dart';
-import 'package:domora/features/proposals/domain/usecases/check_user_proposal_usecase.dart';
-import 'package:domora/features/proposals/domain/usecases/get_proposals_by_service_usecase.dart';
-import 'package:domora/features/proposals/domain/usecases/send_proposal_usecase.dart';
 import 'package:domora/features/proposals/ui/bloc/proposal_send_bloc.dart';
 import 'package:domora/features/proposals/ui/bloc/service_proposals_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/send_proposal_screen.dart';
@@ -113,43 +53,13 @@ import 'package:domora/features/welcome/ui/screens/welcome_screen.dart';
 
 /// Construye y devuelve el router raíz de la aplicación.
 GoRouter buildRouter({required NetworkInfo networkInfo}) {
-  final supabase = Supabase.instance.client;
-
-  // Singletons de la capa de datos / dominio.
-  final errorMapper = ErrorMapperSingleton.instance;
-
-  final AuthDataSource authDs = AuthDataSourceImpl(supabase, networkInfo);
-  final AuthRepository authRepo = AuthRepositoryImpl(authDs, errorMapper);
-  final getCurrentSession = GetCurrentSessionUseCase(authRepo);
-  final signOut = SignOutUseCase(authRepo);
-
-  final OnboardingDataSource onbDs = OnboardingDataSourceImpl(supabase, networkInfo: networkInfo);
-  final OnboardingRepository onbRepo = OnboardingRepositoryImpl(onbDs, errorMapper);
-
-  final ProfileDataSource profDs = ProfileDataSourceImpl(supabase, networkInfo: networkInfo);
-  final ProfileRepository profRepo = ProfileRepositoryImpl(profDs, authRepo, errorMapper);
-
-  final ServiceRemoteDataSource servDs = ServiceRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
-  final ServiceRepository servRepo = ServiceRepositoryImpl(servDs, errorMapper);
-  final AddressRemoteDataSource addressRemoteDs =
-      AddressRemoteDataSourceImpl(networkInfo: networkInfo);
-  final LocationDataSource locationDs = LocationDataSourceImpl();
-  final AddressRepository addressRepo =
-      AddressRepositoryImpl(addressRemoteDs, locationDs, errorMapper);
-
-  final ProposalRemoteDataSource propDs =
-      ProposalRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
-  final ProposalRepository propRepo =
-      ProposalRepositoryImpl(propDs, errorMapper);
-
   return GoRouter(
     initialLocation: AppConstants.routeSplash,
     routes: [
       GoRoute(
         path: AppConstants.routeSplash,
         builder: (_, __) => BlocProvider(
-          create: (_) =>
-              SplashBloc(getCurrentSession)..add(const SplashCheckSessionEvent()),
+          create: (_) => sl<SplashBloc>()..add(const SplashCheckSessionEvent()),
           child: const MainScreen(),
         ),
       ),
@@ -160,14 +70,14 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       GoRoute(
         path: AppConstants.routeLogin,
         builder: (_, __) => BlocProvider(
-          create: (_) => LoginBloc(LoginUseCase(authRepo)),
+          create: (_) => sl<LoginBloc>(),
           child: const LoginScreen(),
         ),
       ),
       GoRoute(
         path: AppConstants.routeSignup,
         builder: (_, __) => BlocProvider(
-          create: (_) => SignupBloc(SignupUseCase(authRepo)),
+          create: (_) => sl<SignupBloc>(),
           child: const SignupScreen(),
         ),
       ),
@@ -175,15 +85,9 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         path: AppConstants.routeOnboarding,
         builder: (_, __) => MultiBlocProvider(
           providers: [
+            BlocProvider(create: (_) => sl<OnboardingBloc>()),
             BlocProvider(
-              create: (_) => OnboardingBloc(
-                saveClient: SaveClientProfileUseCase(onbRepo),
-                saveProvider: SaveProviderProfileUseCase(onbRepo),
-                getCurrentSession: getCurrentSession,
-              ),
-            ),
-            BlocProvider(
-              create: (_) => OnboardingRouteBloc(getCurrentSession)
+              create: (_) => sl<OnboardingRouteBloc>()
                 ..add(const OnboardingRouteLoadEvent()),
             ),
           ],
@@ -192,7 +96,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       ),
       GoRoute(
         path: AppConstants.routeClientHome,
-        builder: (_, __) => ClientHomePage(userId: supabase.auth.currentUser?.id),
+        builder: (_, __) => ClientHomePage(userId: sl<SupabaseClient>().auth.currentUser?.id),
       ),
       GoRoute(
         path: AppConstants.routeProviderHome,
@@ -203,19 +107,8 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         builder: (context, state) {
           return MultiBlocProvider(
             providers: [
-              BlocProvider(
-                create: (_) => ServicePublishBloc(
-                  publishCleaningService: PublishCleaningServiceUseCase(servRepo),
-                  getCurrentSession: getCurrentSession,
-                ),
-              ),
-              BlocProvider(
-                create: (_) => AddressPickerBloc(
-                  getCurrentLocation: GetCurrentLocationUseCase(addressRepo),
-                  autocomplete: AutocompleteAddressUseCase(addressRepo),
-                  reverseGeocode: ReverseGeocodeUseCase(addressRepo),
-                ),
-              ),
+              BlocProvider(create: (_) => sl<ServicePublishBloc>()),
+              BlocProvider(create: (_) => sl<AddressPickerBloc>()),
             ],
             child: const PublishServiceFlowScreen(),
           );
@@ -225,12 +118,8 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         path: AppConstants.routeProfile,
         builder: (_, __) => MultiBlocProvider(
           providers: [
-            BlocProvider(
-              create: (_) => ProfileBloc(GetCurrentProfileUseCase(profRepo)),
-            ),
-            BlocProvider(
-              create: (_) => ProfileSignOutBloc(signOut),
-            ),
+            BlocProvider(create: (_) => sl<ProfileBloc>()),
+            BlocProvider(create: (_) => sl<ProfileSignOutBloc>()),
           ],
           child: const ProfilePage(),
         ),
@@ -245,15 +134,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
           }
 
           return BlocProvider(
-            create: (_) => ProfileEditBloc(
-              UpdateProfileUseCase(profRepo),
-              UpdateClientProfileUseCase(profRepo),
-              UpdateProviderProfileUseCase(profRepo),
-              UpdateProviderAddressUseCase(profRepo),
-              UploadAvatarUseCase(profRepo),
-              UpdateEmailUseCase(profRepo),
-              UpdatePasswordUseCase(profRepo),
-            ),
+            create: (_) => sl<ProfileEditBloc>(),
             child: EditProfilePage(initialProfile: initialProfile),
           );
         },
@@ -261,11 +142,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       GoRoute(
         path: AppConstants.routeMyServices,
         builder: (_, __) => BlocProvider(
-          create: (_) => MyServicesBloc(
-            GetMyServicesUseCase(servRepo),
-            GetAllServicesUseCase(servRepo),
-            getCurrentSession,
-          ),
+          create: (_) => sl<MyServicesBloc>(),
           child: const MyServicesScreen(),
         ),
       ),
@@ -274,11 +151,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return BlocProvider(
-            create: (_) => ServiceDetailBloc(
-              GetServiceDetailUseCase(servRepo),
-              getCurrentSession,
-              CheckUserProposalUseCase(propRepo),
-            )..add(FetchServiceDetailEvent(id)),
+            create: (_) => sl<ServiceDetailBloc>()..add(FetchServiceDetailEvent(id)),
             child: ServiceDetailScreen(serviceId: id),
           );
         },
@@ -288,11 +161,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         builder: (context, state) {
           final serviceId = state.pathParameters['serviceId']!;
           return BlocProvider(
-            create: (_) => ProposalSendBloc(
-              SendProposalUseCase(propRepo),
-              CheckUserProposalUseCase(propRepo),
-              getCurrentSession,
-            ),
+            create: (_) => sl<ProposalSendBloc>(),
             child: SendProposalScreen(serviceId: serviceId),
           );
         },
@@ -302,11 +171,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         builder: (context, state) {
           final serviceId = state.pathParameters['serviceId']!;
           return BlocProvider(
-            create: (_) => ServiceProposalsBloc(
-              getProposalsByServiceUseCase: GetProposalsByServiceUseCase(propRepo),
-              getCurrentSession: getCurrentSession,
-              acceptProposalUseCase: AcceptProposalUseCase(propRepo),
-            ),
+            create: (_) => sl<ServiceProposalsBloc>(),
             child: ServiceProposalsScreen(serviceId: serviceId),
           );
         },
@@ -316,9 +181,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         builder: (context, state) {
           final userId = state.pathParameters['userId']!;
           return BlocProvider(
-            create: (_) => ProviderPublicProfileBloc(
-              getProviderProfileUseCase: GetProviderProfileUseCase(profRepo),
-            ),
+            create: (_) => sl<ProviderPublicProfileBloc>(),
             child: ProviderPublicProfileScreen(userId: userId),
           );
         },
@@ -330,14 +193,8 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
           final extra = state.extra as Map<String, dynamic>;
           final amount = (extra['amount'] as num).toDouble();
 
-          final payDs = PaymentRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
-          final payRepo = PaymentRepositoryImpl(payDs, errorMapper);
-
           return BlocProvider(
-            create: (_) => PaymentBloc(
-              processPaymentUseCase: ProcessPaymentUseCase(payRepo),
-              getCurrentSession: getCurrentSession,
-            ),
+            create: (_) => sl<PaymentBloc>(),
             child: PaymentSelectionScreen(
               bookingId: bookingId,
               amount: amount,
@@ -348,16 +205,8 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       GoRoute(
         path: '/activity',
         builder: (context, state) {
-          final bookDs = BookingRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
-          final bookRepo = BookingRepositoryImpl(bookDs, errorMapper);
-
           return BlocProvider(
-            create: (_) => BookingActivityBloc(
-              getClientHistory: GetClientBookingHistoryUseCase(bookRepo),
-              getProviderActive: GetProviderActiveBookingsUseCase(bookRepo),
-              completeBooking: CompleteBookingUseCase(bookRepo),
-              getCurrentSession: getCurrentSession,
-            ),
+            create: (_) => sl<BookingActivityBloc>(),
             child: const BookingActivityScreen(),
           );
         },
@@ -370,14 +219,8 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
           final serviceTitle = extra['serviceTitle'] as String;
           final providerName = extra['providerName'] as String;
 
-          final revDs = ReviewRemoteDataSourceImpl(supabase, networkInfo: networkInfo);
-          final revRepo = ReviewRepositoryImpl(revDs, errorMapper);
-
           return BlocProvider(
-            create: (_) => ReviewBloc(
-              sendReviewUseCase: SendReviewUseCase(revRepo),
-              checkReviewUseCase: CheckBookingReviewUseCase(revRepo),
-            )..add(CheckReviewStatusEvent(bookingId)),
+            create: (_) => sl<ReviewBloc>()..add(CheckReviewStatusEvent(bookingId)),
             child: RatingScreen(
               bookingId: bookingId,
               serviceTitle: serviceTitle,

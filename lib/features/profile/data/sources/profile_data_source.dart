@@ -5,17 +5,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/network/network_info.dart';
 import 'package:domora/core/entities/avatar_file.dart';
+import '../models/user_model.dart';
+import '../models/address_model.dart';
+import '../models/client_profile_model.dart';
+import '../models/provider_profile_model.dart';
 
 abstract class ProfileDataSource {
   String? getCurrentUserId();
 
   /// Devuelve el email del usuario autenticado desde la sesión local de Supabase.
   String? getCurrentUserEmail();
-  Future<Map<String, dynamic>?> getUser(String userId);
+  Future<UserModel?> getUser(String userId);
   Future<String?> getRole(String userId);
-  Future<Map<String, dynamic>?> getClientProfile(String userId);
-  Future<Map<String, dynamic>?> getProviderProfile(String userId);
-  Future<Map<String, dynamic>?> getPrimaryAddress(String userId);
+  Future<ClientProfileModel?> getClientProfile(String userId);
+  Future<ProviderProfileModel?> getProviderProfile(String userId);
+  Future<AddressModel?> getPrimaryAddress(String userId);
 
   /// Actualiza la fila en la tabla `users` identificada por `userId`.
   Future<void> updateUser(String userId, Map<String, dynamic> updates);
@@ -54,16 +58,18 @@ class ProfileDataSourceImpl implements ProfileDataSource {
   String? getCurrentUserEmail() => _client.auth.currentUser?.email;
 
   @override
-  Future<Map<String, dynamic>?> getUser(String userId) async {
+  Future<UserModel?> getUser(String userId) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    return await _client
+    final data = await _client
         .from(AppConstants.tableUsers)
         .select()
         .eq('id', userId)
         .maybeSingle();
+    
+    return data != null ? UserModel.fromJson(data) : null;
   }
 
   @override
@@ -85,33 +91,37 @@ class ProfileDataSourceImpl implements ProfileDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>?> getClientProfile(String userId) async {
+  Future<ClientProfileModel?> getClientProfile(String userId) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    return await _client
+    final data = await _client
         .from(AppConstants.tableClientProfiles)
         .select()
         .eq('user_id', userId)
         .maybeSingle();
+    
+    return data != null ? ClientProfileModel.fromJson(data) : null;
   }
 
   @override
-  Future<Map<String, dynamic>?> getProviderProfile(String userId) async {
+  Future<ProviderProfileModel?> getProviderProfile(String userId) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    return await _client
+    final data = await _client
         .from(AppConstants.tableProviderProfiles)
         .select()
         .eq('user_id', userId)
         .maybeSingle();
+    
+    return data != null ? ProviderProfileModel.fromJson(data) : null;
   }
 
   @override
-  Future<Map<String, dynamic>?> getPrimaryAddress(String userId) async {
+  Future<AddressModel?> getPrimaryAddress(String userId) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
@@ -123,7 +133,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .eq('user_id', userId)
         .eq('is_primary', true)
         .maybeSingle();
-    if (primary != null) return primary;
+    if (primary != null) return AddressModel.fromJson(primary);
 
     final any = await _client
         .from(AppConstants.tableAddresses)
@@ -131,7 +141,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .eq('user_id', userId)
         .limit(1)
         .maybeSingle();
-    return any;
+    return any != null ? AddressModel.fromJson(any) : null;
   }
 
   @override
@@ -171,7 +181,13 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw const SocketException('No internet');
     }
 
-    final current = await getPrimaryAddress(userId);
+    final current = await _client
+        .from(AppConstants.tableAddresses)
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_primary', true)
+        .maybeSingle();
+
     if (current != null && current['id'] != null) {
       await _client.from(AppConstants.tableAddresses).update(updates).eq('id', current['id']);
       return;
