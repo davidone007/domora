@@ -102,7 +102,7 @@ Cerrar el ciclo transaccional del marketplace implementando la aceptación de pr
 
 ---
 
-# HU16 – Ver historial
+# HU16 – Ver historial cupones o hisotial en soliciutdes
 
 ## Historia de usuario
 
