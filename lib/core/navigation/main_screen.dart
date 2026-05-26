@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:domora/core/navigation/bloc/splash_bloc.dart';
+import 'package:domora/features/app/ui/bloc/splash_bloc.dart';
 
 /// Pantalla inicial. Decide a dónde enviar al usuario:
 /// - Sin sesión → login.

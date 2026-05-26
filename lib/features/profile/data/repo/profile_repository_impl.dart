@@ -6,7 +6,6 @@ import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/features/auth/domain/repo/auth_repo.dart';
-import 'package:domora/features/profile/data/mappers/profile_mappers.dart';
 import 'package:domora/features/profile/data/sources/profile_data_source.dart';
 import 'package:domora/features/profile/domain/entities/address.dart';
 import 'package:domora/features/profile/domain/entities/client_profile.dart';
@@ -39,14 +38,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
         return const Left(AuthFailure('No hay una sesión activa'));
       }
 
-      final userMap = await _dataSource.getUser(userId);
-      if (userMap == null) {
+      var user = await _dataSource.getUser(userId);
+      if (user == null) {
         return const Left(ServerFailure('Usuario no encontrado'));
       }
 
       final authEmail = _dataSource.getCurrentUserEmail();
       if (authEmail != null && authEmail.isNotEmpty) {
-        userMap['email'] = authEmail;
+        user = user.copyWith(email: authEmail);
       }
 
       final role = await _dataSource.getRole(userId);
@@ -59,21 +58,15 @@ class ProfileRepositoryImpl implements ProfileRepository {
       Address? primaryAddress;
 
       if (role == AppConstants.roleClient) {
-        final cp = await _dataSource.getClientProfile(userId);
-        if (cp != null) clientProfile = ProfileMappers.clientProfileFromMap(cp);
+        clientProfile = await _dataSource.getClientProfile(userId);
       } else if (role == AppConstants.roleProvider) {
-        final pp = await _dataSource.getProviderProfile(userId);
-        if (pp != null) {
-          providerProfile = ProfileMappers.providerProfileFromMap(pp);
-        }
-
-        final addr = await _dataSource.getPrimaryAddress(userId);
-        if (addr != null) primaryAddress = ProfileMappers.addressFromMap(addr);
+        providerProfile = await _dataSource.getProviderProfile(userId);
+        primaryAddress = await _dataSource.getPrimaryAddress(userId);
       }
 
       return Right(
         FullProfile(
-          user: ProfileMappers.userFromMap(userMap),
+          user: user,
           role: role,
           clientProfile: clientProfile,
           providerProfile: providerProfile,
@@ -95,7 +88,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, Unit>> updateUserFields(UpdateUserFieldsParams params) async {
     try {
-      // Traducción dominio → esquema de BD: solo ocurre aquí.
       final dbMap = <String, dynamic>{
         if (params.firstName != null) 'first_name': params.firstName,
         if (params.lastName  != null) 'last_name':  params.lastName,
@@ -120,7 +112,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, Unit>> updateClientProfileFields(UpdateClientProfileParams params) async {
     try {
-      // Traducción dominio → esquema de BD.
       final dbMap = <String, dynamic>{
         if (params.bio       != null) 'bio':        params.bio,
         if (params.avatarUrl != null) 'avatar_url': params.avatarUrl,
@@ -144,7 +135,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, Unit>> updateProviderProfileFields(UpdateProviderProfileParams params) async {
     try {
-      // Traducción dominio → esquema de BD.
       final dbMap = <String, dynamic>{
         if (params.yearsExperience != null) 'years_experience': params.yearsExperience,
         if (params.hourlyRate      != null) 'hourly_rate':      params.hourlyRate,
@@ -171,7 +161,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, Unit>> updatePrimaryAddress(UpdateProviderAddressParams params) async {
     try {
-      // Traducción dominio → esquema de BD.
       final dbMap = <String, dynamic>{
         'address_line1': params.addressLine1,
         if (params.addressLine2 != null) 'address_line2': params.addressLine2,
@@ -204,7 +193,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
         isProvider: isProvider,
       );
 
-      // Update the appropriate profile table with the new avatar URL
       if (isProvider) {
         await _dataSource.updateProviderProfile(userId, {'avatar_url': publicUrl});
       } else {
@@ -224,8 +212,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, FullProfile>> getProviderProfileById(String userId) async {
     try {
-      final userMap = await _dataSource.getUser(userId);
-      if (userMap == null) {
+      final user = await _dataSource.getUser(userId);
+      if (user == null) {
         return const Left(ServerFailure('Proveedor no encontrado'));
       }
 
@@ -237,13 +225,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
       ProviderProfile? providerProfile;
       Address? primaryAddress;
 
-      final pp = await _dataSource.getProviderProfile(userId);
-      if (pp != null) {
-        providerProfile = ProfileMappers.providerProfileFromMap(pp);
-      }
-
-      final addr = await _dataSource.getPrimaryAddress(userId);
-      if (addr != null) primaryAddress = ProfileMappers.addressFromMap(addr);
+      providerProfile = await _dataSource.getProviderProfile(userId);
+      primaryAddress = await _dataSource.getPrimaryAddress(userId);
 
       // Cargamos las estadísticas reales
       final statsResult = await getProviderStats(userId);
@@ -251,7 +234,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
       return Right(
         FullProfile(
-          user: ProfileMappers.userFromMap(userMap),
+          user: user,
           role: role!,
           providerProfile: providerProfile,
           primaryAddress: primaryAddress,
