@@ -94,6 +94,14 @@ import 'package:domora/features/proposals/ui/bloc/proposal_send_bloc.dart';
 import 'package:domora/features/proposals/ui/bloc/service_proposals_bloc.dart';
 import 'package:domora/features/proposals/ui/bloc/review_bloc.dart';
 
+// Notifications
+import 'package:domora/features/notifications/data/repo/notification_repository_impl.dart';
+import 'package:domora/features/notifications/data/sources/notification_remote_data_source.dart';
+import 'package:domora/features/notifications/domain/repo/notification_repository.dart';
+import 'package:domora/features/notifications/domain/usecases/get_notifications_usecase.dart';
+import 'package:domora/features/notifications/domain/usecases/mark_notification_read_usecase.dart';
+import 'package:domora/features/notifications/ui/bloc/notification_bloc.dart';
+
 // App Logic
 import 'package:domora/features/app/ui/bloc/splash_bloc.dart';
 import 'package:domora/features/app/ui/bloc/onboarding_route_bloc.dart';
@@ -322,6 +330,27 @@ Future<void> init() async {
     () => ReviewBloc(
       sendReviewUseCase: sl(),
       checkReviewUseCase: sl(),
+    ),
+  );
+
+  // Notifications
+  sl.registerLazySingleton<NotificationRemoteDataSource>(
+    () => NotificationRemoteDataSourceImpl(sl(), networkInfo: sl()),
+  );
+  sl.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(sl(), sl()),
+  );
+
+  // UseCases
+  sl.registerLazySingleton(() => GetNotificationsUseCase(sl()));
+  sl.registerLazySingleton(() => MarkNotificationReadUseCase(sl()));
+
+  // BLoCs
+  sl.registerLazySingleton(
+    () => NotificationBloc(
+      getNotifications: sl(),
+      markAsRead: sl(),
+      repository: sl(),
     ),
   );
 }

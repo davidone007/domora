@@ -40,16 +40,7 @@ class _ProviderHomePageState extends State<ProviderHomePage> {
       role: AppConstants.roleProvider, // Añadido rol explícito
       body: Column(
         children: [
-          DashboardHeader(
-            onNotificationsTap: () {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  const SnackBar(
-                      content: Text('No tienes notificaciones nuevas')),
-                );
-            },
-          ),
+          const DashboardHeader(),
           Expanded(
             child: Container(
               width: double.infinity,

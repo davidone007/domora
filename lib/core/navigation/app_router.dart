@@ -46,6 +46,9 @@ import 'package:domora/features/proposals/ui/bloc/service_proposals_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/send_proposal_screen.dart';
 import 'package:domora/features/proposals/ui/screens/service_proposals_screen.dart';
 
+import 'package:domora/features/notifications/ui/bloc/notification_bloc.dart';
+import 'package:domora/features/notifications/ui/screens/notifications_screen.dart';
+
 import 'package:domora/features/home/ui/pages/client_home_page.dart';
 import 'package:domora/features/home/ui/pages/provider_home_page.dart';
 
@@ -226,6 +229,15 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
               serviceTitle: serviceTitle,
               providerName: providerName,
             ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) {
+          return BlocProvider(
+            create: (_) => sl<NotificationBloc>(),
+            child: const NotificationsScreen(),
           );
         },
       ),
