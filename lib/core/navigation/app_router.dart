@@ -235,8 +235,8 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       GoRoute(
         path: '/notifications',
         builder: (context, state) {
-          return BlocProvider(
-            create: (_) => sl<NotificationBloc>(),
+          return BlocProvider.value(
+            value: sl<NotificationBloc>()..add(const FetchNotificationsEvent()),
             child: const NotificationsScreen(),
           );
         },

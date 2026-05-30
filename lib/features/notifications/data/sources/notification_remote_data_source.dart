@@ -22,7 +22,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       throw const PostgrestException(message: 'No hay conexión a internet');
     }
 
-    final userId = _client.auth.currentUser!.id;
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return [];
+
     final List<dynamic> response = await _client
         .from('notifications')
         .select()
@@ -62,7 +64,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
   @override
   Stream<List<Map<String, dynamic>>> watchNotifications() {
-    final userId = _client.auth.currentUser!.id;
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return const Stream.empty();
+
     return _client
         .from('notifications')
         .stream(primaryKey: ['id'])

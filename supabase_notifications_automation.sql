@@ -3,6 +3,11 @@
 -- Run this in the Supabase SQL Editor.
 -- ============================================================================
 
+-- 0. ENABLE REALTIME FOR NOTIFICATIONS TABLE
+-- ----------------------------------------------------------------------------
+-- Required so that supabase_flutter .stream() receives live changes.
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+
 -- 1. NOTIFY PROVIDERS WHEN A NEW SERVICE IS PUBLISHED
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_service_notification()
