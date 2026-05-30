@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import '../bloc/notification_bloc.dart';
 import '../../domain/entities/app_notification.dart';
@@ -90,7 +91,16 @@ class _NotificationTile extends StatelessWidget {
     return ListTile(
       onTap: () {
         context.read<NotificationBloc>().add(MarkAsReadRequestedEvent(notification.id));
-        // TODO: Navegar al detalle relacionado si aplica
+        
+        // Navegación dinámica según el tipo
+        if (notification.relatedServiceId != null) {
+          if (notification.type == 'new_service_available' || notification.type == 'proposal_received') {
+            context.push('/service-detail/${notification.relatedServiceId}');
+          } else if (notification.type == 'service_accepted' && notification.relatedBookingId != null) {
+            // El proveedor va a ver su actividad
+            context.go('/activity');
+          }
+        }
       },
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Container(
@@ -142,6 +152,8 @@ class _NotificationTile extends StatelessWidget {
 
   IconData _getIconForType(String type) {
     switch (type) {
+      case 'new_service_available':
+        return Icons.campaign_outlined;
       case 'proposal_received':
         return Icons.description_outlined;
       case 'service_accepted':
