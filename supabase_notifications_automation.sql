@@ -6,7 +6,19 @@
 -- 0. ENABLE REALTIME FOR NOTIFICATIONS TABLE
 -- ----------------------------------------------------------------------------
 -- Required so that supabase_flutter .stream() receives live changes.
-ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+-- Wrapped in DO/EXCEPTION so re-runs don't abort the script with
+-- "relation is already member of publication".
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+EXCEPTION WHEN duplicate_object THEN
+  -- Already added, nothing to do.
+  NULL;
+END $$;
+
+-- 0b. ADD fcm_token COLUMN TO users (for OS-level push via FCM)
+-- ----------------------------------------------------------------------------
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS fcm_token text;
 
 -- 1. NOTIFY PROVIDERS WHEN A NEW SERVICE IS PUBLISHED
 -- ----------------------------------------------------------------------------

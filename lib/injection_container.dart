@@ -100,7 +100,9 @@ import 'package:domora/features/notifications/data/sources/notification_remote_d
 import 'package:domora/features/notifications/domain/repo/notification_repository.dart';
 import 'package:domora/features/notifications/domain/usecases/get_notifications_usecase.dart';
 import 'package:domora/features/notifications/domain/usecases/mark_notification_read_usecase.dart';
+import 'package:domora/features/notifications/domain/usecases/register_fcm_token_usecase.dart';
 import 'package:domora/features/notifications/ui/bloc/notification_bloc.dart';
+import 'package:domora/core/services/fcm_service.dart';
 
 // App Logic
 import 'package:domora/features/app/ui/bloc/splash_bloc.dart';
@@ -142,9 +144,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SignupUseCase(sl()));
 
   // BLoCs
-  sl.registerFactory(() => LoginBloc(sl()));
+  sl.registerFactory(() => LoginBloc(sl(), sl()));
   sl.registerFactory(() => SignupBloc(sl()));
-  sl.registerFactory(() => SplashBloc(sl()));
+  sl.registerFactory(() => SplashBloc(sl(), sl()));
   sl.registerFactory(() => OnboardingRouteBloc(sl()));
 
   // Onboarding
@@ -344,6 +346,7 @@ Future<void> init() async {
   // UseCases
   sl.registerLazySingleton(() => GetNotificationsUseCase(sl()));
   sl.registerLazySingleton(() => MarkNotificationReadUseCase(sl()));
+  sl.registerLazySingleton(() => RegisterFcmTokenUseCase(sl()));
 
   // BLoCs
   sl.registerLazySingleton(
@@ -351,6 +354,14 @@ Future<void> init() async {
       getNotifications: sl(),
       markAsRead: sl(),
       repository: sl(),
+    ),
+  );
+
+  // FCM Service (singleton — lifecycle attached once per app run)
+  sl.registerLazySingleton(
+    () => FcmService(
+      registerFcmToken: sl(),
+      notificationBloc: sl(),
     ),
   );
 }

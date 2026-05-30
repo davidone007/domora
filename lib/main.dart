@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:domora/core/services/fcm_background_handler.dart';
 import 'package:domora/core/error/error_mapper_singleton.dart';
 import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/injection_container.dart' as di;
@@ -24,11 +25,13 @@ Future<void> main() async {
   // Inicializar localización para fechas (Intl)
   await initializeDateFormatting('es_CO', null);
 
-  // Inicializar Firebase
+  // Inicializar Firebase + registrar el handler de FCM en background.
+  // El handler de background DEBE registrarse antes de runApp para que
+  // funcione cuando la app no está en primer plano.
   try {
     await Firebase.initializeApp();
-    final messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission(
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
       sound: true,
