@@ -155,17 +155,22 @@ class ServiceProposalsBloc extends Bloc<ServiceProposalsEvent, ServiceProposalsS
 
     final result = await _acceptProposalUseCase.execute(event.proposal);
 
-    result.fold(
-      (failure) => emit(state.copyWith(
+    await result.fold(
+      (failure) async => emit(state.copyWith(
         status: ServiceProposalsStatus.error,
         errorMessage: 'Error al aceptar la propuesta',
       )),
-      (bookingId) => emit(state.copyWith(
-        status: ServiceProposalsStatus.acceptSuccess,
-        acceptedBookingId: bookingId,
-        acceptedAmount: event.proposal.price,
-      )),
-      );
-      }
-      }
+      (bookingId) async {
+        emit(state.copyWith(
+          status: ServiceProposalsStatus.acceptSuccess,
+          acceptedBookingId: bookingId,
+          acceptedAmount: event.proposal.price,
+        ));
+        // Refrescamos la lista para reflejar rechazos automáticos y el
+        // estado de propuesta aceptada antes de que el usuario regrese.
+        add(FetchServiceProposalsEvent(event.proposal.serviceId));
+      },
+    );
+  }
+}
 

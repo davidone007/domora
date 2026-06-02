@@ -31,17 +31,50 @@ class _RatingScreenState extends State<RatingScreen> {
     super.dispose();
   }
 
+  Future<void> _confirmAndSubmit(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enviar calificación'),
+        content: const Text(
+          'Una vez enviada, no podrás modificarla. ¿Deseas continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar',
+                style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sí, enviar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    context.read<ReviewBloc>().add(
+          SendReviewRequestedEvent(
+            bookingId: widget.bookingId,
+            rating: _rating,
+            comment: _commentController.text,
+          ),
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<ReviewBloc, ReviewState>(
       listener: (context, state) {
         if (state.status == ReviewStatus.success) {
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('¡Gracias por tu calificación!'), backgroundColor: AppTheme.primary),
           );
-          Navigator.pop(context, true); // Retornamos true para indicar éxito
+          Navigator.pop(context, true);
         }
         if (state.status == ReviewStatus.error && state.errorMessage != null) {
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.errorMessage!), backgroundColor: AppTheme.error),
           );
@@ -77,12 +110,15 @@ class _RatingScreenState extends State<RatingScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(5, (index) {
+                  final selected = index < _rating;
                   return IconButton(
                     onPressed: () => setState(() => _rating = index + 1),
+                    padding: const EdgeInsets.all(8),
+                    iconSize: 40,
+                    tooltip: '${index + 1} estrella${index == 0 ? '' : 's'}',
                     icon: Icon(
-                      index < _rating ? Icons.star : Icons.star_border,
-                      color: index < _rating ? Colors.amber : AppTheme.textTertiary,
-                      size: 40,
+                      selected ? Icons.star : Icons.star_border,
+                      color: selected ? Colors.amber : AppTheme.textTertiary,
                     ),
                   );
                 }),
@@ -101,20 +137,13 @@ class _RatingScreenState extends State<RatingScreen> {
               
               BlocBuilder<ReviewBloc, ReviewState>(
                 builder: (context, state) {
+                  final isSubmitting = state.status == ReviewStatus.loading;
                   return CustomButton(
                     label: 'Enviar Calificación',
-                    isLoading: state.status == ReviewStatus.loading,
-                    onPressed: _rating == 0 
-                      ? null 
-                      : () {
-                        context.read<ReviewBloc>().add(
-                          SendReviewRequestedEvent(
-                            bookingId: widget.bookingId,
-                            rating: _rating,
-                            comment: _commentController.text,
-                          ),
-                        );
-                      },
+                    isLoading: isSubmitting,
+                    onPressed: (_rating == 0 || isSubmitting)
+                        ? null
+                        : () => _confirmAndSubmit(context),
                   );
                 },
               ),

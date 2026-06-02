@@ -67,12 +67,14 @@ class _SendProposalScreenState extends State<SendProposalScreen> {
       body: BlocConsumer<ProposalSendBloc, ProposalSendState>(
         listener: (context, state) {
           if (state.status == ProposalSendStatus.success) {
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Cotización enviada con éxito')),
             );
             Navigator.pop(context, true);
           }
           if (state.status == ProposalSendStatus.error) {
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage ?? 'Error al enviar cotización'),

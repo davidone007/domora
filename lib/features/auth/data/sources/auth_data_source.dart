@@ -36,6 +36,9 @@ abstract class AuthDataSource {
   /// Actualiza la contraseña del usuario a través de Supabase Auth.
   Future<void> updatePassword(
       {required String currentPassword, required String newPassword});
+
+  /// Solicita un correo de restablecimiento de contraseña.
+  Future<void> requestPasswordReset(String email);
 }
 
 class AuthDataSourceImpl implements AuthDataSource {
@@ -140,6 +143,18 @@ class AuthDataSourceImpl implements AuthDataSource {
     }
 
     await _client.auth.updateUser(UserAttributes(password: newPassword));
+  }
+
+  @override
+  Future<void> requestPasswordReset(String email) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+    final normalized = email.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      throw const AuthException('Ingresa un correo válido');
+    }
+    await _client.auth.resetPasswordForEmail(normalized);
   }
 
   @override

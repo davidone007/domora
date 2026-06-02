@@ -20,12 +20,23 @@ class Step4Location extends StatefulWidget {
 
 class _Step4LocationState extends State<Step4Location> {
   late final TextEditingController _searchController;
+  late final TextEditingController _addressLine1Controller;
+  late final TextEditingController _addressLine2Controller;
+  late final TextEditingController _neighborhoodController;
+  late final TextEditingController _cityController;
   Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
+    final address = context.read<ServicePublishBloc>().state.address;
     _searchController = TextEditingController();
+    _addressLine1Controller = TextEditingController(text: address.addressLine1);
+    _addressLine2Controller =
+        TextEditingController(text: address.addressLine2 ?? '');
+    _neighborhoodController =
+        TextEditingController(text: address.neighborhood ?? '');
+    _cityController = TextEditingController(text: address.city);
     _searchController.addListener(_onSearchChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -41,7 +52,27 @@ class _Step4LocationState extends State<Step4Location> {
     _searchController
       ..removeListener(_onSearchChanged)
       ..dispose();
+    _addressLine1Controller.dispose();
+    _addressLine2Controller.dispose();
+    _neighborhoodController.dispose();
+    _cityController.dispose();
     super.dispose();
+  }
+
+  void _syncFromAddress(ServiceAddress address) {
+    void syncOne(TextEditingController c, String value) {
+      if (c.text != value) {
+        c.value = TextEditingValue(
+          text: value,
+          selection: TextSelection.collapsed(offset: value.length),
+        );
+      }
+    }
+
+    syncOne(_addressLine1Controller, address.addressLine1);
+    syncOne(_addressLine2Controller, address.addressLine2 ?? '');
+    syncOne(_neighborhoodController, address.neighborhood ?? '');
+    syncOne(_cityController, address.city);
   }
 
   void _onSearchChanged() {
@@ -75,6 +106,7 @@ class _Step4LocationState extends State<Step4Location> {
           final merged = _mergeAddress(currentAddress, state.resolvedAddress!);
           if (merged != currentAddress) {
             _update(context, merged);
+            _syncFromAddress(merged);
           }
         }
       },
@@ -101,14 +133,14 @@ class _Step4LocationState extends State<Step4Location> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Selecciona tu ubicacion actual o busca la direccion. Tambien puedes tocar el mapa para ajustar el punto.',
+                      'Selecciona tu ubicación actual o busca la dirección. También puedes tocar el mapa para ajustar el punto.',
                       style: theme.textTheme.bodyLarge
                           ?.copyWith(color: AppTheme.textSecondary),
                     ),
                     const SizedBox(height: 24),
                     CustomTextField(
                       controller: _searchController,
-                      label: 'Buscar direccion',
+                      label: 'Buscar dirección',
                       hint: 'Ej: Calle 10 # 20-30',
                       prefixIcon: Icons.search,
                     ),
@@ -132,7 +164,7 @@ class _Step4LocationState extends State<Step4Location> {
                             label: Text(
                               isLoadingLocation
                                   ? 'Ubicando...'
-                                  : 'Usar mi ubicacion actual',
+                                  : 'Usar mi ubicación actual',
                             ),
                           ),
                         ),
@@ -171,11 +203,8 @@ class _Step4LocationState extends State<Step4Location> {
                     ),
                     const SizedBox(height: 24),
                     CustomTextField(
-                      controller: TextEditingController(text: address.addressLine1)
-                        ..selection = TextSelection.fromPosition(
-                          TextPosition(offset: address.addressLine1.length),
-                        ),
-                      label: 'Direccion (Calle / Carrera)',
+                      controller: _addressLine1Controller,
+                      label: 'Dirección (Calle / Carrera)',
                       hint: 'Ej: Calle 10 # 20-30',
                       onChanged: (v) =>
                           _update(context, address.copyWith(addressLine1: v)),
@@ -185,10 +214,7 @@ class _Step4LocationState extends State<Step4Location> {
                       children: [
                         Expanded(
                           child: CustomTextField(
-                            controller: TextEditingController(text: address.neighborhood)
-                              ..selection = TextSelection.fromPosition(
-                                TextPosition(offset: address.neighborhood?.length ?? 0),
-                              ),
+                            controller: _neighborhoodController,
                             label: 'Barrio',
                             onChanged: (v) =>
                                 _update(context, address.copyWith(neighborhood: v)),
@@ -197,10 +223,7 @@ class _Step4LocationState extends State<Step4Location> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: CustomTextField(
-                            controller: TextEditingController(text: address.city)
-                              ..selection = TextSelection.fromPosition(
-                                TextPosition(offset: address.city.length),
-                              ),
+                            controller: _cityController,
                             label: 'Ciudad',
                             onChanged: (v) =>
                                 _update(context, address.copyWith(city: v)),
@@ -210,10 +233,7 @@ class _Step4LocationState extends State<Step4Location> {
                     ),
                     const SizedBox(height: 16),
                     CustomTextField(
-                      controller: TextEditingController(text: address.addressLine2)
-                        ..selection = TextSelection.fromPosition(
-                          TextPosition(offset: address.addressLine2?.length ?? 0),
-                        ),
+                      controller: _addressLine2Controller,
                       label: 'Apto / Interior / Referencia (Opcional)',
                       onChanged: (v) =>
                           _update(context, address.copyWith(addressLine2: v)),

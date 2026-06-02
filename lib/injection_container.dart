@@ -16,8 +16,10 @@ import 'package:domora/features/auth/domain/usecases/get_current_session_usecase
 import 'package:domora/features/auth/domain/usecases/login_usecase.dart';
 import 'package:domora/features/auth/domain/usecases/signout_usecase.dart';
 import 'package:domora/features/auth/domain/usecases/signup_usecase.dart';
+import 'package:domora/features/auth/domain/usecases/request_password_reset_usecase.dart';
 import 'package:domora/features/auth/ui/auth_blocs/login_bloc.dart';
 import 'package:domora/features/auth/ui/auth_blocs/signup_bloc.dart';
+import 'package:domora/features/auth/ui/auth_blocs/forgot_password_bloc.dart';
 
 // Onboarding
 import 'package:domora/features/onboarding/data/repo/onboarding_repo_impl.dart';
@@ -142,10 +144,12 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LoginUseCase(sl()));
   sl.registerLazySingleton(() => SignOutUseCase(sl()));
   sl.registerLazySingleton(() => SignupUseCase(sl()));
+  sl.registerLazySingleton(() => RequestPasswordResetUseCase(sl()));
 
   // BLoCs
   sl.registerFactory(() => LoginBloc(sl(), sl()));
   sl.registerFactory(() => SignupBloc(sl()));
+  sl.registerFactory(() => ForgotPasswordBloc(sl()));
   sl.registerFactory(() => SplashBloc(sl(), sl()));
   sl.registerFactory(() => OnboardingRouteBloc(sl()));
 

@@ -80,6 +80,17 @@ class ProposalRemoteDataSourceImpl implements ProposalRemoteDataSource {
       'p_price': proposal.price,
     });
 
+    // Defensive: ensure the parent service moves to in_progress even if the
+    // RPC implementation does not handle this transition. Idempotent.
+    try {
+      await _client
+          .from('services')
+          .update({'status': 'in_progress'})
+          .eq('id', proposal.serviceId);
+    } catch (_) {
+      // Don't fail accept if status nudge fails; the booking is already created.
+    }
+
     return response as String;
   }
 }

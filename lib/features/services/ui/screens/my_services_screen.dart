@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
+import 'package:domora/core/widgets/empty_state.dart';
+import 'package:domora/core/widgets/error_state.dart';
+import 'package:domora/core/widgets/loading_state.dart';
 import 'package:domora/core/widgets/main_shell.dart';
 import '../bloc/my_services_bloc.dart';
 import '../widgets/service_card.dart';
@@ -52,72 +55,46 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                     builder: (context, state) {
                       if (state.status == MyServicesStatus.loading &&
                           state.allServices.isEmpty) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const LoadingStateView();
                       }
 
                       if (state.status == MyServicesStatus.error) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.error_outline,
-                                    size: 48, color: AppTheme.error),
-                                const SizedBox(height: 16),
-                                Text(
-                                  state.errorMessage ??
-                                      'Ocurrió un error al cargar los servicios',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodyLarge,
-                                ),
-                                const SizedBox(height: 24),
-                                ElevatedButton(
-                                  onPressed: _fetchServices,
-                                  child: const Text('Reintentar'),
-                                ),
-                              ],
-                            ),
-                          ),
+                        return ErrorStateView(
+                          message: state.errorMessage ??
+                              'Ocurrió un error al cargar los servicios',
+                          onRetry: _fetchServices,
                         );
                       }
 
                       if (state.allServices.isEmpty &&
                           state.status == MyServicesStatus.success) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.description_outlined,
-                                    size: 64,
-                                    color:
-                                        AppTheme.textTertiary.withOpacity(0.5)),
-                                const SizedBox(height: 16),
-                                Text(
-                                  emptyMessage,
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(color: AppTheme.textSecondary),
-                                ),
-                              ],
-                            ),
-                          ),
+                        return EmptyState(
+                          icon: Icons.description_outlined,
+                          title: emptyMessage,
+                          subtitle: isProvider
+                              ? 'Cuando haya solicitudes abiertas, aparecerán aquí.'
+                              : 'Publica una solicitud para que los aseadores coticen.',
                         );
                       }
 
                       final services = state.filteredServices;
 
                       if (services.isEmpty && state.selectedStatus != null) {
-                        return const Center(
-                            child: Text('No hay servicios con este estado'));
+                        return const EmptyState(
+                          icon: Icons.filter_alt_off_outlined,
+                          title: 'Sin resultados',
+                          subtitle: 'No hay servicios con este estado.',
+                        );
                       }
 
                       return RefreshIndicator(
-                        onRefresh: () async => _fetchServices(),
+                        onRefresh: () async {
+                          final bloc = context.read<MyServicesBloc>();
+                          bloc.add(const FetchMyServicesEvent());
+                          await bloc.stream.firstWhere(
+                            (s) => s.status != MyServicesStatus.loading,
+                          );
+                        },
                         child: ListView.builder(
                           padding: const EdgeInsets.all(20),
                           itemCount: services.length,

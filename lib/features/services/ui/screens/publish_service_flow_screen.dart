@@ -53,6 +53,7 @@ class _PublishServiceFlowScreenState extends State<PublishServiceFlowScreen> {
 
         if (state.status == ServicePublishStatus.error &&
             state.errorMessage != null) {
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),
@@ -65,48 +66,98 @@ class _PublishServiceFlowScreenState extends State<PublishServiceFlowScreen> {
         final isLastStep = state.currentStep == 4;
         final progress = (state.currentStep + 1) / 5;
         final isLoading = state.status == ServicePublishStatus.loading;
+        final hasDraft = state.title.isNotEmpty || state.images.isNotEmpty;
 
-        return Scaffold(
-          backgroundColor: AppTheme.background,
-          appBar: isLastStep
-              ? null
-              : AppBar(
-                  title: const Text('Publicar Limpieza'),
-                  leading: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: isLoading ? null : () => context.pop(),
-                  ),
-                  bottom: PreferredSize(
-                    preferredSize: const Size.fromHeight(4),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: AppTheme.border,
-                      valueColor:
-                          const AlwaysStoppedAnimation<Color>(AppTheme.primary),
-                      minHeight: 4,
+        return PopScope(
+          canPop: isLastStep || !hasDraft,
+          onPopInvokedWithResult: (didPop, result) async {
+            if (didPop) return;
+            final shouldLeave = await _confirmExit(context);
+            if (shouldLeave == true && context.mounted) {
+              context.pop();
+            }
+          },
+          child: Scaffold(
+            backgroundColor: AppTheme.background,
+            appBar: isLastStep
+                ? null
+                : AppBar(
+                    title: const Text('Publicar Limpieza'),
+                    leading: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              if (!hasDraft) {
+                                context.pop();
+                                return;
+                              }
+                              final shouldLeave = await _confirmExit(context);
+                              if (shouldLeave == true && context.mounted) {
+                                context.pop();
+                              }
+                            },
+                    ),
+                    bottom: PreferredSize(
+                      preferredSize: const Size.fromHeight(4),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: AppTheme.border,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppTheme.primary),
+                        minHeight: 4,
+                      ),
                     ),
                   ),
+            body: Column(
+              children: [
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: const [
+                      Step1PlaceDetails(),
+                      Step2GeneralInfo(),
+                      Step3Schedule(),
+                      Step4Location(),
+                      Step5Success(),
+                    ],
+                  ),
                 ),
-          body: Column(
-            children: [
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: const [
-                    Step1PlaceDetails(),
-                    Step2GeneralInfo(),
-                    Step3Schedule(),
-                    Step4Location(),
-                    Step5Success(),
-                  ],
-                ),
-              ),
-              if (!isLastStep) _buildNavigationButtons(context, state, isLoading),
-            ],
+                if (!isLastStep)
+                  _buildNavigationButtons(context, state, isLoading),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Future<bool?> _confirmExit(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Salir de la publicación?'),
+        content: const Text(
+          'Perderás los datos ingresados hasta el momento. ¿Seguro que quieres salir?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Continuar editando',
+                style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Salir'),
+          ),
+        ],
+      ),
     );
   }
 

@@ -173,4 +173,21 @@ class AuthRepositoryImpl implements AuthRepository {
       ));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> requestPasswordReset(String email) async {
+    try {
+      await _dataSource.requestPasswordReset(email);
+      return const Right(null);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'requestPasswordReset',
+          parameters: {'email': email},
+        ).toString(),
+      ));
+    }
+  }
 }

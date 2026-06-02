@@ -72,12 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _onForgotPassword() {
-    // HU posterior: pantalla de recuperación. Por ahora informamos.
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text('Recuperación disponible próximamente')),
-      );
+    context.push(AppConstants.routeForgotPassword);
   }
 
   @override
@@ -157,18 +152,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Recuérdame + ¿Olvidaste tu contraseña?
                   Row(
                     children: [
-                      SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: Checkbox(
-                          value: _rememberMe,
-                          onChanged: loading
-                              ? null
-                              : (v) => setState(
-                                  () => _rememberMe = v ?? false),
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                        ),
+                      Checkbox(
+                        value: _rememberMe,
+                        onChanged: loading
+                            ? null
+                            : (v) =>
+                                setState(() => _rememberMe = v ?? false),
+                        visualDensity: VisualDensity.compact,
                       ),
                       const SizedBox(width: 8),
                       Text(
