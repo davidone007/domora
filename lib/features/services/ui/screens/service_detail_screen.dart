@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/widgets/custom_button.dart';
+import 'package:domora/core/widgets/error_state.dart';
+import 'package:domora/core/widgets/loading_state.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/features/services/domain/entities/cleaning_service_detail.dart';
 import '../bloc/service_detail_bloc.dart';
@@ -21,24 +23,15 @@ class ServiceDetailScreen extends StatelessWidget {
       body: BlocBuilder<ServiceDetailBloc, ServiceDetailState>(
         builder: (context, state) {
           if (state.status == ServiceDetailStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingStateView();
           }
 
           if (state.status == ServiceDetailStatus.error) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: AppTheme.error),
-                  const SizedBox(height: 16),
-                  Text(state.errorMessage ?? 'Error al cargar el detalle'),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => context.read<ServiceDetailBloc>().add(FetchServiceDetailEvent(serviceId)),
-                    child: const Text('Reintentar'),
-                  ),
-                ],
-              ),
+            return ErrorStateView(
+              message: state.errorMessage ?? 'Error al cargar el detalle',
+              onRetry: () => context
+                  .read<ServiceDetailBloc>()
+                  .add(FetchServiceDetailEvent(serviceId)),
             );
           }
 

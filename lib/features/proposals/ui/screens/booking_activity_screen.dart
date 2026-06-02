@@ -6,6 +6,9 @@ import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/widgets/main_shell.dart';
 import 'package:domora/core/widgets/custom_button.dart';
+import 'package:domora/core/widgets/empty_state.dart';
+import 'package:domora/core/widgets/error_state.dart';
+import 'package:domora/core/widgets/loading_state.dart';
 import '../bloc/booking_activity_bloc.dart';
 import '../../domain/entities/booking_with_service.dart';
 
@@ -47,49 +50,37 @@ class _BookingActivityScreenState extends State<BookingActivityScreen> {
 
   Widget _buildBody(BookingActivityState state, bool isProvider) {
     if (state.status == BookingActivityStatus.loading && state.bookings.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const LoadingStateView();
     }
 
     if (state.status == BookingActivityStatus.error) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: AppTheme.error),
-              const SizedBox(height: 16),
-              Text(state.errorMessage ?? 'Error al cargar actividad'),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => context.read<BookingActivityBloc>().add(const FetchBookingActivityEvent()),
-                child: const Text('Reintentar'),
-              ),
-            ],
-          ),
-        ),
+      return ErrorStateView(
+        message: state.errorMessage ?? 'Error al cargar actividad',
+        onRetry: () => context
+            .read<BookingActivityBloc>()
+            .add(const FetchBookingActivityEvent()),
       );
     }
 
     if (state.status == BookingActivityStatus.success && state.bookings.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.history_outlined, size: 80, color: AppTheme.divider),
-            const SizedBox(height: 16),
-            Text(
-              isProvider ? 'No tienes trabajos activos' : 'No tienes servicios completados',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textSecondary),
-            ),
-          ],
-        ),
+      return EmptyState(
+        icon: Icons.history_outlined,
+        title: isProvider
+            ? 'Aún no tienes trabajos activos'
+            : 'Aún no tienes servicios completados',
+        subtitle: isProvider
+            ? 'Cuando aceptes una propuesta, tu trabajo aparecerá aquí.'
+            : 'Cuando uno de tus servicios se complete, aparecerá aquí.',
       );
     }
 
     return RefreshIndicator(
       onRefresh: () async {
-        context.read<BookingActivityBloc>().add(const FetchBookingActivityEvent());
+        final bloc = context.read<BookingActivityBloc>();
+        bloc.add(const FetchBookingActivityEvent());
+        await bloc.stream.firstWhere(
+          (s) => s.status != BookingActivityStatus.loading,
+        );
       },
       child: ListView.builder(
         padding: const EdgeInsets.all(20),

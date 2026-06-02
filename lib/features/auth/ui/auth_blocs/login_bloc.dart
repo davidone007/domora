@@ -80,12 +80,16 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       LoginParams(email: event.email, password: event.password),
     );
 
-    result.fold(
-      (failure) => emit(LoginFailState(failure.message)),
-      (auth) {
-        // Registrar/refrescar el token FCM ahora que hay un usuario autenticado.
-        // No bloqueamos la navegación si falla.
-        _fcmService.initialize();
+    await result.fold(
+      (failure) async => emit(LoginFailState(failure.message)),
+      (auth) async {
+        // Registrar/refrescar el token FCM antes de navegar, para garantizar
+        // que el dispositivo está suscrito a notificaciones al entrar al home.
+        try {
+          await _fcmService.initialize();
+        } catch (_) {
+          // No bloqueamos la navegación si la inicialización FCM falla.
+        }
         emit(
           LoginSuccessState(
             role: auth.role,

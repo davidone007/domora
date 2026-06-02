@@ -14,6 +14,8 @@ import 'package:domora/features/auth/ui/auth_blocs/login_bloc.dart';
 import 'package:domora/features/auth/ui/auth_screens/login_screen.dart';
 import 'package:domora/features/auth/ui/auth_blocs/signup_bloc.dart';
 import 'package:domora/features/auth/ui/auth_screens/signup_screen.dart';
+import 'package:domora/features/auth/ui/auth_blocs/forgot_password_bloc.dart';
+import 'package:domora/features/auth/ui/auth_screens/forgot_password_screen.dart';
 
 import 'package:domora/features/onboarding/ui/bloc/onboarding_bloc.dart';
 import 'package:domora/features/onboarding/ui/screens/onboarding_screen.dart';
@@ -41,6 +43,7 @@ import 'package:domora/features/proposals/ui/bloc/review_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/rating_screen.dart';
 import 'package:domora/features/proposals/ui/bloc/payment_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/payment_selection_screen.dart';
+import 'package:domora/features/proposals/ui/screens/payment_success_screen.dart';
 import 'package:domora/features/proposals/ui/bloc/proposal_send_bloc.dart';
 import 'package:domora/features/proposals/ui/bloc/service_proposals_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/send_proposal_screen.dart';
@@ -82,6 +85,13 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         builder: (_, __) => BlocProvider(
           create: (_) => sl<SignupBloc>(),
           child: const SignupScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppConstants.routeForgotPassword,
+        builder: (_, __) => BlocProvider(
+          create: (_) => sl<ForgotPasswordBloc>(),
+          child: const ForgotPasswordScreen(),
         ),
       ),
       GoRoute(
@@ -204,6 +214,10 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
             ),
           );
         },
+      ),
+      GoRoute(
+        path: '/payment-success',
+        builder: (_, __) => const PaymentSuccessScreen(),
       ),
       GoRoute(
         path: '/activity',

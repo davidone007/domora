@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:domora/core/theme/app_theme.dart';
+import 'package:domora/core/widgets/empty_state.dart';
+import 'package:domora/core/widgets/error_state.dart';
+import 'package:domora/core/widgets/loading_state.dart';
 import '../bloc/notification_bloc.dart';
 import '../../domain/entities/app_notification.dart';
 
@@ -19,49 +22,34 @@ class NotificationsScreen extends StatelessWidget {
       body: BlocBuilder<NotificationBloc, NotificationState>(
         builder: (context, state) {
           if (state.status == NotificationStatus.loading && state.notifications.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingStateView();
           }
 
           if (state.status == NotificationStatus.error) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 64, color: AppTheme.error),
-                    const SizedBox(height: 16),
-                    Text(state.errorMessage ?? 'Error al cargar notificaciones'),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => context.read<NotificationBloc>().add(const FetchNotificationsEvent()),
-                      child: const Text('Reintentar'),
-                    ),
-                  ],
-                ),
-              ),
+            return ErrorStateView(
+              message: state.errorMessage ?? 'Error al cargar notificaciones',
+              onRetry: () => context
+                  .read<NotificationBloc>()
+                  .add(const FetchNotificationsEvent()),
             );
           }
 
           if (state.notifications.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.notifications_off_outlined, size: 80, color: AppTheme.divider),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No tienes notificaciones aún',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textSecondary),
-                  ),
-                ],
-              ),
+            return const EmptyState(
+              icon: Icons.notifications_off_outlined,
+              title: 'Aún no tienes notificaciones',
+              subtitle:
+                  'Te avisaremos cuando haya novedades en tus servicios.',
             );
           }
 
           return RefreshIndicator(
             onRefresh: () async {
-              context.read<NotificationBloc>().add(const FetchNotificationsEvent());
+              final bloc = context.read<NotificationBloc>();
+              bloc.add(const FetchNotificationsEvent());
+              await bloc.stream.firstWhere(
+                (s) => s.status != NotificationStatus.loading,
+              );
             },
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),

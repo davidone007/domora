@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
+import 'package:domora/core/widgets/empty_state.dart';
+import 'package:domora/core/widgets/error_state.dart';
+import 'package:domora/core/widgets/loading_state.dart';
 import '../../domain/entities/proposal_with_provider.dart';
 import '../bloc/service_proposals_bloc.dart';
 import '../widgets/proposal_card.dart';
@@ -45,6 +48,7 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
       body: BlocConsumer<ServiceProposalsBloc, ServiceProposalsState>(
         listener: (context, state) {
           if (state.status == ServiceProposalsStatus.acceptSuccess) {
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Propuesta aceptada con éxito. Procede con el pago.'),
@@ -52,7 +56,6 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
               ),
             );
 
-            // Navegamos al pago
             context.push(
               '/payment/${state.acceptedBookingId}',
               extra: {'amount': state.acceptedAmount},
@@ -60,6 +63,7 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
           }
 
           if (state.status == ServiceProposalsStatus.error && state.errorMessage != null) {
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.errorMessage!),
@@ -71,53 +75,25 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
         builder: (context, state) {
           if (state.status == ServiceProposalsStatus.loading ||
               state.status == ServiceProposalsStatus.accepting) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingStateView();
           }
 
           if (state.status == ServiceProposalsStatus.error) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: AppTheme.error),
-                  const SizedBox(height: 16),
-                  Text(state.errorMessage ?? 'Error al cargar propuestas'),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => context
-                        .read<ServiceProposalsBloc>()
-                        .add(FetchServiceProposalsEvent(widget.serviceId)),
-                    child: const Text('Reintentar'),
-                  ),
-                ],
-              ),
+            return ErrorStateView(
+              message: state.errorMessage ?? 'Error al cargar propuestas',
+              onRetry: () => context
+                  .read<ServiceProposalsBloc>()
+                  .add(FetchServiceProposalsEvent(widget.serviceId)),
             );
           }
 
           if (state.status == ServiceProposalsStatus.success) {
             if (state.proposals.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.description_outlined, size: 80, color: AppTheme.divider),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Aún no hay propuestas',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Te avisaremos cuando alguien cotice tu servicio.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppTheme.textTertiary),
-                    ),
-                  ],
-                ),
+              return const EmptyState(
+                icon: Icons.description_outlined,
+                title: 'Aún no hay propuestas',
+                subtitle:
+                    'Te avisaremos cuando un aseador cotice tu servicio.',
               );
             }
 
@@ -125,7 +101,11 @@ class _ServiceProposalsScreenState extends State<ServiceProposalsScreen> {
 
             return RefreshIndicator(
               onRefresh: () async {
-                context.read<ServiceProposalsBloc>().add(FetchServiceProposalsEvent(widget.serviceId));
+                final bloc = context.read<ServiceProposalsBloc>();
+                bloc.add(FetchServiceProposalsEvent(widget.serviceId));
+                await bloc.stream.firstWhere(
+                  (s) => s.status != ServiceProposalsStatus.loading,
+                );
               },
               child: ListView.builder(
                 padding: const EdgeInsets.all(24),

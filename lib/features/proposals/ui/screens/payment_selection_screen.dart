@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/widgets/custom_button.dart';
 import 'package:domora/core/widgets/custom_text_field.dart';
 import '../bloc/payment_bloc.dart';
-import 'payment_success_screen.dart';
 
 class PaymentSelectionScreen extends StatefulWidget {
   final String bookingId;
@@ -46,11 +46,11 @@ class _PaymentSelectionScreenState extends State<PaymentSelectionScreen> {
     return BlocListener<PaymentBloc, PaymentState>(
       listener: (context, state) {
         if (state.status == PaymentStatus.success) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const PaymentSuccessScreen()),
-          );
+          if (!context.mounted) return;
+          context.go('/payment-success');
         }
         if (state.status == PaymentStatus.error && state.errorMessage != null) {
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.errorMessage!), backgroundColor: AppTheme.error),
           );
