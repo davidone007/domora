@@ -26,10 +26,11 @@ lib/
 ├── injection_container.dart         # get_it DI setup (all repos, sources, use cases, blocs)
 ├── core/
 │   ├── navigation/app_router.dart   # GoRouter route definitions
+│   ├── services/                    # Cross-feature singletons (e.g. FcmService)
 │   ├── theme/app_theme.dart         # Color palette (#4FBF67 green primary) + DM Sans
-│   ├── error/failures.dart          # Typed failures for Either<Failure, T>
+│   ├── error/                       # failures.dart + FailureMapper + ErrorLogger
 │   ├── utils/constants.dart         # Route paths, table names, role strings, storage keys
-│   └── widgets/                     # Shared UI (CustomTextField, CustomButton, MainShell, etc.)
+│   └── widgets/                     # Shared UI (CustomTextField, CustomButton, etc.)
 └── features/{feature_name}/
     ├── data/
     │   ├── models/                  # Extend domain entities, add fromJson/toJson
@@ -44,15 +45,21 @@ lib/
         └── screens/               # Flutter widgets
 ```
 
-**Features**: auth, onboarding, profile, services, proposals (quotes/bookings/payments/reviews), notifications, home, welcome.
+**Features**: `auth`, `onboarding`, `profile`, `services`, `proposals`, `notifications`, `home`, `welcome`, `app` (splash + routing logic).
+
+The `proposals` feature bundles four sub-domains each with their own repo/source/BLoC: quotes, bookings, payments, reviews.
 
 ## Key Patterns
 
-- **State management**: BLoC (flutter_bloc). BLoCs registered as factories in get_it; repos and data sources as lazy singletons.
-- **Error handling**: `Either<Failure, T>` (dartz) throughout use cases and repositories. Typed failures: `AuthFailure`, `ServerFailure`, `NetworkFailure`, `ValidationFailure`, `PermissionFailure`.
-- **Navigation**: GoRouter with BlocProviders at route level. `MainShell` wraps dashboard routes with bottom navigation.
+- **State management**: BLoC (flutter_bloc). BLoCs registered as `registerFactory` in get_it; repos and data sources as `registerLazySingleton`. Exceptions: `NotificationBloc` and `FcmService` are lazy singletons because they hold long-lived realtime subscriptions.
+- **Error handling**: `Either<Failure, T>` (dartz) throughout use cases and repositories. Repositories call `FailureMapper.mapException()` to convert raw exceptions to typed failures. Typed failures: `AuthFailure`, `ServerFailure`, `NetworkFailure`, `ValidationFailure`, `PermissionFailure`, `UnknownFailure`.
+- **Navigation**: GoRouter with BlocProviders at route level. Most route paths live in `AppConstants`; a few (`/publish-service`, `/service-detail/:id`, `/send-proposal/:serviceId`, `/payment/:bookingId`, `/rate-service/:bookingId`, `/activity`, `/notifications`, `/provider-profile/:userId`) are hardcoded inline in `app_router.dart`. Data is passed between routes via `state.extra`.
 - **Network**: Health probe to Supabase before queries (1500ms timeout via `NetworkInfo`).
+- **Local storage**: `flutter_secure_storage` for `onboarding_done` and `user_role` flags (keys in `AppConstants`).
+- **Location**: `geolocator` for device GPS, `flutter_map` + `latlong2` for map display, custom `AddressRemoteDataSource` for autocomplete/reverse-geocode.
+- **Push notifications**: `FcmService.initialize()` must be called after a session is confirmed (post-login or post-splash). It registers the FCM token and attaches foreground/tap listeners that trigger `FetchNotificationsEvent`. Realtime updates come via Supabase stream in `NotificationRepository`.
 - **Auth flow**: Splash → checks session → routes to Welcome, Login, Onboarding, or Dashboard based on session + onboarding status.
+- **Testing**: `mocktail` for mocks.
 
 ## Supabase Tables
 

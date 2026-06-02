@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:domora/core/services/fcm_background_handler.dart';
+import 'package:domora/firebase_options.dart';
 import 'package:domora/core/error/error_mapper_singleton.dart';
 import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/injection_container.dart' as di;
@@ -29,7 +30,7 @@ Future<void> main() async {
   // El handler de background DEBE registrarse antes de runApp para que
   // funcione cuando la app no está en primer plano.
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
