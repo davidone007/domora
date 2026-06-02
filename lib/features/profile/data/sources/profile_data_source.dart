@@ -28,10 +28,12 @@ abstract class ProfileDataSource {
   Future<void> updateClientProfile(String userId, Map<String, dynamic> updates);
 
   /// Actualiza la fila en `provider_profiles` para el `userId`.
-  Future<void> updateProviderProfile(String userId, Map<String, dynamic> updates);
+  Future<void> updateProviderProfile(
+      String userId, Map<String, dynamic> updates);
 
   /// Actualiza o crea la dirección principal del usuario.
-  Future<void> updatePrimaryAddress(String userId, Map<String, dynamic> updates);
+  Future<void> updatePrimaryAddress(
+      String userId, Map<String, dynamic> updates);
 
   /// Sube el avatar a Supabase Storage y retorna la URL pública.
   /// El parámetro [isProvider] determina la subcarpeta (client_avatars o provider_avatars).
@@ -49,7 +51,8 @@ class ProfileDataSourceImpl implements ProfileDataSource {
   final SupabaseClient _client;
   final NetworkInfo _networkInfo;
 
-  ProfileDataSourceImpl(this._client, {required NetworkInfo networkInfo}) : _networkInfo = networkInfo;
+  ProfileDataSourceImpl(this._client, {required NetworkInfo networkInfo})
+      : _networkInfo = networkInfo;
 
   @override
   String? getCurrentUserId() => _client.auth.currentUser?.id;
@@ -68,7 +71,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .select()
         .eq('id', userId)
         .maybeSingle();
-    
+
     return data != null ? UserModel.fromJson(data) : null;
   }
 
@@ -101,7 +104,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .select()
         .eq('user_id', userId)
         .maybeSingle();
-    
+
     return data != null ? ClientProfileModel.fromJson(data) : null;
   }
 
@@ -116,7 +119,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .select()
         .eq('user_id', userId)
         .maybeSingle();
-    
+
     return data != null ? ProviderProfileModel.fromJson(data) : null;
   }
 
@@ -154,20 +157,28 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw const SocketException('userId está vacío');
     }
 
-    await _client.from(AppConstants.tableUsers).update(updates).eq('id', userId);
+    await _client
+        .from(AppConstants.tableUsers)
+        .update(updates)
+        .eq('id', userId);
   }
 
   @override
-  Future<void> updateClientProfile(String userId, Map<String, dynamic> updates) async {
+  Future<void> updateClientProfile(
+      String userId, Map<String, dynamic> updates) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    await _client.from(AppConstants.tableClientProfiles).update(updates).eq('user_id', userId);
+    await _client
+        .from(AppConstants.tableClientProfiles)
+        .update(updates)
+        .eq('user_id', userId);
   }
 
   @override
-  Future<void> updateProviderProfile(String userId, Map<String, dynamic> updates) async {
+  Future<void> updateProviderProfile(
+      String userId, Map<String, dynamic> updates) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
@@ -182,7 +193,8 @@ class ProfileDataSourceImpl implements ProfileDataSource {
   }
 
   @override
-  Future<void> updatePrimaryAddress(String userId, Map<String, dynamic> updates) async {
+  Future<void> updatePrimaryAddress(
+      String userId, Map<String, dynamic> updates) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
@@ -195,7 +207,10 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .maybeSingle();
 
     if (current != null && current['id'] != null) {
-      await _client.from(AppConstants.tableAddresses).update(updates).eq('id', current['id']);
+      await _client
+          .from(AppConstants.tableAddresses)
+          .update(updates)
+          .eq('id', current['id']);
       return;
     }
 
@@ -226,15 +241,14 @@ class ProfileDataSourceImpl implements ProfileDataSource {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final path = '$userId/avatar_$timestamp.$safeExt';
 
-    await _client.storage
-      .from(AppConstants.bucketAvatars)
-        .uploadBinary(
+    await _client.storage.from(AppConstants.bucketAvatars).uploadBinary(
           path,
           avatarFile.bytes,
           fileOptions: const FileOptions(upsert: true),
         );
 
-    final publicUrl = _client.storage.from(AppConstants.bucketAvatars).getPublicUrl(path);
+    final publicUrl =
+        _client.storage.from(AppConstants.bucketAvatars).getPublicUrl(path);
 
     return publicUrl;
   }

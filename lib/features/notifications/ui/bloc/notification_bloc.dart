@@ -83,29 +83,37 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     on<NotificationsUpdatedEvent>(_onNotificationsUpdated);
 
     // Iniciar escucha en tiempo real
-    _notificationsSubscription = _watchNotifications.execute().listen((notifications) {
+    _notificationsSubscription =
+        _watchNotifications.execute().listen((notifications) {
       add(NotificationsUpdatedEvent(notifications));
     });
   }
 
-  Future<void> _onFetchNotifications(FetchNotificationsEvent event, Emitter<NotificationState> emit) async {
+  Future<void> _onFetchNotifications(
+      FetchNotificationsEvent event, Emitter<NotificationState> emit) async {
     emit(state.copyWith(status: NotificationStatus.loading));
 
     final result = await _getNotifications.execute();
 
     result.fold(
-      (failure) => emit(state.copyWith(status: NotificationStatus.error, errorMessage: failure.message)),
-      (notifications) => emit(state.copyWith(status: NotificationStatus.success, notifications: notifications)),
+      (failure) => emit(state.copyWith(
+          status: NotificationStatus.error, errorMessage: failure.message)),
+      (notifications) => emit(state.copyWith(
+          status: NotificationStatus.success, notifications: notifications)),
     );
   }
 
-  Future<void> _onMarkAsRead(MarkAsReadRequestedEvent event, Emitter<NotificationState> emit) async {
+  Future<void> _onMarkAsRead(
+      MarkAsReadRequestedEvent event, Emitter<NotificationState> emit) async {
     await _markAsRead.execute(event.notificationId);
     // No emitimos éxito aquí, esperamos a que el Stream actualice la lista.
   }
 
-  void _onNotificationsUpdated(NotificationsUpdatedEvent event, Emitter<NotificationState> emit) {
-    emit(state.copyWith(status: NotificationStatus.success, notifications: event.notifications));
+  void _onNotificationsUpdated(
+      NotificationsUpdatedEvent event, Emitter<NotificationState> emit) {
+    emit(state.copyWith(
+        status: NotificationStatus.success,
+        notifications: event.notifications));
   }
 
   @override

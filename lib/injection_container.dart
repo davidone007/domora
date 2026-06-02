@@ -197,7 +197,8 @@ Future<void> init() async {
   // BLoCs
   sl.registerFactory(() => ProfileBloc(sl()));
   sl.registerFactory(() => ProfileSignOutBloc(sl()));
-  sl.registerFactory(() => ProviderPublicProfileBloc(getProviderProfileUseCase: sl()));
+  sl.registerFactory(
+      () => ProviderPublicProfileBloc(getProviderProfileUseCase: sl()));
   sl.registerFactory(
     () => ProfileEditBloc(
       sl(),

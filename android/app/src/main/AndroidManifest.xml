@@ -6,7 +6,7 @@
          The runtime prompt is triggered by FirebaseMessaging.requestPermission(). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="domora"
+        android:label="Domora"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
