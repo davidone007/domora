@@ -39,14 +39,6 @@ class _ClientHomePageState extends State<ClientHomePage> {
       ..showSnackBar(SnackBar(content: Text('$name disponible próximamente')));
   }
 
-  void _onNotificationsTap() {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text('No tienes notificaciones nuevas')),
-      );
-  }
-
   @override
   Widget build(BuildContext context) {
     return MainShell(
@@ -55,7 +47,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
       body: Column(
         children: [
           // Header oscuro pegado al top.
-          DashboardHeader(onNotificationsTap: _onNotificationsTap),
+          const DashboardHeader(),
 
           // Sheet blanca con curva superior.
           Expanded(

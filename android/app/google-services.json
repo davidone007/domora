@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "798851561105",
+    "project_id": "domora-9b1a8",
+    "storage_bucket": "domora-9b1a8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:798851561105:android:7e1a543a07e241ca357130",
+        "android_client_info": {
+          "package_name": "com.domora.domora"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDm90yLFOvdp1ByUDgyMw-CFZQkVKvk30U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

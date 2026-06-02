@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:domora/core/services/fcm_service.dart';
 import 'package:domora/features/auth/domain/usecases/login_usecase.dart';
  
 // EVENTS
@@ -62,8 +63,9 @@ class LoginFailState extends LoginState {
 // BLOC
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final LoginUseCase _loginUseCase;
+  final FcmService _fcmService;
 
-  LoginBloc(this._loginUseCase) : super(const LoginInitialState()) {
+  LoginBloc(this._loginUseCase, this._fcmService) : super(const LoginInitialState()) {
     on<LoginSubmitEvent>(_onSubmit);
     on<LoginResetEvent>((_, emit) => emit(const LoginInitialState()));
   }
@@ -80,12 +82,17 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
     result.fold(
       (failure) => emit(LoginFailState(failure.message)),
-      (auth) => emit(
-        LoginSuccessState(
-          role: auth.role,
-          onboardingCompleted: auth.onboardingCompleted,
-        ),
-      ),
+      (auth) {
+        // Registrar/refrescar el token FCM ahora que hay un usuario autenticado.
+        // No bloqueamos la navegación si falla.
+        _fcmService.initialize();
+        emit(
+          LoginSuccessState(
+            role: auth.role,
+            onboardingCompleted: auth.onboardingCompleted,
+          ),
+        );
+      },
     );
   }
 }

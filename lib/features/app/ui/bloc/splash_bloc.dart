@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:domora/core/services/fcm_service.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/features/auth/domain/usecases/get_current_session_usecase.dart';
 
@@ -37,8 +38,9 @@ class SplashNavigateState extends SplashState {
 
 class SplashBloc extends Bloc<SplashEvent, SplashState> {
   final GetCurrentSessionUseCase _getCurrentSession;
+  final FcmService _fcmService;
 
-  SplashBloc(this._getCurrentSession) : super(const SplashInitialState()) {
+  SplashBloc(this._getCurrentSession, this._fcmService) : super(const SplashInitialState()) {
     on<SplashCheckSessionEvent>(_onCheckSession);
   }
 
@@ -66,6 +68,9 @@ class SplashBloc extends Bloc<SplashEvent, SplashState> {
           emit(const SplashNavigateState(AppConstants.routeWelcome));
           return;
         }
+
+        // Sesión válida persistida: registrar/refrescar el token FCM.
+        _fcmService.initialize();
 
         emit(
           SplashNavigateState(
