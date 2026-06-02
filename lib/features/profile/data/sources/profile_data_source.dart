@@ -172,7 +172,13 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw const SocketException('No internet');
     }
 
-    await _client.from(AppConstants.tableProviderProfiles).update(updates).eq('user_id', userId);
+    await _client.from(AppConstants.tableProviderProfiles).upsert(
+      {
+        'user_id': userId,
+        ...updates,
+      },
+      onConflict: 'user_id',
+    );
   }
 
   @override
