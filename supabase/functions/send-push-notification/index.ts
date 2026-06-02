@@ -135,8 +135,9 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (userErr) {
-      console.error("user lookup failed", userErr);
-      return new Response("user lookup failed", { status: 500 });
+      const detail = JSON.stringify(userErr);
+      console.error("user lookup failed", detail, "user_id:", notification.user_id);
+      return new Response(`user lookup failed: ${detail}`, { status: 500 });
     }
     if (!user?.fcm_token) {
       // Recipient has no registered device — skip silently, this is normal.
@@ -144,10 +145,20 @@ Deno.serve(async (req) => {
     }
 
     const projectId = Deno.env.get("FIREBASE_PROJECT_ID");
-    const serviceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
-    if (!projectId || !serviceAccountJson) {
+    const serviceAccountRaw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
+    if (!projectId || !serviceAccountRaw) {
       console.error("Missing FIREBASE_PROJECT_ID or FIREBASE_SERVICE_ACCOUNT");
       return new Response("server misconfigured", { status: 500 });
+    }
+
+    // The secret may be stored either as raw JSON or base64-encoded JSON.
+    // Base64 is preferred because it survives dotenv/env-file quoting without
+    // having its `\n` escapes mangled into real control characters.
+    let serviceAccountJson = serviceAccountRaw.trim();
+    if (!serviceAccountJson.startsWith("{")) {
+      serviceAccountJson = new TextDecoder().decode(
+        Uint8Array.from(atob(serviceAccountJson), (c) => c.charCodeAt(0)),
+      );
     }
     const serviceAccount: ServiceAccount = JSON.parse(serviceAccountJson);
     const accessToken = await getAccessToken(serviceAccount);

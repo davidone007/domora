@@ -53,13 +53,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
 
-    // Asumimos que hay una columna fcm_token en la tabla users o una tabla dedicada
-    // Por simplicidad, actualizamos la tabla users si existe el campo
-    try {
-      await _client.from('users').update({'fcm_token': token}).eq('id', userId);
-    } catch (_) {
-      // Ignorar si el campo no existe aún en la base de datos
-    }
+    await _client.from('users').update({'fcm_token': token}).eq('id', userId);
   }
 
   @override
