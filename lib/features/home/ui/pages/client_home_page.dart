@@ -17,8 +17,7 @@ import 'package:domora/features/home/ui/widgets/service_card.dart';
 ///      Noticias y Ofertas (chips + banner promocional).
 ///   3. Bottom nav del MainShell.
 class ClientHomePage extends StatefulWidget {
-  final String? userId;
-  const ClientHomePage({super.key, this.userId});
+  const ClientHomePage({super.key});
 
   @override
   State<ClientHomePage> createState() => _ClientHomePageState();
@@ -133,8 +132,4 @@ class _ClientHomePageState extends State<ClientHomePage> {
       ),
     );
   }
-
-  // Mantiene la firma con Supabase por si más adelante mostramos el nombre
-  // del usuario en el saludo. Por ahora dejamos el saludo genérico para que
-  // sea consistente.
 }

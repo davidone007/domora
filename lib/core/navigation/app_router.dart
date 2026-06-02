@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:domora/injection_container.dart';
 import 'package:domora/core/network/network_info.dart';
@@ -109,7 +108,7 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       ),
       GoRoute(
         path: AppConstants.routeClientHome,
-        builder: (_, __) => ClientHomePage(userId: sl<SupabaseClient>().auth.currentUser?.id),
+        builder: (_, __) => const ClientHomePage(),
       ),
       GoRoute(
         path: AppConstants.routeProviderHome,
