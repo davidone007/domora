@@ -9,6 +9,7 @@ import '../models/user_model.dart';
 import '../models/address_model.dart';
 import '../models/client_profile_model.dart';
 import '../models/provider_profile_model.dart';
+import '../models/provider_review_model.dart';
 
 abstract class ProfileDataSource {
   String? getCurrentUserId();
@@ -45,6 +46,7 @@ abstract class ProfileDataSource {
 
   Future<int> getCompletedServicesCount(String providerId);
   Future<Map<String, dynamic>> getReviewsStats(String providerId);
+  Future<List<ProviderReviewModel>> getProviderReviews(String providerId);
 }
 
 class ProfileDataSourceImpl implements ProfileDataSource {
@@ -291,5 +293,22 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       'average_rating': average,
       'total_reviews': ratings.length,
     };
+  }
+
+  @override
+  Future<List<ProviderReviewModel>> getProviderReviews(String providerId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    final List<dynamic> response = await _client
+        .from(AppConstants.tableReviews)
+        .select('id, rating, comment, created_at, bookings!inner(provider_id, users!bookings_client_id_fkey(first_name, last_name))')
+        .eq('bookings.provider_id', providerId)
+        .order('created_at', ascending: false);
+
+    return response
+        .map((json) => ProviderReviewModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 }

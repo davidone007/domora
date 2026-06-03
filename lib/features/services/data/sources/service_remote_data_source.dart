@@ -40,10 +40,10 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
     }
 
     final response = await _client
-        .from('services')
-        .select('*, cleaning_details(*), addresses(*), service_images(*), quotes(count)')
-        .eq('id', serviceId)
-        .single();
+      .from('services')
+      .select('*, cleaning_details(*), addresses(*), service_images(*), quotes(count), bookings(provider_id)')
+      .eq('id', serviceId)
+      .single();
 
     return ServiceDetailModel.fromJson(response);
   }
@@ -72,9 +72,9 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
     // Consulta que trae todos los servicios y cuenta las propuestas (quotes)
     final response = await _client
-        .from('services')
-        .select('*, quotes(count)')
-        .order('created_at', ascending: false);
+      .from('services')
+      .select('*, quotes(provider_id), bookings(provider_id)')
+      .order('created_at', ascending: false);
 
     return (response as List).map((json) => ServiceModel.fromJson(json)).toList();
   }

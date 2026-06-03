@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
+import 'package:domora/features/profile/domain/entities/provider_review.dart';
 import '../bloc/provider_public_profile_bloc.dart';
 
 class ProviderPublicProfileScreen extends StatefulWidget {
@@ -122,20 +123,62 @@ class _ProviderPublicProfileScreenState extends State<ProviderPublicProfileScree
                           const SizedBox(height: 32),
                         ],
                         _SectionTitle(title: 'Servicios Completados'),
-                        _PlaceholderInfo(
+                        _StatHighlightCard(
                           icon: Icons.check_circle_outline,
-                          text: stats != null && stats.completedServicesCount > 0
-                              ? 'Este proveedor ha completado ${stats.completedServicesCount} servicios con éxito.'
-                              : 'Este proveedor está comenzando y aún no tiene servicios completados.',
+                          iconColor: AppTheme.primary,
+                          title: 'Servicios realizados',
+                          value: '${stats?.completedServicesCount ?? 0}',
+                          subtitle: stats != null && stats.completedServicesCount > 0
+                              ? 'Clientes satisfechos y trabajos finalizados.'
+                              : 'Aun no registra servicios completados.',
                         ),
                         const SizedBox(height: 24),
                         _SectionTitle(title: 'Calificaciones'),
-                        _PlaceholderInfo(
-                          icon: Icons.star_border,
-                          text: stats != null && stats.totalReviewsCount > 0
-                              ? 'Calificación promedio: ${stats.averageRating.toStringAsFixed(1)} / 5.0 (basado en ${stats.totalReviewsCount} reseñas).'
-                              : 'Aún no tiene calificaciones registradas.',
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatHighlightCard(
+                                icon: Icons.star_outline,
+                                iconColor: Colors.amber.shade700,
+                                title: 'Promedio',
+                                value: stats != null && stats.totalReviewsCount > 0
+                                    ? stats.averageRating.toStringAsFixed(1)
+                                    : 'N/A',
+                                subtitle: 'de 5.0',
+                                compact: true,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _StatHighlightCard(
+                                icon: Icons.rate_review_outlined,
+                                iconColor: AppTheme.primary,
+                                title: 'Reseñas',
+                                value: '${stats?.totalReviewsCount ?? 0}',
+                                subtitle: 'opiniones registradas',
+                                compact: true,
+                              ),
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 12),
+                        _RatingStrip(
+                          rating: stats?.averageRating ?? 0.0,
+                          totalReviews: stats?.totalReviewsCount ?? 0,
+                        ),
+                        const SizedBox(height: 20),
+                        _SectionTitle(title: 'Reseñas'),
+                        if (profile.reviews.isEmpty)
+                          const _PlaceholderInfo(
+                            icon: Icons.rate_review_outlined,
+                            text: 'Aun no hay reseñas registradas.',
+                          )
+                        else
+                          Column(
+                            children: profile.reviews
+                                .map((review) => _ReviewCard(review: review))
+                                .toList(),
+                          ),
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -342,6 +385,238 @@ class _PlaceholderInfo extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StatHighlightCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String value;
+  final String subtitle;
+  final bool compact;
+
+  const _StatHighlightCard({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cardPadding = compact ? const EdgeInsets.all(14) : const EdgeInsets.all(18);
+    return Container(
+      padding: cardPadding,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textTertiary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RatingStrip extends StatelessWidget {
+  final double rating;
+  final int totalReviews;
+
+  const _RatingStrip({required this.rating, required this.totalReviews});
+
+  @override
+  Widget build(BuildContext context) {
+    final normalized = rating.clamp(0, 5) / 5;
+    final percent = (normalized * 100).round();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.primarySoft.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Row(
+        children: [
+          _StarRow(rating: rating),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  totalReviews > 0
+                      ? '$percent% de satisfaccion'
+                      : 'Sin calificaciones registradas',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: totalReviews > 0 ? normalized : 0,
+                    minHeight: 6,
+                    backgroundColor: Colors.white,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.amber.shade700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StarRow extends StatelessWidget {
+  final double rating;
+
+  const _StarRow({required this.rating});
+
+  @override
+  Widget build(BuildContext context) {
+    final fullStars = rating.floor().clamp(0, 5);
+    final hasHalf = rating - fullStars >= 0.5 && fullStars < 5;
+    final emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < fullStars; i++)
+          Icon(Icons.star, color: Colors.amber.shade700, size: 18),
+        if (hasHalf)
+          Icon(Icons.star_half, color: Colors.amber.shade700, size: 18),
+        for (var i = 0; i < emptyStars; i++)
+          Icon(Icons.star_border, color: Colors.amber.shade700, size: 18),
+      ],
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  final ProviderReview review;
+
+  const _ReviewCard({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    final dateLabel = review.createdAt != null
+        ? DateFormat('dd MMM, yyyy', 'es_CO').format(review.createdAt!)
+        : null;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  review.reviewerName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              if (dateLabel != null)
+                Text(
+                  dateLabel,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textTertiary,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _StarRow(rating: review.rating.toDouble()),
+          if (review.comment != null && review.comment!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              review.comment!,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

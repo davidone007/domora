@@ -31,7 +31,7 @@ class _BookingActivityScreenState extends State<BookingActivityScreen> {
     return BlocBuilder<BookingActivityBloc, BookingActivityState>(
       builder: (context, state) {
         final isProvider = state.role == AppConstants.roleProvider;
-        final title = isProvider ? 'Mis Trabajos' : 'Historial de Servicios';
+        final title = isProvider ? 'Mis Trabajos en Progreso' : 'Historial de Servicios';
 
         return MainShell(
           activeTab: MainTab.activity,
@@ -69,7 +69,7 @@ class _BookingActivityScreenState extends State<BookingActivityScreen> {
             ? 'Aún no tienes trabajos activos'
             : 'Aún no tienes servicios completados',
         subtitle: isProvider
-            ? 'Cuando aceptes una propuesta, tu trabajo aparecerá aquí.'
+            ? 'Cuando te acepten una propuesta, tu trabajo aparecerá aquí.'
             : 'Cuando uno de tus servicios se complete, aparecerá aquí.',
       );
     }
@@ -171,10 +171,30 @@ class _BookingActivityCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      isProvider ? 'Cliente: ${item.otherPartyName}' : 'Aseador: ${item.otherPartyName}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
+                    if (!isProvider && item.booking.status == 'completed' && item.hasReview)
+                      GestureDetector(
+                        onTap: () {
+                          context.push('/provider-profile/${item.booking.providerId}');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Aseador: ${item.otherPartyName}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Text(
+                        isProvider ? 'Cliente: ${item.otherPartyName}' : 'Aseador: ${item.otherPartyName}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
                     Text(
                       item.service.title,
                       style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),

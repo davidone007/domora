@@ -11,6 +11,7 @@ import 'package:domora/features/profile/domain/entities/address.dart';
 import 'package:domora/features/profile/domain/entities/client_profile.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_profile.dart';
+import 'package:domora/features/profile/domain/entities/provider_review.dart';
 import 'package:domora/features/profile/domain/entities/provider_stats.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
@@ -56,12 +57,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
       ClientProfile? clientProfile;
       ProviderProfile? providerProfile;
       Address? primaryAddress;
+      var reviews = const <ProviderReview>[];
 
       if (role == AppConstants.roleClient) {
         clientProfile = await _dataSource.getClientProfile(userId);
       } else if (role == AppConstants.roleProvider) {
         providerProfile = await _dataSource.getProviderProfile(userId);
         primaryAddress = await _dataSource.getPrimaryAddress(userId);
+        reviews = await _dataSource.getProviderReviews(userId);
       }
 
       return Right(
@@ -71,6 +74,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
           clientProfile: clientProfile,
           providerProfile: providerProfile,
           primaryAddress: primaryAddress,
+          reviews: reviews,
         ),
       );
     } catch (e, stackTrace) {
@@ -231,6 +235,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       // Cargamos las estadísticas reales
       final statsResult = await getProviderStats(userId);
       final ProviderStats? stats = statsResult.fold((_) => null, (s) => s);
+      final reviews = await _dataSource.getProviderReviews(userId);
 
       return Right(
         FullProfile(
@@ -239,6 +244,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
           providerProfile: providerProfile,
           primaryAddress: primaryAddress,
           stats: stats,
+          reviews: reviews,
         ),
       );
     } catch (e, stackTrace) {
