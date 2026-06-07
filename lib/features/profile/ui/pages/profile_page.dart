@@ -11,6 +11,7 @@ import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_review.dart';
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/profile_signout_bloc.dart';
+import 'package:domora/features/profile/ui/widgets/review_card.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -303,7 +304,12 @@ class _ProfileContent extends StatelessWidget {
               else
                 Column(
                   children: profile.reviews
-                      .map((review) => _ReviewCard(review: review))
+                      .map((review) => ReviewCard(
+                            review: review,
+                            showShadow: false,
+                            padding: 14,
+                            starsSize: 16,
+                          ))
                       .toList(),
                 ),
             ],
@@ -444,139 +450,4 @@ class _EmptyReviews extends StatelessWidget {
   }
 }
 
-class _ReviewCard extends StatelessWidget {
-  final ProviderReview review;
-
-  const _ReviewCard({required this.review});
-
-  @override
-  Widget build(BuildContext context) {
-    final dateLabel = review.createdAt != null
-        ? DateFormat('dd MMM, yyyy', 'es_CO').format(review.createdAt!)
-        : null;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  review.reviewerName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              if (dateLabel != null)
-                Text(
-                  dateLabel,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textTertiary,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          RatingStars(rating: review.rating.toDouble(), size: 16),
-          if (review.comment != null && review.comment!.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              review.comment!,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppTheme.textSecondary,
-                height: 1.4,
-              ),
-            ),
-          ],
-          if (review.hasSubRatings) ...[
-            const SizedBox(height: 10),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-            _ReviewSubRatings(review: review),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ReviewSubRatings extends StatelessWidget {
-  final ProviderReview review;
-  const _ReviewSubRatings({required this.review});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (review.punctualityRating != null)
-          _SubRatingLine(
-            icon: Icons.schedule_outlined,
-            label: 'Puntualidad',
-            rating: review.punctualityRating!,
-          ),
-        if (review.qualityRating != null) ...[
-          if (review.punctualityRating != null) const SizedBox(height: 5),
-          _SubRatingLine(
-            icon: Icons.workspace_premium_outlined,
-            label: 'Calidad',
-            rating: review.qualityRating!,
-          ),
-        ],
-        if (review.communicationRating != null) ...[
-          if (review.punctualityRating != null ||
-              review.qualityRating != null)
-            const SizedBox(height: 5),
-          _SubRatingLine(
-            icon: Icons.chat_outlined,
-            label: 'Comunicación',
-            rating: review.communicationRating!,
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _SubRatingLine extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final int rating;
-  const _SubRatingLine({
-    required this.icon,
-    required this.label,
-    required this.rating,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: AppTheme.textTertiary),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-        ),
-        RatingStars(rating: rating.toDouble(), size: 13),
-      ],
-    );
-  }
-}
 

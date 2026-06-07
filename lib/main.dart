@@ -85,8 +85,12 @@ class _DomoraAppState extends State<DomoraApp> {
   void initState() {
     super.initState();
     _router = buildRouter(networkInfo: di.sl<NetworkInfo>());
+    
+    // Escuchar cambios en la autenticación, específicamente para recuperación de contraseña
     _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      debugPrint('Auth event received: ${data.event}');
       if (data.event == AuthChangeEvent.passwordRecovery) {
+        debugPrint('Navigating to reset password screen');
         _router.go(AppConstants.routeResetPassword);
       }
     });

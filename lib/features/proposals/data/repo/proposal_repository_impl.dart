@@ -73,6 +73,23 @@ class ProposalRepositoryImpl implements ProposalRepository {
   }
 
   @override
+  Future<Either<Failure, List<Proposal>>> getProposalsByProviderId(String providerId) async {
+    try {
+      final models = await _remoteDataSource.getProposalsByProviderId(providerId);
+      return Right(models);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getProposalsByProviderId',
+          userId: providerId,
+        ).toString(),
+      ));
+    }
+  }
+
+  @override
   Future<Either<Failure, String>> acceptProposal(Proposal proposal) async {
     try {
       final model = ProposalModel.fromEntity(proposal);

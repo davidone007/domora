@@ -282,7 +282,8 @@ class ProfileDataSourceImpl implements ProfileDataSource {
     final List<dynamic> response = await _client
         .from(AppConstants.tableReviews)
         .select('rating, bookings!inner(provider_id)')
-        .eq('bookings.provider_id', providerId);
+        .eq('bookings.provider_id', providerId)
+        .or('reviewer_type.eq.client,reviewer_type.is.null');
 
     if (response.isEmpty) {
       return {'average_rating': 0.0, 'total_reviews': 0};
@@ -315,6 +316,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
           'users!bookings_client_id_fkey(first_name, last_name))',
         )
         .eq('bookings.provider_id', providerId)
+        .or('reviewer_type.eq.client,reviewer_type.is.null')
         .order('created_at', ascending: false);
 
     return response

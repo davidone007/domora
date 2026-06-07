@@ -18,6 +18,9 @@ abstract class ProposalRepository {
     required String clientId,
   });
 
+  /// Obtiene todas las propuestas enviadas por un proveedor.
+  Future<Either<Failure, List<Proposal>>> getProposalsByProviderId(String providerId);
+
   /// Acepta una propuesta, creando un booking y actualizando los estados de las entidades relacionadas.
   Future<Either<Failure, String>> acceptProposal(Proposal proposal);
 }
