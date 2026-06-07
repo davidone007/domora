@@ -40,7 +40,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
     final response = await _client
         .from(AppConstants.tableBookings)
-        .select('*, services(*), reviews(id), $otherPartyTable(first_name, last_name, client_profiles(avatar_url), provider_profiles(avatar_url))')
+        .select('*, services(*), reviews(id, rating, comment, reviewer_type), $otherPartyTable(first_name, last_name, client_profiles(avatar_url), provider_profiles(avatar_url))')
         .eq(userField, userId)
         .inFilter('status', statuses)
         .order('created_at', ascending: false);

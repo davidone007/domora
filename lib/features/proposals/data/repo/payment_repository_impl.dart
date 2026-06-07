@@ -17,7 +17,14 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failure, Unit>> processPayment(Payment payment) async {
     try {
       final model = PaymentModel.fromEntity(payment);
-      await _remoteDataSource.processPayment(model);
+
+      // El repositorio orquesta las dos operaciones atómicas:
+      // 1. Registrar el pago en la tabla `payments`.
+      await _remoteDataSource.insertPayment(model);
+
+      // 2. Actualizar el estado de pago en el booking.
+      await _remoteDataSource.updateBookingPaymentStatus(payment.bookingId, 'paid');
+
       return const Right(unit);
     } catch (e, stackTrace) {
       return Left(_errorMapper.mapException(

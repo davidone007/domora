@@ -39,6 +39,10 @@ abstract class AuthDataSource {
 
   /// Solicita un correo de restablecimiento de contraseña.
   Future<void> requestPasswordReset(String email);
+
+  /// Establece una nueva contraseña usando la sesión de recuperación activa
+  /// (llamar después de que el usuario haya abierto el enlace del correo).
+  Future<void> setNewPasswordAfterReset(String newPassword);
 }
 
 class AuthDataSourceImpl implements AuthDataSource {
@@ -131,10 +135,8 @@ class AuthDataSourceImpl implements AuthDataSource {
       throw const AuthException('No se pudo obtener el correo actual');
     }
 
-    if (currentPassword == newPassword) {
-      throw const AuthException('No se puede cambiar por la misma contraseña');
-    }
-
+    // La validación de negocio (currentPassword != newPassword) reside en
+    // UpdatePasswordUseCase. El DataSource solo accede a la infraestructura.
     try {
       await _client.auth
           .signInWithPassword(email: email, password: currentPassword);
@@ -150,11 +152,21 @@ class AuthDataSourceImpl implements AuthDataSource {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
+    // La validación de correo vacío reside en RequestPasswordResetUseCase.
+    // El DataSource recibe un email ya normalizado y solo ejecuta la llamada.
     final normalized = email.trim().toLowerCase();
-    if (normalized.isEmpty) {
-      throw const AuthException('Ingresa un correo válido');
+    await _client.auth.resetPasswordForEmail(
+      normalized,
+      redirectTo: 'domora://reset-password',
+    );
+  }
+
+  @override
+  Future<void> setNewPasswordAfterReset(String newPassword) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
     }
-    await _client.auth.resetPasswordForEmail(normalized);
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
 
   @override

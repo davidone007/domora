@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
+import 'package:domora/core/widgets/rating_stars.dart';
 import 'package:domora/features/profile/domain/entities/provider_review.dart';
 import '../bloc/provider_public_profile_bloc.dart';
 
@@ -492,7 +493,7 @@ class _RatingStrip extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _StarRow(rating: rating),
+          RatingStars(rating: rating, size: 18),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -523,31 +524,6 @@ class _RatingStrip extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _StarRow extends StatelessWidget {
-  final double rating;
-
-  const _StarRow({required this.rating});
-
-  @override
-  Widget build(BuildContext context) {
-    final fullStars = rating.floor().clamp(0, 5);
-    final hasHalf = rating - fullStars >= 0.5 && fullStars < 5;
-    final emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < fullStars; i++)
-          Icon(Icons.star, color: Colors.amber.shade700, size: 18),
-        if (hasHalf)
-          Icon(Icons.star_half, color: Colors.amber.shade700, size: 18),
-        for (var i = 0; i < emptyStars; i++)
-          Icon(Icons.star_border, color: Colors.amber.shade700, size: 18),
-      ],
     );
   }
 }
@@ -603,7 +579,7 @@ class _ReviewCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          _StarRow(rating: review.rating.toDouble()),
+          RatingStars(rating: review.rating.toDouble(), size: 18),
           if (review.comment != null && review.comment!.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
@@ -615,8 +591,84 @@ class _ReviewCard extends StatelessWidget {
               ),
             ),
           ],
+          if (review.hasSubRatings) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            _SubRatingsDisplay(review: review),
+          ],
         ],
       ),
+    );
+  }
+}
+
+/// Muestra los sub-ratings opcionales (puntualidad, calidad, comunicación).
+class _SubRatingsDisplay extends StatelessWidget {
+  final ProviderReview review;
+  const _SubRatingsDisplay({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (review.punctualityRating != null)
+          _SubRatingRow(
+            icon: Icons.schedule_outlined,
+            label: 'Puntualidad',
+            rating: review.punctualityRating!,
+          ),
+        if (review.qualityRating != null) ...[
+          if (review.punctualityRating != null)
+            const SizedBox(height: 6),
+          _SubRatingRow(
+            icon: Icons.workspace_premium_outlined,
+            label: 'Calidad',
+            rating: review.qualityRating!,
+          ),
+        ],
+        if (review.communicationRating != null) ...[
+          if (review.punctualityRating != null ||
+              review.qualityRating != null)
+            const SizedBox(height: 6),
+          _SubRatingRow(
+            icon: Icons.chat_outlined,
+            label: 'Comunicación',
+            rating: review.communicationRating!,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SubRatingRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int rating;
+  const _SubRatingRow({
+    required this.icon,
+    required this.label,
+    required this.rating,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: AppTheme.textTertiary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+        ),
+        RatingStars(rating: rating.toDouble(), size: 13),
+      ],
     );
   }
 }

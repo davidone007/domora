@@ -49,5 +49,17 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Necesitamos tu ubicacion para sugerir la direccion del servicio.</string>
+	<!-- Deep link scheme for Supabase password recovery (domora://reset-password) -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>domora</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

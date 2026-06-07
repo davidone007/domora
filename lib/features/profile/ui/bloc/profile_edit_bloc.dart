@@ -7,8 +7,8 @@ import 'package:domora/features/profile/domain/usecases/update_client_profile_us
 import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/upload_avatar_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_email_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_password_usecase.dart';
+import 'package:domora/features/auth/domain/usecases/update_email_usecase.dart';
+import 'package:domora/features/auth/domain/usecases/update_password_usecase.dart';
 
 // Events
 abstract class ProfileEditEvent extends Equatable {

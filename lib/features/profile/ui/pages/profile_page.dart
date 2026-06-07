@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/widgets/main_shell.dart';
+import 'package:domora/core/widgets/rating_stars.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_review.dart';
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
@@ -55,6 +56,8 @@ class _ProfilePageState extends State<ProfilePage> {
         builder: (context, state) {
           String? currentRole;
           if (state is ProfileLoadedState) {
+            currentRole = state.profile.role;
+          } else if (state is ProfileTogglingAvailabilityState) {
             currentRole = state.profile.role;
           }
 
@@ -117,6 +120,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           );
                         }
                         if (state is ProfileLoadedState) {
+                          return RefreshIndicator(
+                            onRefresh: () async => context
+                                .read<ProfileBloc>()
+                                .add(const ProfileRefreshEvent()),
+                            child: _ProfileContent(profile: state.profile),
+                          );
+                        }
+                        if (state is ProfileTogglingAvailabilityState) {
                           return RefreshIndicator(
                             onRefresh: () async => context
                                 .read<ProfileBloc>()
@@ -282,21 +293,21 @@ class _ProfileContent extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            _InfoSection(
-              title: 'Mis reseñas',
-              children: [
-                if (profile.reviews.isEmpty)
-                  const _EmptyReviews()
-                else
-                  Column(
-                    children: profile.reviews
-                        .map((review) => _ReviewCard(review: review))
-                        .toList(),
-                  ),
-              ],
-            ),
           ],
+          const SizedBox(height: 20),
+          _InfoSection(
+            title: 'Mis reseñas',
+            children: [
+              if (profile.reviews.isEmpty)
+                const _EmptyReviews()
+              else
+                Column(
+                  children: profile.reviews
+                      .map((review) => _ReviewCard(review: review))
+                      .toList(),
+                ),
+            ],
+          ),
         ],
 
         // Acciones.
@@ -477,7 +488,7 @@ class _ReviewCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          _StarRow(rating: review.rating.toDouble()),
+          RatingStars(rating: review.rating.toDouble(), size: 16),
           if (review.comment != null && review.comment!.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
@@ -489,33 +500,83 @@ class _ReviewCard extends StatelessWidget {
               ),
             ),
           ],
+          if (review.hasSubRatings) ...[
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            _ReviewSubRatings(review: review),
+          ],
         ],
       ),
     );
   }
 }
 
-class _StarRow extends StatelessWidget {
-  final double rating;
-
-  const _StarRow({required this.rating});
+class _ReviewSubRatings extends StatelessWidget {
+  final ProviderReview review;
+  const _ReviewSubRatings({required this.review});
 
   @override
   Widget build(BuildContext context) {
-    final fullStars = rating.floor().clamp(0, 5);
-    final hasHalf = rating - fullStars >= 0.5 && fullStars < 5;
-    final emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Column(
       children: [
-        for (var i = 0; i < fullStars; i++)
-          Icon(Icons.star, color: Colors.amber.shade700, size: 16),
-        if (hasHalf)
-          Icon(Icons.star_half, color: Colors.amber.shade700, size: 16),
-        for (var i = 0; i < emptyStars; i++)
-          Icon(Icons.star_border, color: Colors.amber.shade700, size: 16),
+        if (review.punctualityRating != null)
+          _SubRatingLine(
+            icon: Icons.schedule_outlined,
+            label: 'Puntualidad',
+            rating: review.punctualityRating!,
+          ),
+        if (review.qualityRating != null) ...[
+          if (review.punctualityRating != null) const SizedBox(height: 5),
+          _SubRatingLine(
+            icon: Icons.workspace_premium_outlined,
+            label: 'Calidad',
+            rating: review.qualityRating!,
+          ),
+        ],
+        if (review.communicationRating != null) ...[
+          if (review.punctualityRating != null ||
+              review.qualityRating != null)
+            const SizedBox(height: 5),
+          _SubRatingLine(
+            icon: Icons.chat_outlined,
+            label: 'Comunicación',
+            rating: review.communicationRating!,
+          ),
+        ],
       ],
     );
   }
 }
+
+class _SubRatingLine extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int rating;
+  const _SubRatingLine({
+    required this.icon,
+    required this.label,
+    required this.rating,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: AppTheme.textTertiary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+        ),
+        RatingStars(rating: rating.toDouble(), size: 13),
+      ],
+    );
+  }
+}
+

@@ -4,10 +4,7 @@ import 'package:domora/core/error/failures.dart';
 import 'package:domora/core/entities/avatar_file.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_stats.dart';
-import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
+import 'package:domora/features/profile/domain/params/profile_params.dart';
 
 abstract class ProfileRepository {
   /// Devuelve el perfil completo del usuario actual (HU4).
@@ -39,16 +36,4 @@ abstract class ProfileRepository {
   /// Obtiene las estadísticas de un proveedor (rating, servicios completados).
   Future<Either<Failure, ProviderStats>> getProviderStats(String providerId);
 
-  /// Actualiza el correo del usuario autenticado (reautentica antes de cambiar).
-  Future<Either<Failure, void>> updateEmail({
-    required String currentEmail,
-    required String currentPassword,
-    required String newEmail,
-  });
-
-  /// Actualiza la contraseña del usuario autenticado (reautentica antes de cambiar).
-  Future<Either<Failure, void>> updatePassword({
-    required String currentPassword,
-    required String newPassword,
-  });
 }

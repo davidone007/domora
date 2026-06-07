@@ -276,7 +276,9 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw const SocketException('No internet');
     }
 
-    // Consultamos las reviews uniéndolas con bookings para filtrar por provider_id
+    // Consultamos las reviews uniéndolas con bookings para filtrar por provider_id.
+    // POST-MIGRACIÓN: añadir .or('reviewer_type.eq.client,reviewer_type.is.null')
+    // para excluir reseñas proveedor→cliente del cálculo del promedio.
     final List<dynamic> response = await _client
         .from(AppConstants.tableReviews)
         .select('rating, bookings!inner(provider_id)')
@@ -301,9 +303,17 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw const SocketException('No internet');
     }
 
+    // POST-MIGRACIÓN: añadir .or('reviewer_type.eq.client,reviewer_type.is.null')
+    // para excluir reseñas proveedor→cliente de la vista pública del proveedor.
     final List<dynamic> response = await _client
         .from(AppConstants.tableReviews)
-        .select('id, rating, comment, created_at, bookings!inner(provider_id, users!bookings_client_id_fkey(first_name, last_name))')
+        .select(
+          'id, rating, comment, '
+          'punctuality_rating, quality_rating, communication_rating, '
+          'created_at, '
+          'bookings!inner(provider_id, '
+          'users!bookings_client_id_fkey(first_name, last_name))',
+        )
         .eq('bookings.provider_id', providerId)
         .order('created_at', ascending: false);
 

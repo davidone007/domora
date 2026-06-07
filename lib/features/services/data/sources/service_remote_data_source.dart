@@ -24,6 +24,10 @@ abstract class ServiceRemoteDataSource {
 
   /// Obtiene el detalle de un servicio por su ID
   Future<ServiceDetailModel> getServiceById(String serviceId);
+
+  /// Comprueba si un proveedor ya tiene una propuesta enviada para un servicio.
+  /// Accede a la tabla `quotes` directamente — es acceso a datos, no lógica de negocio.
+  Future<bool> hasUserProposed(String serviceId, String providerId);
 }
 
 class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
@@ -134,6 +138,22 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
         });
       }
     }
+  }
+
+  @override
+  Future<bool> hasUserProposed(String serviceId, String providerId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const PostgrestException(message: 'No hay conexión a internet');
+    }
+
+    final response = await _client
+        .from('quotes')
+        .select('id')
+        .eq('service_id', serviceId)
+        .eq('provider_id', providerId)
+        .maybeSingle();
+
+    return response != null;
   }
 
   Future<String?> _uploadImage(String serviceId, AvatarFile file) async {

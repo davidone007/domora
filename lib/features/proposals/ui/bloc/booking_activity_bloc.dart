@@ -35,12 +35,14 @@ class BookingActivityState extends Equatable {
   final BookingActivityStatus status;
   final List<BookingWithService> bookings;
   final String? role;
+  final String? userId;
   final String? errorMessage;
 
   const BookingActivityState({
     this.status = BookingActivityStatus.initial,
     this.bookings = const [],
     this.role,
+    this.userId,
     this.errorMessage,
   });
 
@@ -48,18 +50,20 @@ class BookingActivityState extends Equatable {
     BookingActivityStatus? status,
     List<BookingWithService>? bookings,
     String? role,
+    String? userId,
     String? errorMessage,
   }) {
     return BookingActivityState(
       status: status ?? this.status,
       bookings: bookings ?? this.bookings,
       role: role ?? this.role,
+      userId: userId ?? this.userId,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 
   @override
-  List<Object?> get props => [status, bookings, role, errorMessage];
+  List<Object?> get props => [status, bookings, role, userId, errorMessage];
 }
 
 // BLoC
@@ -105,6 +109,7 @@ class BookingActivityBloc extends Bloc<BookingActivityEvent, BookingActivityStat
         status: BookingActivityStatus.success,
         bookings: bookings,
         role: auth.role,
+        userId: auth.userId,
       )),
     );
   }

@@ -190,4 +190,18 @@ class AuthRepositoryImpl implements AuthRepository {
       ));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> setNewPasswordAfterReset(String newPassword) async {
+    try {
+      await _dataSource.setNewPasswordAfterReset(newPassword);
+      return const Right(null);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(operation: 'setNewPasswordAfterReset').toString(),
+      ));
+    }
+  }
 }

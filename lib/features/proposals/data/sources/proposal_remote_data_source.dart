@@ -10,7 +10,13 @@ abstract class ProposalRemoteDataSource {
     required String serviceId,
     required String clientId,
   });
+
+  /// Ejecuta el RPC `accept_quote` y devuelve el ID del booking creado.
   Future<String> acceptProposal(ProposalModel proposal);
+
+  /// Actualiza el estado de un servicio. Método de infraestructura pura;
+  /// la decisión de cuándo llamarlo pertenece al [ProposalRepositoryImpl].
+  Future<void> updateServiceStatus(String serviceId, String status);
 }
 
 class ProposalRemoteDataSourceImpl implements ProposalRemoteDataSource {
@@ -80,17 +86,14 @@ class ProposalRemoteDataSourceImpl implements ProposalRemoteDataSource {
       'p_price': proposal.price,
     });
 
-    // Defensive: ensure the parent service moves to in_progress even if the
-    // RPC implementation does not handle this transition. Idempotent.
-    try {
-      await _client
-          .from('services')
-          .update({'status': 'in_progress'})
-          .eq('id', proposal.serviceId);
-    } catch (_) {
-      // Don't fail accept if status nudge fails; the booking is already created.
-    }
-
     return response as String;
+  }
+
+  @override
+  Future<void> updateServiceStatus(String serviceId, String status) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const PostgrestException(message: 'No hay conexión a internet');
+    }
+    await _client.from('services').update({'status': status}).eq('id', serviceId);
   }
 }

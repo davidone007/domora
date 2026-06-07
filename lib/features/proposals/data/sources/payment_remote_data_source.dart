@@ -4,7 +4,14 @@ import 'package:domora/core/utils/constants.dart';
 import '../models/payment_model.dart';
 
 abstract class PaymentRemoteDataSource {
-  Future<void> processPayment(PaymentModel payment);
+  /// Inserta el registro de pago en la tabla `payments`.
+  Future<void> insertPayment(PaymentModel payment);
+
+  /// Actualiza el `payment_status` del booking asociado.
+  /// Separado de [insertPayment] para que el [PaymentRepositoryImpl]
+  /// pueda orquestar ambas operaciones y manejar cada fallo de forma
+  /// independiente.
+  Future<void> updateBookingPaymentStatus(String bookingId, String status);
 }
 
 class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
@@ -15,20 +22,21 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
       : _networkInfo = networkInfo;
 
   @override
-  Future<void> processPayment(PaymentModel payment) async {
+  Future<void> insertPayment(PaymentModel payment) async {
     if (!await _networkInfo.isConnected()) {
       throw const PostgrestException(message: 'No hay conexión a internet');
     }
-
-    // 1. Insertar el pago
     await _client.from(AppConstants.tablePayments).insert(payment.toJson());
+  }
 
-    // 2. Actualizar el estado de pago del booking
+  @override
+  Future<void> updateBookingPaymentStatus(String bookingId, String status) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const PostgrestException(message: 'No hay conexión a internet');
+    }
     await _client
         .from(AppConstants.tableBookings)
-        .update({'payment_status': 'paid'})
-        .eq('id', payment.bookingId);
+        .update({'payment_status': status})
+        .eq('id', bookingId);
   }
 }
-
-// Add tablePayments to AppConstants if not exists

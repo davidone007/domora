@@ -76,7 +76,19 @@ class ProposalRepositoryImpl implements ProposalRepository {
   Future<Either<Failure, String>> acceptProposal(Proposal proposal) async {
     try {
       final model = ProposalModel.fromEntity(proposal);
+
+      // 1. Ejecutar el RPC que crea el booking y retorna su ID.
       final bookingId = await _remoteDataSource.acceptProposal(model);
+
+      // 2. Asegurar que el servicio pase a in_progress (idempotente).
+      // Esta transición de estado es responsabilidad del repositorio, no del DataSource.
+      try {
+        await _remoteDataSource.updateServiceStatus(proposal.serviceId, 'in_progress');
+      } catch (_) {
+        // No se falla la operación principal si la actualización de estado falla;
+        // el booking ya fue creado. Se puede reintentar en una futura sincronización.
+      }
+
       return Right(bookingId);
     } catch (e, stackTrace) {
       return Left(_errorMapper.mapException(

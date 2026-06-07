@@ -15,15 +15,40 @@ class SendReviewRequestedEvent extends ReviewEvent {
   final String bookingId;
   final int rating;
   final String? comment;
+  final int? punctualityRating;
+  final int? qualityRating;
+  final int? communicationRating;
+
+  /// Dirección de la reseña ('client' o 'provider').
+  /// null = legado — no envía reviewer_type a Supabase.
+  final String? reviewerType;
+
+  /// ID del usuario que escribe la reseña.
+  /// null = legado.
+  final String? reviewerId;
 
   const SendReviewRequestedEvent({
     required this.bookingId,
     required this.rating,
     this.comment,
+    this.punctualityRating,
+    this.qualityRating,
+    this.communicationRating,
+    this.reviewerType,
+    this.reviewerId,
   });
 
   @override
-  List<Object?> get props => [bookingId, rating, comment];
+  List<Object?> get props => [
+        bookingId,
+        rating,
+        comment,
+        punctualityRating,
+        qualityRating,
+        communicationRating,
+        reviewerType,
+        reviewerId,
+      ];
 }
 
 class CheckReviewStatusEvent extends ReviewEvent {
@@ -86,6 +111,11 @@ class ReviewBloc extends Bloc<ReviewEvent, ReviewState> {
       bookingId: event.bookingId,
       rating: event.rating,
       comment: event.comment,
+      punctualityRating: event.punctualityRating,
+      qualityRating: event.qualityRating,
+      communicationRating: event.communicationRating,
+      reviewerType: event.reviewerType,
+      reviewerId: event.reviewerId,
     );
 
     final result = await _sendReviewUseCase.execute(review);

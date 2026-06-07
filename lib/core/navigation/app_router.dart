@@ -15,6 +15,8 @@ import 'package:domora/features/auth/ui/auth_blocs/signup_bloc.dart';
 import 'package:domora/features/auth/ui/auth_screens/signup_screen.dart';
 import 'package:domora/features/auth/ui/auth_blocs/forgot_password_bloc.dart';
 import 'package:domora/features/auth/ui/auth_screens/forgot_password_screen.dart';
+import 'package:domora/features/auth/ui/auth_blocs/reset_password_bloc.dart';
+import 'package:domora/features/auth/ui/auth_screens/reset_password_screen.dart';
 
 import 'package:domora/features/onboarding/ui/bloc/onboarding_bloc.dart';
 import 'package:domora/features/onboarding/ui/screens/onboarding_screen.dart';
@@ -94,6 +96,13 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         ),
       ),
       GoRoute(
+        path: AppConstants.routeResetPassword,
+        builder: (_, __) => BlocProvider(
+          create: (_) => sl<ResetPasswordBloc>(),
+          child: const ResetPasswordScreen(),
+        ),
+      ),
+      GoRoute(
         path: AppConstants.routeOnboarding,
         builder: (_, __) => MultiBlocProvider(
           providers: [
@@ -112,7 +121,10 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       ),
       GoRoute(
         path: AppConstants.routeProviderHome,
-        builder: (_, __) => const ProviderHomePage(),
+        builder: (_, __) => BlocProvider(
+          create: (_) => sl<ProfileBloc>()..add(const ProfileLoadEvent()),
+          child: const ProviderHomePage(),
+        ),
       ),
       GoRoute(
         path: '/publish-service',
@@ -233,14 +245,18 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
           final bookingId = state.pathParameters['bookingId']!;
           final extra = state.extra as Map<String, dynamic>;
           final serviceTitle = extra['serviceTitle'] as String;
-          final providerName = extra['providerName'] as String;
+          final otherPartyName = extra['otherPartyName'] as String;
+          final reviewerType = extra['reviewerType'] as String? ?? 'client';
+          final reviewerId = extra['reviewerId'] as String?;
 
           return BlocProvider(
             create: (_) => sl<ReviewBloc>()..add(CheckReviewStatusEvent(bookingId)),
             child: RatingScreen(
               bookingId: bookingId,
               serviceTitle: serviceTitle,
-              providerName: providerName,
+              otherPartyName: otherPartyName,
+              reviewerType: reviewerType,
+              reviewerId: reviewerId,
             ),
           );
         },

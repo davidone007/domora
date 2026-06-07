@@ -48,4 +48,5 @@ class AppConstants {
   static const String routeMyServices = '/my-services';
   static const String routeServiceProposals = '/service-proposals';
   static const String routeForgotPassword = '/forgot-password';
+  static const String routeResetPassword = '/reset-password';
 }

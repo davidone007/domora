@@ -5,6 +5,9 @@ class ProviderReviewModel extends ProviderReview {
     required super.reviewerName,
     required super.rating,
     super.comment,
+    super.punctualityRating,
+    super.qualityRating,
+    super.communicationRating,
     super.createdAt,
   });
 
@@ -12,7 +15,8 @@ class ProviderReviewModel extends ProviderReview {
     Map<String, dynamic>? reviewerData;
     final bookings = json['bookings'];
     if (bookings is Map) {
-      reviewerData = bookings['users!bookings_client_id_fkey'] as Map<String, dynamic>?;
+      reviewerData = bookings['users!bookings_client_id_fkey']
+          as Map<String, dynamic>?;
     }
     final firstName = reviewerData?['first_name'] as String?;
     final lastName = reviewerData?['last_name'] as String?;
@@ -24,6 +28,9 @@ class ProviderReviewModel extends ProviderReview {
       reviewerName: nameParts.isNotEmpty ? nameParts.join(' ') : 'Cliente',
       rating: json['rating'] as int? ?? 0,
       comment: json['comment'] as String?,
+      punctualityRating: json['punctuality_rating'] as int?,
+      qualityRating: json['quality_rating'] as int?,
+      communicationRating: json['communication_rating'] as int?,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
