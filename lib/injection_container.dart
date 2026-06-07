@@ -103,6 +103,7 @@ import 'package:domora/features/notifications/domain/repo/notification_repositor
 import 'package:domora/features/notifications/domain/usecases/get_notifications_usecase.dart';
 import 'package:domora/features/notifications/domain/usecases/mark_notification_read_usecase.dart';
 import 'package:domora/features/notifications/domain/usecases/register_fcm_token_usecase.dart';
+import 'package:domora/features/notifications/domain/usecases/watch_notifications_usecase.dart';
 import 'package:domora/features/notifications/ui/bloc/notification_bloc.dart';
 import 'package:domora/core/services/fcm_service.dart';
 
@@ -196,7 +197,8 @@ Future<void> init() async {
   // BLoCs
   sl.registerFactory(() => ProfileBloc(sl()));
   sl.registerFactory(() => ProfileSignOutBloc(sl()));
-  sl.registerFactory(() => ProviderPublicProfileBloc(getProviderProfileUseCase: sl()));
+  sl.registerFactory(
+      () => ProviderPublicProfileBloc(getProviderProfileUseCase: sl()));
   sl.registerFactory(
     () => ProfileEditBloc(
       sl(),
@@ -351,13 +353,14 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetNotificationsUseCase(sl()));
   sl.registerLazySingleton(() => MarkNotificationReadUseCase(sl()));
   sl.registerLazySingleton(() => RegisterFcmTokenUseCase(sl()));
+  sl.registerLazySingleton(() => WatchNotificationsUseCase(sl()));
 
   // BLoCs
   sl.registerLazySingleton(
     () => NotificationBloc(
       getNotifications: sl(),
       markAsRead: sl(),
-      repository: sl(),
+      watchNotifications: sl(),
     ),
   );
 

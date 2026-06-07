@@ -37,6 +37,7 @@ class MyServicesState extends Equatable {
   final String? selectedStatus;
   final String? errorMessage;
   final String? role;
+  final String? currentUserId;
 
   const MyServicesState({
     this.status = MyServicesStatus.initial,
@@ -45,6 +46,7 @@ class MyServicesState extends Equatable {
     this.selectedStatus,
     this.errorMessage,
     this.role,
+    this.currentUserId,
   });
 
   MyServicesState copyWith({
@@ -55,6 +57,7 @@ class MyServicesState extends Equatable {
     bool clearStatus = false,
     String? errorMessage,
     String? role,
+    String? currentUserId,
   }) {
     return MyServicesState(
       status: status ?? this.status,
@@ -64,6 +67,7 @@ class MyServicesState extends Equatable {
           clearStatus ? null : (selectedStatus ?? this.selectedStatus),
       errorMessage: errorMessage ?? this.errorMessage,
       role: role ?? this.role,
+      currentUserId: currentUserId ?? this.currentUserId,
     );
   }
 
@@ -74,7 +78,8 @@ class MyServicesState extends Equatable {
         filteredServices,
         selectedStatus,
         errorMessage,
-        role
+        role,
+        currentUserId,
       ];
 }
 
@@ -128,7 +133,7 @@ class MyServicesBloc extends Bloc<MyServicesEvent, MyServicesState> {
       return;
     }
 
-    emit(state.copyWith(role: role));
+    emit(state.copyWith(role: role, currentUserId: userId));
 
     final result = role == AppConstants.roleProvider
         ? await _getAllServices.execute()
@@ -142,7 +147,12 @@ class MyServicesBloc extends Bloc<MyServicesEvent, MyServicesState> {
       (services) => emit(state.copyWith(
         status: MyServicesStatus.success,
         allServices: services,
-        filteredServices: _applyFilter(services, state.selectedStatus),
+        filteredServices: _applyFilter(
+          services,
+          state.selectedStatus,
+          role: role,
+          userId: userId,
+        ),
       )),
     );
   }
@@ -151,12 +161,37 @@ class MyServicesBloc extends Bloc<MyServicesEvent, MyServicesState> {
     emit(state.copyWith(
       selectedStatus: event.status,
       clearStatus: event.status == null,
-      filteredServices: _applyFilter(state.allServices, event.status),
+      filteredServices: _applyFilter(
+        state.allServices,
+        event.status,
+        role: state.role,
+        userId: state.currentUserId,
+      ),
     ));
   }
 
-  List<Service> _applyFilter(List<Service> services, String? status) {
-    if (status == null || status.isEmpty) return services;
-    return services.where((s) => s.status == status).toList();
+  List<Service> _applyFilter(
+    List<Service> services,
+    String? status, {
+    String? role,
+    String? userId,
+  }) {
+    Iterable<Service> filtered = services;
+    if (role == AppConstants.roleProvider && userId != null) {
+      filtered = filtered.where((service) {
+        if (service.status == 'open') {
+          return true;
+        }
+
+        if (service.status == 'in_progress' || service.status == 'completed') {
+          return service.bookingProviderId == userId;
+        }
+
+        return false;
+      });
+    }
+
+    if (status == null || status.isEmpty) return filtered.toList();
+    return filtered.where((service) => service.status == status).toList();
   }
 }

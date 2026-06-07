@@ -12,11 +12,14 @@ class ServiceModel extends Service {
     super.preferredDate,
     super.preferredTimeStart,
     super.quotesCount = 0,
+    super.bookingProviderId,
+    super.quoteProviderIds = const [],
   });
 
   factory ServiceModel.fromJson(Map<String, dynamic> json) {
     // Supabase returns 'quotes' as a list or an object with count depending on query
     int count = 0;
+    final quoteProviderIds = <String>[];
     if (json['quotes'] != null) {
       if (json['quotes'] is List) {
         final list = json['quotes'] as List;
@@ -25,10 +28,26 @@ class ServiceModel extends Service {
           count = (list.first as Map)['count'] as int? ?? 0;
         } else {
           count = list.length;
+          for (final item in list) {
+            if (item is Map && item['provider_id'] != null) {
+              quoteProviderIds.add(item['provider_id'] as String);
+            }
+          }
         }
       } else if (json['quotes'] is Map && json['quotes']['count'] != null) {
         count = json['quotes']['count'] as int;
       }
+    }
+
+    String? bookingProviderId;
+    final bookings = json['bookings'];
+    if (bookings is List && bookings.isNotEmpty) {
+      final first = bookings.first;
+      if (first is Map && first['provider_id'] != null) {
+        bookingProviderId = first['provider_id'] as String?;
+      }
+    } else if (bookings is Map && bookings['provider_id'] != null) {
+      bookingProviderId = bookings['provider_id'] as String?;
     }
 
     return ServiceModel(
@@ -42,6 +61,8 @@ class ServiceModel extends Service {
           : null,
       preferredTimeStart: json['preferred_time_start'],
       quotesCount: count,
+      bookingProviderId: bookingProviderId,
+      quoteProviderIds: quoteProviderIds,
     );
   }
 

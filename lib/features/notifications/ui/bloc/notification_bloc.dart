@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/app_notification.dart';
-import '../../domain/repo/notification_repository.dart';
 import '../../domain/usecases/get_notifications_usecase.dart';
 import '../../domain/usecases/mark_notification_read_usecase.dart';
+import '../../domain/usecases/watch_notifications_usecase.dart';
 
 // Events
 abstract class NotificationEvent extends Equatable {
@@ -67,45 +67,53 @@ class NotificationState extends Equatable {
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final GetNotificationsUseCase _getNotifications;
   final MarkNotificationReadUseCase _markAsRead;
-  final NotificationRepository _repository;
+  final WatchNotificationsUseCase _watchNotifications;
   StreamSubscription? _notificationsSubscription;
 
   NotificationBloc({
     required GetNotificationsUseCase getNotifications,
     required MarkNotificationReadUseCase markAsRead,
-    required NotificationRepository repository,
+    required WatchNotificationsUseCase watchNotifications,
   })  : _getNotifications = getNotifications,
         _markAsRead = markAsRead,
-        _repository = repository,
+        _watchNotifications = watchNotifications,
         super(const NotificationState()) {
     on<FetchNotificationsEvent>(_onFetchNotifications);
     on<MarkAsReadRequestedEvent>(_onMarkAsRead);
     on<NotificationsUpdatedEvent>(_onNotificationsUpdated);
 
     // Iniciar escucha en tiempo real
-    _notificationsSubscription = _repository.watchNotifications().listen((notifications) {
+    _notificationsSubscription =
+        _watchNotifications.execute().listen((notifications) {
       add(NotificationsUpdatedEvent(notifications));
     });
   }
 
-  Future<void> _onFetchNotifications(FetchNotificationsEvent event, Emitter<NotificationState> emit) async {
+  Future<void> _onFetchNotifications(
+      FetchNotificationsEvent event, Emitter<NotificationState> emit) async {
     emit(state.copyWith(status: NotificationStatus.loading));
 
     final result = await _getNotifications.execute();
 
     result.fold(
-      (failure) => emit(state.copyWith(status: NotificationStatus.error, errorMessage: failure.message)),
-      (notifications) => emit(state.copyWith(status: NotificationStatus.success, notifications: notifications)),
+      (failure) => emit(state.copyWith(
+          status: NotificationStatus.error, errorMessage: failure.message)),
+      (notifications) => emit(state.copyWith(
+          status: NotificationStatus.success, notifications: notifications)),
     );
   }
 
-  Future<void> _onMarkAsRead(MarkAsReadRequestedEvent event, Emitter<NotificationState> emit) async {
+  Future<void> _onMarkAsRead(
+      MarkAsReadRequestedEvent event, Emitter<NotificationState> emit) async {
     await _markAsRead.execute(event.notificationId);
     // No emitimos éxito aquí, esperamos a que el Stream actualice la lista.
   }
 
-  void _onNotificationsUpdated(NotificationsUpdatedEvent event, Emitter<NotificationState> emit) {
-    emit(state.copyWith(status: NotificationStatus.success, notifications: event.notifications));
+  void _onNotificationsUpdated(
+      NotificationsUpdatedEvent event, Emitter<NotificationState> emit) {
+    emit(state.copyWith(
+        status: NotificationStatus.success,
+        notifications: event.notifications));
   }
 
   @override

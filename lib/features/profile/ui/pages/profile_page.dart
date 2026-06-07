@@ -7,6 +7,7 @@ import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/widgets/main_shell.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
+import 'package:domora/features/profile/domain/entities/provider_review.dart';
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/profile_signout_bloc.dart';
 
@@ -281,6 +282,20 @@ class _ProfileContent extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 20),
+            _InfoSection(
+              title: 'Mis reseñas',
+              children: [
+                if (profile.reviews.isEmpty)
+                  const _EmptyReviews()
+                else
+                  Column(
+                    children: profile.reviews
+                        .map((review) => _ReviewCard(review: review))
+                        .toList(),
+                  ),
+              ],
+            ),
           ],
         ],
 
@@ -391,6 +406,116 @@ class _ErrorView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EmptyReviews extends StatelessWidget {
+  const _EmptyReviews();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(Icons.rate_review_outlined, size: 20, color: AppTheme.textTertiary),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Aún no tienes reseñas registradas.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  final ProviderReview review;
+
+  const _ReviewCard({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    final dateLabel = review.createdAt != null
+        ? DateFormat('dd MMM, yyyy', 'es_CO').format(review.createdAt!)
+        : null;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  review.reviewerName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              if (dateLabel != null)
+                Text(
+                  dateLabel,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textTertiary,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _StarRow(rating: review.rating.toDouble()),
+          if (review.comment != null && review.comment!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              review.comment!,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StarRow extends StatelessWidget {
+  final double rating;
+
+  const _StarRow({required this.rating});
+
+  @override
+  Widget build(BuildContext context) {
+    final fullStars = rating.floor().clamp(0, 5);
+    final hasHalf = rating - fullStars >= 0.5 && fullStars < 5;
+    final emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < fullStars; i++)
+          Icon(Icons.star, color: Colors.amber.shade700, size: 16),
+        if (hasHalf)
+          Icon(Icons.star_half, color: Colors.amber.shade700, size: 16),
+        for (var i = 0; i < emptyStars; i++)
+          Icon(Icons.star_border, color: Colors.amber.shade700, size: 16),
+      ],
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:domora/features/profile/domain/entities/address.dart';
 import 'package:domora/features/profile/domain/entities/client_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_profile.dart';
+import 'package:domora/features/profile/domain/entities/provider_review.dart';
 import 'package:domora/features/profile/domain/entities/provider_stats.dart';
 import 'package:domora/features/profile/domain/entities/user.dart';
 
@@ -14,6 +15,7 @@ class FullProfile extends Equatable {
   final ProviderProfile? providerProfile;
   final Address? primaryAddress;
   final ProviderStats? stats;
+  final List<ProviderReview> reviews;
 
   const FullProfile({
     required this.user,
@@ -22,6 +24,7 @@ class FullProfile extends Equatable {
     this.providerProfile,
     this.primaryAddress,
     this.stats,
+    this.reviews = const [],
   });
 
   bool get isProvider => role == 'provider';
@@ -33,5 +36,5 @@ class FullProfile extends Equatable {
 
   @override
   List<Object?> get props =>
-      [user, role, clientProfile, providerProfile, primaryAddress, stats];
+      [user, role, clientProfile, providerProfile, primaryAddress, stats, reviews];
 }

@@ -9,6 +9,7 @@ import '../models/user_model.dart';
 import '../models/address_model.dart';
 import '../models/client_profile_model.dart';
 import '../models/provider_profile_model.dart';
+import '../models/provider_review_model.dart';
 
 abstract class ProfileDataSource {
   String? getCurrentUserId();
@@ -28,10 +29,12 @@ abstract class ProfileDataSource {
   Future<void> updateClientProfile(String userId, Map<String, dynamic> updates);
 
   /// Actualiza la fila en `provider_profiles` para el `userId`.
-  Future<void> updateProviderProfile(String userId, Map<String, dynamic> updates);
+  Future<void> updateProviderProfile(
+      String userId, Map<String, dynamic> updates);
 
   /// Actualiza o crea la dirección principal del usuario.
-  Future<void> updatePrimaryAddress(String userId, Map<String, dynamic> updates);
+  Future<void> updatePrimaryAddress(
+      String userId, Map<String, dynamic> updates);
 
   /// Sube el avatar a Supabase Storage y retorna la URL pública.
   /// El parámetro [isProvider] determina la subcarpeta (client_avatars o provider_avatars).
@@ -43,13 +46,15 @@ abstract class ProfileDataSource {
 
   Future<int> getCompletedServicesCount(String providerId);
   Future<Map<String, dynamic>> getReviewsStats(String providerId);
+  Future<List<ProviderReviewModel>> getProviderReviews(String providerId);
 }
 
 class ProfileDataSourceImpl implements ProfileDataSource {
   final SupabaseClient _client;
   final NetworkInfo _networkInfo;
 
-  ProfileDataSourceImpl(this._client, {required NetworkInfo networkInfo}) : _networkInfo = networkInfo;
+  ProfileDataSourceImpl(this._client, {required NetworkInfo networkInfo})
+      : _networkInfo = networkInfo;
 
   @override
   String? getCurrentUserId() => _client.auth.currentUser?.id;
@@ -68,7 +73,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .select()
         .eq('id', userId)
         .maybeSingle();
-    
+
     return data != null ? UserModel.fromJson(data) : null;
   }
 
@@ -101,7 +106,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .select()
         .eq('user_id', userId)
         .maybeSingle();
-    
+
     return data != null ? ClientProfileModel.fromJson(data) : null;
   }
 
@@ -116,7 +121,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .select()
         .eq('user_id', userId)
         .maybeSingle();
-    
+
     return data != null ? ProviderProfileModel.fromJson(data) : null;
   }
 
@@ -154,29 +159,44 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw const SocketException('userId está vacío');
     }
 
-    await _client.from(AppConstants.tableUsers).update(updates).eq('id', userId);
+    await _client
+        .from(AppConstants.tableUsers)
+        .update(updates)
+        .eq('id', userId);
   }
 
   @override
-  Future<void> updateClientProfile(String userId, Map<String, dynamic> updates) async {
+  Future<void> updateClientProfile(
+      String userId, Map<String, dynamic> updates) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    await _client.from(AppConstants.tableClientProfiles).update(updates).eq('user_id', userId);
+    await _client
+        .from(AppConstants.tableClientProfiles)
+        .update(updates)
+        .eq('user_id', userId);
   }
 
   @override
-  Future<void> updateProviderProfile(String userId, Map<String, dynamic> updates) async {
+  Future<void> updateProviderProfile(
+      String userId, Map<String, dynamic> updates) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    await _client.from(AppConstants.tableProviderProfiles).update(updates).eq('user_id', userId);
+    await _client.from(AppConstants.tableProviderProfiles).upsert(
+      {
+        'user_id': userId,
+        ...updates,
+      },
+      onConflict: 'user_id',
+    );
   }
 
   @override
-  Future<void> updatePrimaryAddress(String userId, Map<String, dynamic> updates) async {
+  Future<void> updatePrimaryAddress(
+      String userId, Map<String, dynamic> updates) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
@@ -189,7 +209,10 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .maybeSingle();
 
     if (current != null && current['id'] != null) {
-      await _client.from(AppConstants.tableAddresses).update(updates).eq('id', current['id']);
+      await _client
+          .from(AppConstants.tableAddresses)
+          .update(updates)
+          .eq('id', current['id']);
       return;
     }
 
@@ -220,15 +243,14 @@ class ProfileDataSourceImpl implements ProfileDataSource {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final path = '$userId/avatar_$timestamp.$safeExt';
 
-    await _client.storage
-      .from(AppConstants.bucketAvatars)
-        .uploadBinary(
+    await _client.storage.from(AppConstants.bucketAvatars).uploadBinary(
           path,
           avatarFile.bytes,
           fileOptions: const FileOptions(upsert: true),
         );
 
-    final publicUrl = _client.storage.from(AppConstants.bucketAvatars).getPublicUrl(path);
+    final publicUrl =
+        _client.storage.from(AppConstants.bucketAvatars).getPublicUrl(path);
 
     return publicUrl;
   }
@@ -271,5 +293,22 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       'average_rating': average,
       'total_reviews': ratings.length,
     };
+  }
+
+  @override
+  Future<List<ProviderReviewModel>> getProviderReviews(String providerId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    final List<dynamic> response = await _client
+        .from(AppConstants.tableReviews)
+        .select('id, rating, comment, created_at, bookings!inner(provider_id, users!bookings_client_id_fkey(first_name, last_name))')
+        .eq('bookings.provider_id', providerId)
+        .order('created_at', ascending: false);
+
+    return response
+        .map((json) => ProviderReviewModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 }

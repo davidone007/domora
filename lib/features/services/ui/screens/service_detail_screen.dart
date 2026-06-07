@@ -109,6 +109,8 @@ class ServiceDetailScreen extends StatelessWidget {
             return const SizedBox.shrink();
           }
 
+          final service = state.serviceDetail!.service;
+
           return Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -122,9 +124,9 @@ class ServiceDetailScreen extends StatelessWidget {
               ],
             ),
             child: SafeArea(
-              child: state.isProvider
+                child: state.isProvider
                   ? state.hasProposed
-                      ? Container(
+                    ? Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: AppTheme.primarySoft,
@@ -145,43 +147,80 @@ class ServiceDetailScreen extends StatelessWidget {
                             ],
                           ),
                         )
-                      : CustomButton(
-                          label: 'Enviar Propuesta',
-                          onPressed: () async {
-                            final result = await context.push('/send-proposal/${state.serviceDetail!.service.id}');
-                            if (result == true && context.mounted) {
-                              context.read<ServiceDetailBloc>().add(FetchServiceDetailEvent(serviceId));
-                            }
-                          },
-                        )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      : service.status.toLowerCase() == 'open'
+                          ? CustomButton(
+                              label: 'Enviar Propuesta',
+                              onPressed: () async {
+                                final result = await context.push('/send-proposal/${service.id}');
+                                if (result == true && context.mounted) {
+                                  context.read<ServiceDetailBloc>().add(FetchServiceDetailEvent(serviceId));
+                                }
+                              },
+                            )
+                          : const SizedBox.shrink()
+                  : service.status.toLowerCase() == 'completed'
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              '${state.serviceDetail!.service.quotesCount}',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: AppTheme.primary,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Proveedor',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: AppTheme.textSecondary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Trabajo finalizado',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ],
                             ),
-                            const Text('Propuestas recibidas', style: TextStyle(fontSize: 12)),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: CustomButton(
+                                label: 'Ver proveedor',
+                                onPressed: service.bookingProviderId == null
+                                    ? null
+                                    : () {
+                                        context.push('/provider-profile/${service.bookingProviderId}');
+                                      },
+                              ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${state.serviceDetail!.service.quotesCount}',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                        color: AppTheme.primary,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                ),
+                                const Text('Propuestas recibidas', style: TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: CustomButton(
+                                label: 'Ver propuestas',
+                                onPressed: () {
+                                  context.push('${AppConstants.routeServiceProposals}/${state.serviceDetail!.service.id}');
+                                },
+                              ),
+                            ),
                           ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: CustomButton(
-                            label: 'Ver propuestas',
-                            onPressed: () {
-                              context.push('${AppConstants.routeServiceProposals}/${state.serviceDetail!.service.id}');
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
             ),
           );
         },

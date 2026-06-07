@@ -50,6 +50,26 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
             body: Column(
               children: [
                 const _StatusFilterList(),
+                if (isProvider)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primarySoft,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Ve a la seccion Actividad del menú para gestionar tus servicios en curso.',
+                        style: TextStyle(
+                          color: AppTheme.primaryDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
                 Expanded(
                   child: BlocBuilder<MyServicesBloc, MyServicesState>(
                     builder: (context, state) {
@@ -99,11 +119,16 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                           padding: const EdgeInsets.all(20),
                           itemCount: services.length,
                           itemBuilder: (context, index) {
+                            final service = services[index];
+                            final hasProposed = isProvider &&
+                                state.currentUserId != null &&
+                                service.quoteProviderIds.contains(state.currentUserId);
                             return ServiceCard(
-                              service: services[index],
+                              service: service,
+                              showProposalSent: hasProposed,
                               onTap: () {
                                 context.push(
-                                    '/service-detail/${services[index].id}');
+                                    '/service-detail/${service.id}');
                               },
                             );
                           },
