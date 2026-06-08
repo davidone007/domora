@@ -92,6 +92,7 @@ class _BookingActivityScreenState extends State<BookingActivityScreen> {
             item: item,
             isProvider: isProvider,
             userId: state.userId,
+            isAvailable: state.isAvailable,
             onComplete: () => _showCompleteConfirm(item),
           );
         },
@@ -133,6 +134,7 @@ class _BookingActivityCard extends StatelessWidget {
   final BookingWithService item;
   final bool isProvider;
   final String? userId;
+  final bool isAvailable;
   final VoidCallback onComplete;
 
   const _BookingActivityCard({
@@ -140,6 +142,7 @@ class _BookingActivityCard extends StatelessWidget {
     required this.isProvider,
     required this.onComplete,
     this.userId,
+    this.isAvailable = true,
   });
 
   @override
@@ -179,7 +182,7 @@ class _BookingActivityCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (!isProvider && item.booking.status == 'completed' && item.hasReview)
+                    if (!isProvider)
                       GestureDetector(
                         onTap: () {
                           context.push('/provider-profile/${item.booking.providerId}');
@@ -195,12 +198,14 @@ class _BookingActivityCard extends StatelessWidget {
                                 color: AppTheme.primary,
                               ),
                             ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.open_in_new, size: 13, color: AppTheme.primary),
                           ],
                         ),
                       )
                     else
                       Text(
-                        isProvider ? 'Cliente: ${item.otherPartyName}' : 'Aseador: ${item.otherPartyName}',
+                        'Cliente: ${item.otherPartyName}',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     Text(
@@ -237,9 +242,21 @@ class _BookingActivityCard extends StatelessWidget {
           ),
           if (isProvider && item.booking.status != 'completed') ...[
             const SizedBox(height: 16),
+            if (!isAvailable)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Debes estar disponible para finalizar servicios',
+                  style: TextStyle(
+                    color: AppTheme.error,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             CustomButton(
               label: 'Finalizar Servicio',
-              onPressed: onComplete,
+              onPressed: isAvailable ? onComplete : null,
             ),
           ],
           if (canRate) ...[

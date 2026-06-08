@@ -40,6 +40,8 @@ import 'package:domora/features/services/ui/screens/service_detail_screen.dart';
 
 import 'package:domora/features/proposals/ui/bloc/booking_activity_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/booking_activity_screen.dart';
+import 'package:domora/features/proposals/ui/bloc/my_proposals_bloc.dart';
+import 'package:domora/features/proposals/ui/screens/my_proposals_screen.dart';
 import 'package:domora/features/proposals/ui/bloc/review_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/rating_screen.dart';
 import 'package:domora/features/proposals/ui/bloc/payment_bloc.dart';
@@ -236,6 +238,15 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
           return BlocProvider(
             create: (_) => sl<BookingActivityBloc>(),
             child: const BookingActivityScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/my-proposals',
+        builder: (context, state) {
+          return BlocProvider(
+            create: (_) => sl<MyProposalsBloc>(),
+            child: const MyProposalsScreen(),
           );
         },
       ),

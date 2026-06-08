@@ -4,6 +4,7 @@ import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/core/error/failures.dart';
 import '../../domain/entities/proposal.dart';
 import '../../domain/entities/proposal_with_provider.dart';
+import '../../domain/entities/proposal_with_service.dart';
 import '../../domain/repo/proposal_repository.dart';
 import '../models/proposal_model.dart';
 import '../sources/proposal_remote_data_source.dart';
@@ -83,6 +84,23 @@ class ProposalRepositoryImpl implements ProposalRepository {
         stackTrace: stackTrace,
         context: ErrorContext(
           operation: 'getProposalsByProviderId',
+          userId: providerId,
+        ).toString(),
+      ));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<ProposalWithService>>> getMyProposalsWithServices(String providerId) async {
+    try {
+      final models = await _remoteDataSource.getMyProposalsWithServices(providerId);
+      return Right(models);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getMyProposalsWithServices',
           userId: providerId,
         ).toString(),
       ));

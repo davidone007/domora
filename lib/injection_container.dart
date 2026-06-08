@@ -76,6 +76,7 @@ import 'package:domora/features/proposals/data/sources/proposal_remote_data_sour
 import 'package:domora/features/proposals/domain/repo/proposal_repository.dart';
 import 'package:domora/features/proposals/domain/usecases/accept_proposal_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/get_proposals_by_service_usecase.dart';
+import 'package:domora/features/proposals/domain/usecases/get_my_proposals_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/send_proposal_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/check_user_proposal_usecase.dart';
 import 'package:domora/features/proposals/data/repo/booking_repository_impl.dart';
@@ -94,6 +95,7 @@ import 'package:domora/features/proposals/domain/repo/review_repository.dart';
 import 'package:domora/features/proposals/domain/usecases/send_review_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/check_booking_review_usecase.dart';
 import 'package:domora/features/proposals/ui/bloc/booking_activity_bloc.dart';
+import 'package:domora/features/proposals/ui/bloc/my_proposals_bloc.dart';
 import 'package:domora/features/proposals/ui/bloc/payment_bloc.dart';
 import 'package:domora/features/proposals/ui/bloc/proposal_send_bloc.dart';
 import 'package:domora/features/proposals/ui/bloc/service_proposals_bloc.dart';
@@ -307,6 +309,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CheckUserProposalUseCase(sl()));
   sl.registerLazySingleton(() => GetProposalsByServiceUseCase(sl()));
   sl.registerLazySingleton(() => AcceptProposalUseCase(sl()));
+  sl.registerLazySingleton(() => GetMyProposalsUseCase(sl()));
   sl.registerLazySingleton(() => GetClientBookingHistoryUseCase(sl()));
   sl.registerLazySingleton(() => GetProviderActiveBookingsUseCase(sl()));
   sl.registerLazySingleton(() => CompleteBookingUseCase(sl()));
@@ -336,6 +339,12 @@ Future<void> init() async {
       completeBooking: sl(),
       getCurrentSession: sl(),
       getCurrentProfile: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => MyProposalsBloc(
+      getMyProposals: sl(),
+      getCurrentSession: sl(),
     ),
   );
   sl.registerFactory(

@@ -165,7 +165,7 @@ class _ProviderHomePageState extends State<ProviderHomePage> {
                                 _ProviderActionCard(
                                   icon: Icons.assignment_outlined,
                                   label: 'Solicitudes',
-                                  onTap: () => context.go('/activity'),
+                                  onTap: () => context.push('/my-proposals'),
                                 ),
                               ],
                             ),

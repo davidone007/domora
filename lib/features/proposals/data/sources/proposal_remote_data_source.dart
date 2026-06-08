@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/network/network_info.dart';
 import '../models/proposal_model.dart';
 import '../models/proposal_with_provider_model.dart';
+import '../models/proposal_with_service_model.dart';
 
 abstract class ProposalRemoteDataSource {
   Future<void> sendProposal(ProposalModel proposal);
@@ -13,6 +14,10 @@ abstract class ProposalRemoteDataSource {
 
   /// Obtiene todas las propuestas enviadas por un proveedor en base a su ID.
   Future<List<ProposalModel>> getProposalsByProviderId(String providerId);
+
+  /// Obtiene todas las propuestas enviadas por un proveedor junto con el
+  /// título y estado del servicio al que pertenecen.
+  Future<List<ProposalWithServiceModel>> getMyProposalsWithServices(String providerId);
 
   /// Ejecuta el RPC `accept_quote` y devuelve el ID del booking creado.
   Future<String> acceptProposal(ProposalModel proposal);
@@ -88,6 +93,23 @@ class ProposalRemoteDataSourceImpl implements ProposalRemoteDataSource {
         .order('created_at', ascending: false);
 
     return response.map((json) => ProposalModel.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  @override
+  Future<List<ProposalWithServiceModel>> getMyProposalsWithServices(String providerId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const PostgrestException(message: 'No hay conexión a internet');
+    }
+
+    final List<dynamic> response = await _client
+        .from('quotes')
+        .select('*, services(title, status)')
+        .eq('provider_id', providerId)
+        .order('created_at', ascending: false);
+
+    return response
+        .map((json) => ProposalWithServiceModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   @override
