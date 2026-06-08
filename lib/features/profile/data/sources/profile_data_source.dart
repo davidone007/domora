@@ -10,6 +10,7 @@ import '../models/address_model.dart';
 import '../models/client_profile_model.dart';
 import '../models/provider_profile_model.dart';
 import '../models/provider_review_model.dart';
+import '../models/client_review_model.dart';
 
 abstract class ProfileDataSource {
   String? getCurrentUserId();
@@ -47,6 +48,9 @@ abstract class ProfileDataSource {
   Future<int> getCompletedServicesCount(String providerId);
   Future<Map<String, dynamic>> getReviewsStats(String providerId);
   Future<List<ProviderReviewModel>> getProviderReviews(String providerId);
+
+  /// Devuelve las reseñas recibidas por un cliente (escritas por proveedores).
+  Future<List<ClientReviewModel>> getClientReviews(String clientId);
 }
 
 class ProfileDataSourceImpl implements ProfileDataSource {
@@ -321,6 +325,32 @@ class ProfileDataSourceImpl implements ProfileDataSource {
 
     return response
         .map((json) => ProviderReviewModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<ClientReviewModel>> getClientReviews(String clientId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    // Obtiene reviews escritas por proveedores sobre este cliente.
+    // reviewer_type = 'provider' significa que un proveedor calificó al cliente.
+    final List<dynamic> response = await _client
+        .from(AppConstants.tableReviews)
+        .select(
+          'id, rating, comment, '
+          'punctuality_rating, quality_rating, communication_rating, '
+          'created_at, '
+          'bookings!inner(client_id, '
+          'users!bookings_provider_id_fkey(first_name, last_name))',
+        )
+        .eq('bookings.client_id', clientId)
+        .eq('reviewer_type', 'provider')
+        .order('created_at', ascending: false);
+
+    return response
+        .map((json) => ClientReviewModel.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 }

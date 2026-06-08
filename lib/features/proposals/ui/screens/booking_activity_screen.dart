@@ -204,9 +204,25 @@ class _BookingActivityCard extends StatelessWidget {
                         ),
                       )
                     else
-                      Text(
-                        'Cliente: ${item.otherPartyName}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      GestureDetector(
+                        onTap: () {
+                          context.push('/client-profile/${item.booking.clientId}');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Cliente: ${item.otherPartyName}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.open_in_new, size: 13, color: AppTheme.primary),
+                          ],
+                        ),
                       ),
                     Text(
                       item.service.title,

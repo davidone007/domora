@@ -33,6 +33,9 @@ abstract class ProfileRepository {
   /// Devuelve el perfil completo de un proveedor por su ID de usuario.
   Future<Either<Failure, FullProfile>> getProviderProfileById(String userId);
 
+  /// Devuelve el perfil público de un cliente para que el proveedor pueda verlo.
+  Future<Either<Failure, FullProfile>> getClientPublicProfile(String userId);
+
   /// Obtiene las estadísticas de un proveedor (rating, servicios completados).
   Future<Either<Failure, ProviderStats>> getProviderStats(String providerId);
 

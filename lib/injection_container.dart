@@ -39,6 +39,7 @@ import 'package:domora/features/profile/data/sources/profile_data_source.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 import 'package:domora/features/profile/domain/usecases/get_current_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/get_provider_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/get_client_public_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
@@ -47,6 +48,7 @@ import 'package:domora/features/profile/domain/usecases/upload_avatar_usecase.da
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/profile_signout_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/provider_public_profile_bloc.dart';
+import 'package:domora/features/profile/ui/bloc/client_public_profile_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/profile_edit_bloc.dart';
 
 // Services
@@ -194,6 +196,7 @@ Future<void> init() async {
   // UseCases
   sl.registerLazySingleton(() => GetCurrentProfileUseCase(sl()));
   sl.registerLazySingleton(() => GetProviderProfileUseCase(sl()));
+  sl.registerLazySingleton(() => GetClientPublicProfileUseCase(sl()));
   sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));
   sl.registerLazySingleton(() => UpdateClientProfileUseCase(sl()));
   sl.registerLazySingleton(() => UpdateProviderProfileUseCase(sl()));
@@ -205,8 +208,10 @@ Future<void> init() async {
   // BLoCs
   sl.registerFactory(() => ProfileBloc(sl(), sl()));
   sl.registerFactory(() => ProfileSignOutBloc(sl()));
+  sl.registerFactory(  () => ProviderPublicProfileBloc(getProviderProfileUseCase: sl()));
   sl.registerFactory(
-      () => ProviderPublicProfileBloc(getProviderProfileUseCase: sl()));
+    () => ClientPublicProfileBloc(getClientPublicProfile: sl()),
+  );
   sl.registerFactory(
     () => ProfileEditBloc(
       sl(),

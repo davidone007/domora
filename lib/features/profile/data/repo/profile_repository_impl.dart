@@ -276,4 +276,49 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, FullProfile>> getClientPublicProfile(String userId) async {
+    try {
+      final user = await _dataSource.getUser(userId);
+      if (user == null) {
+        return const Left(ServerFailure('Cliente no encontrado'));
+      }
+
+      final clientProfile = await _dataSource.getClientProfile(userId);
+      final reviews = await _dataSource.getClientReviews(userId);
+
+      // Calcular rating promedio a partir de las reseñas recibidas.
+      double avgRating = 0.0;
+      if (reviews.isNotEmpty) {
+        final sum = reviews.map((r) => r.rating).reduce((a, b) => a + b);
+        avgRating = sum / reviews.length;
+      }
+
+      final stats = ProviderStats(
+        averageRating: avgRating,
+        totalReviewsCount: reviews.length,
+        completedServicesCount: 0,
+      );
+
+      return Right(
+        FullProfile(
+          user: user,
+          role: AppConstants.roleClient,
+          clientProfile: clientProfile,
+          stats: stats,
+          reviews: reviews,
+        ),
+      );
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getClientPublicProfile',
+          userId: userId,
+        ).toString(),
+      ));
+    }
+  }
+
 }

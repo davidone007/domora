@@ -27,6 +27,8 @@ import 'package:domora/features/profile/ui/bloc/profile_signout_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/provider_public_profile_bloc.dart';
 import 'package:domora/features/profile/ui/pages/profile_page.dart';
 import 'package:domora/features/profile/ui/screens/provider_public_profile_screen.dart';
+import 'package:domora/features/profile/ui/bloc/client_public_profile_bloc.dart';
+import 'package:domora/features/profile/ui/screens/client_public_profile_screen.dart';
 import 'package:domora/features/profile/ui/bloc/profile_edit_bloc.dart';
 import 'package:domora/features/profile/ui/pages/edit_profile_page.dart';
 
@@ -209,6 +211,16 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
           return BlocProvider(
             create: (_) => sl<ProviderPublicProfileBloc>(),
             child: ProviderPublicProfileScreen(userId: userId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/client-profile/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return BlocProvider(
+            create: (_) => sl<ClientPublicProfileBloc>(),
+            child: ClientPublicProfileScreen(userId: userId),
           );
         },
       ),
