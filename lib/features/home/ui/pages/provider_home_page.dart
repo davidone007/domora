@@ -9,6 +9,8 @@ import 'package:domora/features/home/ui/widgets/dashboard_header.dart';
 import 'package:domora/features/home/ui/widgets/news_chip_filter.dart';
 import 'package:domora/features/home/ui/widgets/promo_banner.dart';
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
+import 'package:domora/features/notifications/ui/bloc/notification_bloc.dart';
+import 'package:domora/features/notifications/domain/entities/app_notification.dart';
 
 /// Dashboard del proveedor.
 class ProviderHomePage extends StatefulWidget {
@@ -101,85 +103,98 @@ class _ProviderHomePageState extends State<ProviderHomePage> {
                   ),
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                    child: BlocBuilder<NotificationBloc, NotificationState>(
+                      builder: (context, notificationState) {
+                        final unreadProposals = notificationState.notifications
+                            .where((n) =>
+                                !n.isRead && n.type == 'proposal_received')
+                            .length;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (!isAvailable && unreadProposals > 0)
+                              _UnavailableWarningBanner(
+                                  count: unreadProposals),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Hola',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .displayMedium,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text('🛠️',
+                                    style: TextStyle(fontSize: 26)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
                             Text(
-                              'Hola',
-                              style:
-                                  Theme.of(context).textTheme.displayMedium,
+                              '¿Listo para tu próximo servicio?',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(color: AppTheme.textSecondary),
                             ),
-                            const SizedBox(width: 8),
-                            const Text('🛠️',
-                                style: TextStyle(fontSize: 26)),
+
+                            const SizedBox(height: 28),
+
+                            Text('Mi panel',
+                                style: Theme.of(context).textTheme.titleLarge),
+                            const SizedBox(height: 16),
+
+                            Row(
+                              children: [
+                                _ProviderActionCard(
+                                  icon: isAvailable
+                                      ? Icons.event_available_outlined
+                                      : Icons.event_busy_outlined,
+                                  label: 'Disponibilidad',
+                                  badgeText: isAvailable ? 'Activo' : 'Inactivo',
+                                  badgeColor: isAvailable
+                                      ? AppTheme.primary
+                                      : AppTheme.textSecondary,
+                                  isLoading: isTogglingAvailability,
+                                  onTap: isTogglingAvailability
+                                      ? null
+                                      : _toggleAvailability,
+                                ),
+                                const SizedBox(width: 16),
+                                _ProviderActionCard(
+                                  icon: Icons.assignment_outlined,
+                                  label: 'Solicitudes',
+                                  onTap: () => context.go('/activity'),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 32),
+
+                            Text('Novedades',
+                                style: Theme.of(context).textTheme.titleLarge),
+                            const SizedBox(height: 16),
+                            NewsChipFilter(
+                              filters: _newsFilters,
+                              selectedIndex: _selectedNewsFilter,
+                              onSelected: (i) =>
+                                  setState(() => _selectedNewsFilter = i),
+                            ),
+                            const SizedBox(height: 16),
+                            PromoBanner(
+                              title: 'Bienvenido a Domora',
+                              subtitle:
+                                  'Completa tu perfil y empieza a recibir solicitudes',
+                              tag: 'Para ti',
+                              onTap: () =>
+                                  context.go(AppConstants.routeProfile),
+                            ),
+
+                            const SizedBox(height: 24),
                           ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '¿Listo para tu próximo servicio?',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyLarge
-                              ?.copyWith(color: AppTheme.textSecondary),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        Text('Mi panel',
-                            style: Theme.of(context).textTheme.titleLarge),
-                        const SizedBox(height: 16),
-
-                        Row(
-                          children: [
-                            _ProviderActionCard(
-                              icon: isAvailable
-                                  ? Icons.event_available_outlined
-                                  : Icons.event_busy_outlined,
-                              label: 'Disponibilidad',
-                              badgeText: isAvailable ? 'Activo' : 'Inactivo',
-                              badgeColor: isAvailable
-                                  ? AppTheme.primary
-                                  : AppTheme.textSecondary,
-                              isLoading: isTogglingAvailability,
-                              onTap: isTogglingAvailability
-                                  ? null
-                                  : _toggleAvailability,
-                            ),
-                            const SizedBox(width: 16),
-                            _ProviderActionCard(
-                              icon: Icons.assignment_outlined,
-                              label: 'Solicitudes',
-                              onTap: () => context.go('/activity'),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        Text('Novedades',
-                            style: Theme.of(context).textTheme.titleLarge),
-                        const SizedBox(height: 16),
-                        NewsChipFilter(
-                          filters: _newsFilters,
-                          selectedIndex: _selectedNewsFilter,
-                          onSelected: (i) =>
-                              setState(() => _selectedNewsFilter = i),
-                        ),
-                        const SizedBox(height: 16),
-                        PromoBanner(
-                          title: 'Bienvenido a Domora',
-                          subtitle:
-                              'Completa tu perfil y empieza a recibir solicitudes',
-                          tag: 'Para ti',
-                          onTap: () =>
-                              context.go(AppConstants.routeProfile),
-                        ),
-
-                        const SizedBox(height: 24),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -282,6 +297,54 @@ class _ProviderActionCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Banner de advertencia que se muestra cuando el proveedor tiene solicitudes
+/// pendientes pero su estado actual es 'Inactivo' (no disponible).
+class _UnavailableWarningBanner extends StatelessWidget {
+  const _UnavailableWarningBanner({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.amber.shade900),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tienes $count ${count == 1 ? 'propuesta pendiente' : 'propuestas pendientes'}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber.shade900,
+                  ),
+                ),
+                Text(
+                  'Activa tu disponibilidad para que los clientes puedan contactarte.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.amber.shade900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

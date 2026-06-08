@@ -263,10 +263,12 @@ Future<void> init() async {
       sl(),
       sl(),
       sl(),
+      sl(),
     ),
   );
   sl.registerFactory(
     () => ServiceDetailBloc(
+      sl(),
       sl(),
       sl(),
       sl(),
@@ -333,6 +335,7 @@ Future<void> init() async {
       getProviderActive: sl(),
       completeBooking: sl(),
       getCurrentSession: sl(),
+      getCurrentProfile: sl(),
     ),
   );
   sl.registerFactory(

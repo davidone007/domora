@@ -148,14 +148,38 @@ class ServiceDetailScreen extends StatelessWidget {
                           ),
                         )
                       : service.status.toLowerCase() == 'open'
-                          ? CustomButton(
-                              label: 'Enviar Propuesta',
-                              onPressed: () async {
-                                final result = await context.push('/send-proposal/${service.id}');
-                                if (result == true && context.mounted) {
-                                  context.read<ServiceDetailBloc>().add(FetchServiceDetailEvent(serviceId));
-                                }
-                              },
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (!state.isAvailable)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Text(
+                                      'Debes estar disponible para enviar propuestas',
+                                      style: TextStyle(
+                                        color: AppTheme.error,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                CustomButton(
+                                  label: 'Enviar Propuesta',
+                                  onPressed: !state.isAvailable
+                                      ? null
+                                      : () async {
+                                          final result = await context.push(
+                                              '/send-proposal/${service.id}');
+                                          if (result == true &&
+                                              context.mounted) {
+                                            context
+                                                .read<ServiceDetailBloc>()
+                                                .add(FetchServiceDetailEvent(
+                                                    serviceId));
+                                          }
+                                        },
+                                ),
+                              ],
                             )
                           : const SizedBox.shrink()
                   : service.status.toLowerCase() == 'completed'
