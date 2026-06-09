@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:domora/core/services/fcm_background_handler.dart';
+import 'package:domora/core/services/auth_recovery_state.dart';
 import 'package:domora/firebase_options.dart';
 import 'package:domora/core/error/error_mapper_singleton.dart';
 import 'package:domora/core/error/failure_mapper.dart';
@@ -18,7 +19,6 @@ import 'package:domora/injection_container.dart' as di;
 import 'package:domora/core/network/network_info.dart';
 import 'package:domora/core/navigation/app_router.dart';
 import 'package:domora/core/theme/app_theme.dart';
-import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/utils/web_utils_stub.dart'
   if (dart.library.html) 'package:domora/core/utils/web_utils.dart';
 
@@ -86,12 +86,21 @@ class _DomoraAppState extends State<DomoraApp> {
     super.initState();
     _router = buildRouter(networkInfo: di.sl<NetworkInfo>());
     
-    // Escuchar cambios en la autenticación, específicamente para recuperación de contraseña
+    // Escuchar cambios de autenticación para recuperación de contraseña.
+    // El flag en AuthRecoveryState permite que el redirect del GoRouter
+    // intercepte cualquier navegación (incluida la del SplashBloc) y mande
+    // al usuario a /reset-password antes de que otro go() lo pise.
     _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      debugPrint('Auth event received: ${data.event}');
+      debugPrint('Auth event received: \${data.event}');
       if (data.event == AuthChangeEvent.passwordRecovery) {
-        debugPrint('Navigating to reset password screen');
-        _router.go(AppConstants.routeResetPassword);
+        AuthRecoveryState.pendingRecovery = true;
+        debugPrint('Password recovery mode activated');
+        _router.refresh(); // dispara el redirect del router
+      } else if (AuthRecoveryState.pendingRecovery &&
+          (data.event == AuthChangeEvent.signedIn ||
+              data.event == AuthChangeEvent.userUpdated)) {
+        AuthRecoveryState.pendingRecovery = false;
+        debugPrint('Password recovery mode cleared');
       }
     });
   }
