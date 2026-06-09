@@ -7,6 +7,7 @@ import 'package:domora/core/network/network_info.dart';
 import 'package:domora/features/app/ui/bloc/onboarding_route_bloc.dart';
 import 'package:domora/features/app/ui/bloc/splash_bloc.dart';
 import 'package:domora/core/navigation/main_screen.dart';
+import 'package:domora/core/services/auth_recovery_state.dart';
 import 'package:domora/core/utils/constants.dart';
 
 import 'package:domora/features/auth/ui/auth_blocs/login_bloc.dart';
@@ -66,6 +67,16 @@ import 'package:domora/features/welcome/ui/screens/welcome_screen.dart';
 GoRouter buildRouter({required NetworkInfo networkInfo}) {
   return GoRouter(
     initialLocation: AppConstants.routeSplash,
+    redirect: (context, state) {
+      // Mientras Supabase tenga una sesión de recuperación activa, redirige
+      // cualquier navegación a /reset-password (evita que el SplashBloc pise
+      // la ruta antes de que el GoRouter esté completamente montado).
+      if (AuthRecoveryState.pendingRecovery &&
+          state.matchedLocation != AppConstants.routeResetPassword) {
+        return AppConstants.routeResetPassword;
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: AppConstants.routeSplash,
