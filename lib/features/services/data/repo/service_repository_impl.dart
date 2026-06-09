@@ -66,6 +66,25 @@ class ServiceRepositoryImpl implements ServiceRepository {
   }
 
   @override
+  Future<Either<Failure, bool>> hasUserProposed(
+      String serviceId, String providerId) async {
+    try {
+      final exists =
+          await _remoteDataSource.hasUserProposed(serviceId, providerId);
+      return Right(exists);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'hasUserProposed',
+          userId: providerId,
+        ).toString(),
+      ));
+    }
+  }
+
+  @override
   Future<Either<Failure, Unit>> publishCleaningService(
       CleaningServiceRequest request) async {
     try {

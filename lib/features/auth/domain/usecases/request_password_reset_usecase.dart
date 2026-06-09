@@ -7,6 +7,13 @@ class RequestPasswordResetUseCase {
   RequestPasswordResetUseCase(this._repository);
 
   Future<Either<Failure, void>> call(String email) {
-    return _repository.requestPasswordReset(email);
+    // Validación de dominio: el correo no puede estar vacío.
+    final normalized = email.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return Future.value(
+        const Left(ValidationFailure('Ingresa un correo válido')),
+      );
+    }
+    return _repository.requestPasswordReset(normalized);
   }
 }

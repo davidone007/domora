@@ -9,6 +9,7 @@ import 'package:domora/core/widgets/custom_button.dart';
 import 'package:domora/core/widgets/empty_state.dart';
 import 'package:domora/core/widgets/error_state.dart';
 import 'package:domora/core/widgets/loading_state.dart';
+import 'package:domora/core/widgets/rating_stars.dart';
 import '../bloc/booking_activity_bloc.dart';
 import '../../domain/entities/booking_with_service.dart';
 
@@ -31,7 +32,7 @@ class _BookingActivityScreenState extends State<BookingActivityScreen> {
     return BlocBuilder<BookingActivityBloc, BookingActivityState>(
       builder: (context, state) {
         final isProvider = state.role == AppConstants.roleProvider;
-        final title = isProvider ? 'Mis Trabajos en Progreso' : 'Historial de Servicios';
+        final title = isProvider ? 'Mis Trabajos' : 'Historial de Servicios';
 
         return MainShell(
           activeTab: MainTab.activity,
@@ -66,10 +67,10 @@ class _BookingActivityScreenState extends State<BookingActivityScreen> {
       return EmptyState(
         icon: Icons.history_outlined,
         title: isProvider
-            ? 'Aún no tienes trabajos activos'
+            ? 'Aún no tienes trabajos'
             : 'Aún no tienes servicios completados',
         subtitle: isProvider
-            ? 'Cuando te acepten una propuesta, tu trabajo aparecerá aquí.'
+            ? 'Cuando te acepten una propuesta, tus trabajos aparecerán aquí.'
             : 'Cuando uno de tus servicios se complete, aparecerá aquí.',
       );
     }
@@ -90,6 +91,8 @@ class _BookingActivityScreenState extends State<BookingActivityScreen> {
           return _BookingActivityCard(
             item: item,
             isProvider: isProvider,
+            userId: state.userId,
+            isAvailable: state.isAvailable,
             onComplete: () => _showCompleteConfirm(item),
           );
         },
@@ -130,12 +133,16 @@ class _BookingActivityScreenState extends State<BookingActivityScreen> {
 class _BookingActivityCard extends StatelessWidget {
   final BookingWithService item;
   final bool isProvider;
+  final String? userId;
+  final bool isAvailable;
   final VoidCallback onComplete;
 
   const _BookingActivityCard({
     required this.item,
     required this.isProvider,
     required this.onComplete,
+    this.userId,
+    this.isAvailable = true,
   });
 
   @override
@@ -143,9 +150,13 @@ class _BookingActivityCard extends StatelessWidget {
     final currencyFormat = NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0);
     final dateFormat = DateFormat('dd MMM yyyy, hh:mm a');
 
-    final bool canRate = !isProvider && 
-                        item.booking.status == 'completed' && 
-                        !item.hasReview;
+    final bool canRate = !isProvider &&
+        item.booking.status == 'completed' &&
+        !item.hasReview;
+
+    final bool canRateAsProvider = isProvider &&
+        item.booking.status == 'completed' &&
+        !item.hasProviderReview;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -171,7 +182,7 @@ class _BookingActivityCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (!isProvider && item.booking.status == 'completed' && item.hasReview)
+                    if (!isProvider)
                       GestureDetector(
                         onTap: () {
                           context.push('/provider-profile/${item.booking.providerId}');
@@ -187,13 +198,31 @@ class _BookingActivityCard extends StatelessWidget {
                                 color: AppTheme.primary,
                               ),
                             ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.open_in_new, size: 13, color: AppTheme.primary),
                           ],
                         ),
                       )
                     else
-                      Text(
-                        isProvider ? 'Cliente: ${item.otherPartyName}' : 'Aseador: ${item.otherPartyName}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      GestureDetector(
+                        onTap: () {
+                          context.push('/client-profile/${item.booking.clientId}');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Cliente: ${item.otherPartyName}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.open_in_new, size: 13, color: AppTheme.primary),
+                          ],
+                        ),
                       ),
                     Text(
                       item.service.title,
@@ -229,9 +258,21 @@ class _BookingActivityCard extends StatelessWidget {
           ),
           if (isProvider && item.booking.status != 'completed') ...[
             const SizedBox(height: 16),
+            if (!isAvailable)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Debes estar disponible para finalizar servicios',
+                  style: TextStyle(
+                    color: AppTheme.error,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             CustomButton(
               label: 'Finalizar Servicio',
-              onPressed: onComplete,
+              onPressed: isAvailable ? onComplete : null,
             ),
           ],
           if (canRate) ...[
@@ -243,7 +284,9 @@ class _BookingActivityCard extends StatelessWidget {
                   '/rate-service/${item.booking.id}',
                   extra: {
                     'serviceTitle': item.service.title,
-                    'providerName': item.otherPartyName,
+                    'otherPartyName': item.otherPartyName,
+                    'reviewerType': 'client',
+                    'reviewerId': userId,
                   },
                 );
                 if (result == true && context.mounted) {
@@ -252,6 +295,124 @@ class _BookingActivityCard extends StatelessWidget {
               },
             ),
           ],
+          if (canRateAsProvider) ...[
+            const SizedBox(height: 16),
+            CustomButton(
+              label: 'Calificar Cliente',
+              onPressed: () async {
+                final result = await context.push(
+                  '/rate-service/${item.booking.id}',
+                  extra: {
+                    'serviceTitle': item.service.title,
+                    'otherPartyName': item.otherPartyName,
+                    'reviewerType': 'provider',
+                    'reviewerId': userId,
+                  },
+                );
+                if (result == true && context.mounted) {
+                  context.read<BookingActivityBloc>().add(const FetchBookingActivityEvent());
+                }
+              },
+            ),
+          ],
+          if (!isProvider && item.hasReview && item.reviewRating != null) ...[
+            const SizedBox(height: 12),
+            _ExistingReviewBadge(
+              rating: item.reviewRating!,
+              comment: item.reviewComment,
+            ),
+          ],
+          if (isProvider && item.hasProviderReview) ...[
+            const SizedBox(height: 12),
+            _AlreadyRatedBadge(),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Muestra el rating ya enviado para un servicio completado.
+class _ExistingReviewBadge extends StatelessWidget {
+  final int rating;
+  final String? comment;
+
+  const _ExistingReviewBadge({required this.rating, this.comment});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.primarySoft,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.rate_review_outlined,
+                  size: 16, color: AppTheme.primary),
+              const SizedBox(width: 6),
+              const Text(
+                'Tu calificación',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.primary,
+                ),
+              ),
+              const Spacer(),
+              RatingStars(rating: rating.toDouble(), size: 14),
+            ],
+          ),
+          if (comment != null && comment!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              comment!,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+                height: 1.3,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Badge compacto que indica al proveedor que ya calificó a este cliente.
+class _AlreadyRatedBadge extends StatelessWidget {
+  const _AlreadyRatedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_outline,
+              size: 16, color: Colors.grey.shade500),
+          const SizedBox(width: 6),
+          Text(
+            'Ya calificaste a este cliente',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade600,
+            ),
+          ),
         ],
       ),
     );

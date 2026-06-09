@@ -1,20 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:domora/core/error/failures.dart';
+import 'package:domora/features/profile/domain/params/profile_params.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 
-/// Parámetros de dominio para actualizar el perfil de un cliente.
-/// Sin claves de BD — solo conceptos de negocio.
-class UpdateClientProfileParams {
-  final String userId;
-  final String? bio;
-  final String? avatarUrl;
-
-  const UpdateClientProfileParams({
-    required this.userId,
-    this.bio,
-    this.avatarUrl,
-  });
-}
+export 'package:domora/features/profile/domain/params/profile_params.dart'
+    show UpdateClientProfileParams;
 
 /// UseCase para actualizar el perfil específico de un cliente.
 class UpdateClientProfileUseCase {

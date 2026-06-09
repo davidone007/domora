@@ -3,16 +3,23 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:domora/features/notifications/domain/usecases/register_fcm_token_usecase.dart';
-import 'package:domora/features/notifications/ui/bloc/notification_bloc.dart';
-
 /// Coordinates the Firebase Cloud Messaging lifecycle for the signed-in user.
 ///
 /// Call [initialize] once a session is confirmed (post-login or post-splash).
 /// Safe to call multiple times — listeners are attached only once.
+///
+/// Both [onTokenReceived] and [onNotificationReceived] are callbacks so that
+/// `FcmService` (a core service) stays completely free of feature-layer
+/// dependencies. The caller wires up the feature logic in the DI container.
 class FcmService {
-  final RegisterFcmTokenUseCase _registerFcmToken;
-  final NotificationBloc _notificationBloc;
+  /// Callback invocado cuando se obtiene/refresca el token FCM.
+  /// Responsable de registrar el token en el backend.
+  final Future<void> Function(String token) onTokenReceived;
+
+  /// Callback invocado al recibir o abrir una notificación push.
+  /// No debe ser nulo; si no se necesita reacción, pasar `() {}`.
+  final void Function() onNotificationReceived;
+
   final FirebaseMessaging _messaging;
 
   StreamSubscription<String>? _tokenRefreshSub;
@@ -21,12 +28,10 @@ class FcmService {
   bool _handlersAttached = false;
 
   FcmService({
-    required RegisterFcmTokenUseCase registerFcmToken,
-    required NotificationBloc notificationBloc,
+    required this.onTokenReceived,
+    required this.onNotificationReceived,
     FirebaseMessaging? messaging,
-  })  : _registerFcmToken = registerFcmToken,
-        _notificationBloc = notificationBloc,
-        _messaging = messaging ?? FirebaseMessaging.instance;
+  }) : _messaging = messaging ?? FirebaseMessaging.instance;
 
   Future<void> initialize() async {
     try {
@@ -34,7 +39,7 @@ class FcmService {
 
       final token = await _messaging.getToken();
       if (token != null && token.isNotEmpty) {
-        await _registerFcmToken.execute(token);
+        await onTokenReceived(token);
         if (kDebugMode) debugPrint('[FCM] Token registered: ${token.substring(0, 12)}…');
       }
 
@@ -49,7 +54,9 @@ class FcmService {
     _handlersAttached = true;
 
     _tokenRefreshSub = _messaging.onTokenRefresh.listen((newToken) {
-      _registerFcmToken.execute(newToken);
+      onTokenReceived(newToken).catchError((Object e) {
+        if (kDebugMode) debugPrint('[FCM] Token refresh callback error: $e');
+      });
       if (kDebugMode) debugPrint('[FCM] Token refreshed');
     });
 
@@ -58,13 +65,13 @@ class FcmService {
         debugPrint('[FCM foreground] ${message.notification?.title}');
       }
       // Realtime stream usually beats this, but trigger a fetch as safety net.
-      _notificationBloc.add(const FetchNotificationsEvent());
+      onNotificationReceived();
     });
 
     _onMessageOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen((message) {
       if (kDebugMode) debugPrint('[FCM tap] ${message.data}');
       // Refresh so the bell badge / list reflects the new notification.
-      _notificationBloc.add(const FetchNotificationsEvent());
+      onNotificationReceived();
     });
   }
 

@@ -4,6 +4,7 @@ import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/core/error/failures.dart';
 import '../../domain/entities/proposal.dart';
 import '../../domain/entities/proposal_with_provider.dart';
+import '../../domain/entities/proposal_with_service.dart';
 import '../../domain/repo/proposal_repository.dart';
 import '../models/proposal_model.dart';
 import '../sources/proposal_remote_data_source.dart';
@@ -73,10 +74,56 @@ class ProposalRepositoryImpl implements ProposalRepository {
   }
 
   @override
+  Future<Either<Failure, List<Proposal>>> getProposalsByProviderId(String providerId) async {
+    try {
+      final models = await _remoteDataSource.getProposalsByProviderId(providerId);
+      return Right(models);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getProposalsByProviderId',
+          userId: providerId,
+        ).toString(),
+      ));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<ProposalWithService>>> getMyProposalsWithServices(String providerId) async {
+    try {
+      final models = await _remoteDataSource.getMyProposalsWithServices(providerId);
+      return Right(models);
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getMyProposalsWithServices',
+          userId: providerId,
+        ).toString(),
+      ));
+    }
+  }
+
+  @override
   Future<Either<Failure, String>> acceptProposal(Proposal proposal) async {
     try {
       final model = ProposalModel.fromEntity(proposal);
+
+      // 1. Ejecutar el RPC que crea el booking y retorna su ID.
       final bookingId = await _remoteDataSource.acceptProposal(model);
+
+      // 2. Asegurar que el servicio pase a in_progress (idempotente).
+      // Esta transición de estado es responsabilidad del repositorio, no del DataSource.
+      try {
+        await _remoteDataSource.updateServiceStatus(proposal.serviceId, 'in_progress');
+      } catch (_) {
+        // No se falla la operación principal si la actualización de estado falla;
+        // el booking ya fue creado. Se puede reintentar en una futura sincronización.
+      }
+
       return Right(bookingId);
     } catch (e, stackTrace) {
       return Left(_errorMapper.mapException(

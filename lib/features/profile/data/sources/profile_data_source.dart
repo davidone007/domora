@@ -10,6 +10,7 @@ import '../models/address_model.dart';
 import '../models/client_profile_model.dart';
 import '../models/provider_profile_model.dart';
 import '../models/provider_review_model.dart';
+import '../models/client_review_model.dart';
 
 abstract class ProfileDataSource {
   String? getCurrentUserId();
@@ -47,6 +48,9 @@ abstract class ProfileDataSource {
   Future<int> getCompletedServicesCount(String providerId);
   Future<Map<String, dynamic>> getReviewsStats(String providerId);
   Future<List<ProviderReviewModel>> getProviderReviews(String providerId);
+
+  /// Devuelve las reseñas recibidas por un cliente (escritas por proveedores).
+  Future<List<ClientReviewModel>> getClientReviews(String clientId);
 }
 
 class ProfileDataSourceImpl implements ProfileDataSource {
@@ -276,11 +280,14 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw const SocketException('No internet');
     }
 
-    // Consultamos las reviews uniéndolas con bookings para filtrar por provider_id
+    // Consultamos las reviews uniéndolas con bookings para filtrar por provider_id.
+    // POST-MIGRACIÓN: añadir .or('reviewer_type.eq.client,reviewer_type.is.null')
+    // para excluir reseñas proveedor→cliente del cálculo del promedio.
     final List<dynamic> response = await _client
         .from(AppConstants.tableReviews)
         .select('rating, bookings!inner(provider_id)')
-        .eq('bookings.provider_id', providerId);
+        .eq('bookings.provider_id', providerId)
+        .or('reviewer_type.eq.client,reviewer_type.is.null');
 
     if (response.isEmpty) {
       return {'average_rating': 0.0, 'total_reviews': 0};
@@ -301,14 +308,49 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw const SocketException('No internet');
     }
 
+    // POST-MIGRACIÓN: añadir .or('reviewer_type.eq.client,reviewer_type.is.null')
+    // para excluir reseñas proveedor→cliente de la vista pública del proveedor.
     final List<dynamic> response = await _client
         .from(AppConstants.tableReviews)
-        .select('id, rating, comment, created_at, bookings!inner(provider_id, users!bookings_client_id_fkey(first_name, last_name))')
+        .select(
+          'id, rating, comment, '
+          'punctuality_rating, quality_rating, communication_rating, '
+          'created_at, '
+          'bookings!inner(provider_id, '
+          'users!bookings_client_id_fkey(first_name, last_name))',
+        )
         .eq('bookings.provider_id', providerId)
+        .or('reviewer_type.eq.client,reviewer_type.is.null')
         .order('created_at', ascending: false);
 
     return response
         .map((json) => ProviderReviewModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<ClientReviewModel>> getClientReviews(String clientId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    // Obtiene reviews escritas por proveedores sobre este cliente.
+    // reviewer_type = 'provider' significa que un proveedor calificó al cliente.
+    final List<dynamic> response = await _client
+        .from(AppConstants.tableReviews)
+        .select(
+          'id, rating, comment, '
+          'punctuality_rating, quality_rating, communication_rating, '
+          'created_at, '
+          'bookings!inner(client_id, '
+          'users!bookings_provider_id_fkey(first_name, last_name))',
+        )
+        .eq('bookings.client_id', clientId)
+        .eq('reviewer_type', 'provider')
+        .order('created_at', ascending: false);
+
+    return response
+        .map((json) => ClientReviewModel.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 }

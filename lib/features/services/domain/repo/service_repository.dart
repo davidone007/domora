@@ -18,4 +18,9 @@ abstract class ServiceRepository {
 
   /// Obtiene el detalle de un servicio por su ID.
   Future<Either<Failure, ServiceDetail>> getServiceById(String id);
+
+  /// Comprueba si el proveedor [providerId] ya envió una propuesta
+  /// para el servicio [serviceId].
+  Future<Either<Failure, bool>> hasUserProposed(
+      String serviceId, String providerId);
 }

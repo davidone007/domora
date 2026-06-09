@@ -38,7 +38,8 @@ class BookingRepositoryImpl implements BookingRepository {
       final results = await _remoteDataSource.getBookings(
         userId: providerId,
         isProvider: true,
-        statuses: ['pending', 'confirmed'],
+        // 'completed' se incluye para que el proveedor pueda calificar al cliente
+        statuses: ['pending', 'confirmed', 'completed'],
       );
       return Right(_mapResults(results, isProvider: true));
     } catch (e, stackTrace) {
@@ -91,10 +92,30 @@ class BookingRepositoryImpl implements BookingRepository {
       
       final reviews = json['reviews'];
       bool hasReview = false;
-      if (reviews is List && reviews.isNotEmpty) {
-        hasReview = true;
-      } else if (reviews is Map) {
-        hasReview = true;
+      bool hasProviderReview = false;
+      int? reviewRating;
+      String? reviewComment;
+
+      // Normalizar a List para manejar tanto arrays como objetos simples
+      final reviewList = reviews is List
+          ? reviews.cast<Map<String, dynamic>?>()
+          : reviews is Map
+              ? [reviews as Map<String, dynamic>?]
+              : <Map<String, dynamic>?>[];
+
+      for (final r in reviewList) {
+        if (r == null) continue;
+        // Post-migración: reviewer_type permite distinguir client vs provider.
+        // Pre-migración: el campo no existe → null → se trata como reseña de cliente.
+        final reviewerType = r['reviewer_type'] as String?;
+        final isClientReview = reviewerType == 'client' || reviewerType == null;
+        if (isClientReview) {
+          hasReview = true;
+          reviewRating = r['rating'] as int?;
+          reviewComment = r['comment'] as String?;
+        } else if (reviewerType == 'provider') {
+          hasProviderReview = true;
+        }
       }
 
       String? avatarUrl;
@@ -114,6 +135,9 @@ class BookingRepositoryImpl implements BookingRepository {
         otherPartyName: name,
         otherPartyAvatarUrl: avatarUrl,
         hasReview: hasReview,
+        reviewRating: reviewRating,
+        reviewComment: reviewComment,
+        hasProviderReview: hasProviderReview,
       );
     }).toList();
   }

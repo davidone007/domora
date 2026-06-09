@@ -5,7 +5,6 @@ import 'package:domora/core/error/error_context.dart';
 import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/entities/avatar_file.dart';
-import 'package:domora/features/auth/domain/repo/auth_repo.dart';
 import 'package:domora/features/profile/data/sources/profile_data_source.dart';
 import 'package:domora/features/profile/domain/entities/address.dart';
 import 'package:domora/features/profile/domain/entities/client_profile.dart';
@@ -14,19 +13,14 @@ import 'package:domora/features/profile/domain/entities/provider_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_review.dart';
 import 'package:domora/features/profile/domain/entities/provider_stats.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
-import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
+import 'package:domora/features/profile/domain/params/profile_params.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileDataSource _dataSource;
-  final AuthRepository _authRepository;
   final FailureMapper _errorMapper;
 
   ProfileRepositoryImpl(
     this._dataSource,
-    this._authRepository,
     this._errorMapper,
   );
 
@@ -283,24 +277,48 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<Either<Failure, void>> updateEmail({
-    required String currentEmail,
-    required String currentPassword,
-    required String newEmail,
-  }) =>
-      _authRepository.updateEmail(
-        currentEmail: currentEmail,
-        currentPassword: currentPassword,
-        newEmail: newEmail,
+  Future<Either<Failure, FullProfile>> getClientPublicProfile(String userId) async {
+    try {
+      final user = await _dataSource.getUser(userId);
+      if (user == null) {
+        return const Left(ServerFailure('Cliente no encontrado'));
+      }
+
+      final clientProfile = await _dataSource.getClientProfile(userId);
+      final reviews = await _dataSource.getClientReviews(userId);
+
+      // Calcular rating promedio a partir de las reseñas recibidas.
+      double avgRating = 0.0;
+      if (reviews.isNotEmpty) {
+        final sum = reviews.map((r) => r.rating).reduce((a, b) => a + b);
+        avgRating = sum / reviews.length;
+      }
+
+      final stats = ProviderStats(
+        averageRating: avgRating,
+        totalReviewsCount: reviews.length,
+        completedServicesCount: 0,
       );
 
-  @override
-  Future<Either<Failure, void>> updatePassword({
-    required String currentPassword,
-    required String newPassword,
-  }) =>
-      _authRepository.updatePassword(
-        currentPassword: currentPassword,
-        newPassword: newPassword,
+      return Right(
+        FullProfile(
+          user: user,
+          role: AppConstants.roleClient,
+          clientProfile: clientProfile,
+          stats: stats,
+          reviews: reviews,
+        ),
       );
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getClientPublicProfile',
+          userId: userId,
+        ).toString(),
+      ));
+    }
+  }
+
 }

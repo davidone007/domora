@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -15,6 +18,7 @@ import 'package:domora/injection_container.dart' as di;
 import 'package:domora/core/network/network_info.dart';
 import 'package:domora/core/navigation/app_router.dart';
 import 'package:domora/core/theme/app_theme.dart';
+import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/utils/web_utils_stub.dart'
   if (dart.library.html) 'package:domora/core/utils/web_utils.dart';
 
@@ -66,8 +70,37 @@ Future<void> main() async {
   );
 }
 
-class DomoraApp extends StatelessWidget {
+class DomoraApp extends StatefulWidget {
   const DomoraApp({super.key});
+
+  @override
+  State<DomoraApp> createState() => _DomoraAppState();
+}
+
+class _DomoraAppState extends State<DomoraApp> {
+  late final GoRouter _router;
+  StreamSubscription<AuthState>? _authSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = buildRouter(networkInfo: di.sl<NetworkInfo>());
+    
+    // Escuchar cambios en la autenticación, específicamente para recuperación de contraseña
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      debugPrint('Auth event received: ${data.event}');
+      if (data.event == AuthChangeEvent.passwordRecovery) {
+        debugPrint('Navigating to reset password screen');
+        _router.go(AppConstants.routeResetPassword);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +116,7 @@ class DomoraApp extends StatelessWidget {
       supportedLocales: const [
         Locale('es', 'CO'),
       ],
-      routerConfig: buildRouter(networkInfo: di.sl<NetworkInfo>()),
+      routerConfig: _router,
     );
   }
 }

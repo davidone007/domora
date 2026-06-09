@@ -15,6 +15,8 @@ import 'package:domora/features/auth/ui/auth_blocs/signup_bloc.dart';
 import 'package:domora/features/auth/ui/auth_screens/signup_screen.dart';
 import 'package:domora/features/auth/ui/auth_blocs/forgot_password_bloc.dart';
 import 'package:domora/features/auth/ui/auth_screens/forgot_password_screen.dart';
+import 'package:domora/features/auth/ui/auth_blocs/reset_password_bloc.dart';
+import 'package:domora/features/auth/ui/auth_screens/reset_password_screen.dart';
 
 import 'package:domora/features/onboarding/ui/bloc/onboarding_bloc.dart';
 import 'package:domora/features/onboarding/ui/screens/onboarding_screen.dart';
@@ -25,6 +27,8 @@ import 'package:domora/features/profile/ui/bloc/profile_signout_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/provider_public_profile_bloc.dart';
 import 'package:domora/features/profile/ui/pages/profile_page.dart';
 import 'package:domora/features/profile/ui/screens/provider_public_profile_screen.dart';
+import 'package:domora/features/profile/ui/bloc/client_public_profile_bloc.dart';
+import 'package:domora/features/profile/ui/screens/client_public_profile_screen.dart';
 import 'package:domora/features/profile/ui/bloc/profile_edit_bloc.dart';
 import 'package:domora/features/profile/ui/pages/edit_profile_page.dart';
 
@@ -38,6 +42,8 @@ import 'package:domora/features/services/ui/screens/service_detail_screen.dart';
 
 import 'package:domora/features/proposals/ui/bloc/booking_activity_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/booking_activity_screen.dart';
+import 'package:domora/features/proposals/ui/bloc/my_proposals_bloc.dart';
+import 'package:domora/features/proposals/ui/screens/my_proposals_screen.dart';
 import 'package:domora/features/proposals/ui/bloc/review_bloc.dart';
 import 'package:domora/features/proposals/ui/screens/rating_screen.dart';
 import 'package:domora/features/proposals/ui/bloc/payment_bloc.dart';
@@ -94,6 +100,13 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         ),
       ),
       GoRoute(
+        path: AppConstants.routeResetPassword,
+        builder: (_, __) => BlocProvider(
+          create: (_) => sl<ResetPasswordBloc>(),
+          child: const ResetPasswordScreen(),
+        ),
+      ),
+      GoRoute(
         path: AppConstants.routeOnboarding,
         builder: (_, __) => MultiBlocProvider(
           providers: [
@@ -112,7 +125,10 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
       ),
       GoRoute(
         path: AppConstants.routeProviderHome,
-        builder: (_, __) => const ProviderHomePage(),
+        builder: (_, __) => BlocProvider(
+          create: (_) => sl<ProfileBloc>()..add(const ProfileLoadEvent()),
+          child: const ProviderHomePage(),
+        ),
       ),
       GoRoute(
         path: '/publish-service',
@@ -199,6 +215,16 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         },
       ),
       GoRoute(
+        path: '/client-profile/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return BlocProvider(
+            create: (_) => sl<ClientPublicProfileBloc>(),
+            child: ClientPublicProfileScreen(userId: userId),
+          );
+        },
+      ),
+      GoRoute(
         path: '/payment/:bookingId',
         builder: (context, state) {
           final bookingId = state.pathParameters['bookingId']!;
@@ -228,19 +254,32 @@ GoRouter buildRouter({required NetworkInfo networkInfo}) {
         },
       ),
       GoRoute(
+        path: '/my-proposals',
+        builder: (context, state) {
+          return BlocProvider(
+            create: (_) => sl<MyProposalsBloc>(),
+            child: const MyProposalsScreen(),
+          );
+        },
+      ),
+      GoRoute(
         path: '/rate-service/:bookingId',
         builder: (context, state) {
           final bookingId = state.pathParameters['bookingId']!;
           final extra = state.extra as Map<String, dynamic>;
           final serviceTitle = extra['serviceTitle'] as String;
-          final providerName = extra['providerName'] as String;
+          final otherPartyName = extra['otherPartyName'] as String;
+          final reviewerType = extra['reviewerType'] as String? ?? 'client';
+          final reviewerId = extra['reviewerId'] as String?;
 
           return BlocProvider(
             create: (_) => sl<ReviewBloc>()..add(CheckReviewStatusEvent(bookingId)),
             child: RatingScreen(
               bookingId: bookingId,
               serviceTitle: serviceTitle,
-              providerName: providerName,
+              otherPartyName: otherPartyName,
+              reviewerType: reviewerType,
+              reviewerId: reviewerId,
             ),
           );
         },

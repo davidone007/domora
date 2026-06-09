@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
+import 'package:domora/core/widgets/rating_stars.dart';
 import 'package:domora/features/profile/domain/entities/provider_review.dart';
+import 'package:domora/features/profile/ui/widgets/review_card.dart';
 import '../bloc/provider_public_profile_bloc.dart';
 
 class ProviderPublicProfileScreen extends StatefulWidget {
@@ -176,7 +178,7 @@ class _ProviderPublicProfileScreenState extends State<ProviderPublicProfileScree
                         else
                           Column(
                             children: profile.reviews
-                                .map((review) => _ReviewCard(review: review))
+                                .map((review) => ReviewCard(review: review))
                                 .toList(),
                           ),
                         const SizedBox(height: 100),
@@ -492,7 +494,7 @@ class _RatingStrip extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _StarRow(rating: rating),
+          RatingStars(rating: rating, size: 18),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -521,100 +523,6 @@ class _RatingStrip extends StatelessWidget {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StarRow extends StatelessWidget {
-  final double rating;
-
-  const _StarRow({required this.rating});
-
-  @override
-  Widget build(BuildContext context) {
-    final fullStars = rating.floor().clamp(0, 5);
-    final hasHalf = rating - fullStars >= 0.5 && fullStars < 5;
-    final emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < fullStars; i++)
-          Icon(Icons.star, color: Colors.amber.shade700, size: 18),
-        if (hasHalf)
-          Icon(Icons.star_half, color: Colors.amber.shade700, size: 18),
-        for (var i = 0; i < emptyStars; i++)
-          Icon(Icons.star_border, color: Colors.amber.shade700, size: 18),
-      ],
-    );
-  }
-}
-
-class _ReviewCard extends StatelessWidget {
-  final ProviderReview review;
-
-  const _ReviewCard({required this.review});
-
-  @override
-  Widget build(BuildContext context) {
-    final dateLabel = review.createdAt != null
-        ? DateFormat('dd MMM, yyyy', 'es_CO').format(review.createdAt!)
-        : null;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  review.reviewerName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              if (dateLabel != null)
-                Text(
-                  dateLabel,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textTertiary,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _StarRow(rating: review.rating.toDouble()),
-          if (review.comment != null && review.comment!.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              review.comment!,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppTheme.textSecondary,
-                height: 1.4,
-              ),
-            ),
-          ],
         ],
       ),
     );

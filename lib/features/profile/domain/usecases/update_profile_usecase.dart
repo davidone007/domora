@@ -1,23 +1,11 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:domora/core/error/failures.dart';
+import 'package:domora/features/profile/domain/params/profile_params.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 
-/// Parámetros de dominio para actualizar los campos básicos del usuario.
-/// Solo contiene conceptos de negocio — sin claves de BD.
-class UpdateUserFieldsParams {
-  final String userId;
-  final String? firstName;
-  final String? lastName;
-  final String? phone;
-
-  const UpdateUserFieldsParams({
-    required this.userId,
-    this.firstName,
-    this.lastName,
-    this.phone,
-  });
-}
+export 'package:domora/features/profile/domain/params/profile_params.dart'
+    show UpdateUserFieldsParams;
 
 /// UseCase para actualizar los campos básicos del usuario (nombre, apellido, teléfono).
 class UpdateProfileUseCase {

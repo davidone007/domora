@@ -71,4 +71,7 @@ abstract class AuthRepository {
 
   /// Envía un correo de restablecimiento de contraseña.
   Future<Either<Failure, void>> requestPasswordReset(String email);
+
+  /// Establece una nueva contraseña usando la sesión de recuperación activa.
+  Future<Either<Failure, void>> setNewPasswordAfterReset(String newPassword);
 }

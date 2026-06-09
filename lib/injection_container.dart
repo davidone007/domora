@@ -17,9 +17,13 @@ import 'package:domora/features/auth/domain/usecases/login_usecase.dart';
 import 'package:domora/features/auth/domain/usecases/signout_usecase.dart';
 import 'package:domora/features/auth/domain/usecases/signup_usecase.dart';
 import 'package:domora/features/auth/domain/usecases/request_password_reset_usecase.dart';
+import 'package:domora/features/auth/domain/usecases/set_new_password_usecase.dart';
+import 'package:domora/features/auth/domain/usecases/update_email_usecase.dart';
+import 'package:domora/features/auth/domain/usecases/update_password_usecase.dart';
 import 'package:domora/features/auth/ui/auth_blocs/login_bloc.dart';
 import 'package:domora/features/auth/ui/auth_blocs/signup_bloc.dart';
 import 'package:domora/features/auth/ui/auth_blocs/forgot_password_bloc.dart';
+import 'package:domora/features/auth/ui/auth_blocs/reset_password_bloc.dart';
 
 // Onboarding
 import 'package:domora/features/onboarding/data/repo/onboarding_repo_impl.dart';
@@ -35,16 +39,16 @@ import 'package:domora/features/profile/data/sources/profile_data_source.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
 import 'package:domora/features/profile/domain/usecases/get_current_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/get_provider_profile_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/get_client_public_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/upload_avatar_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_email_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_password_usecase.dart';
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/profile_signout_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/provider_public_profile_bloc.dart';
+import 'package:domora/features/profile/ui/bloc/client_public_profile_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/profile_edit_bloc.dart';
 
 // Services
@@ -62,6 +66,7 @@ import 'package:domora/features/services/domain/usecases/reverse_geocode_usecase
 import 'package:domora/features/services/domain/usecases/get_my_services_usecase.dart';
 import 'package:domora/features/services/domain/usecases/get_all_services_usecase.dart';
 import 'package:domora/features/services/domain/usecases/get_service_detail_usecase.dart';
+import 'package:domora/features/services/domain/usecases/check_provider_has_proposed_usecase.dart';
 import 'package:domora/features/services/ui/bloc/address_picker_bloc.dart';
 import 'package:domora/features/services/ui/bloc/service_publish_bloc.dart';
 import 'package:domora/features/services/ui/bloc/my_services_bloc.dart';
@@ -73,6 +78,7 @@ import 'package:domora/features/proposals/data/sources/proposal_remote_data_sour
 import 'package:domora/features/proposals/domain/repo/proposal_repository.dart';
 import 'package:domora/features/proposals/domain/usecases/accept_proposal_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/get_proposals_by_service_usecase.dart';
+import 'package:domora/features/proposals/domain/usecases/get_my_proposals_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/send_proposal_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/check_user_proposal_usecase.dart';
 import 'package:domora/features/proposals/data/repo/booking_repository_impl.dart';
@@ -91,6 +97,7 @@ import 'package:domora/features/proposals/domain/repo/review_repository.dart';
 import 'package:domora/features/proposals/domain/usecases/send_review_usecase.dart';
 import 'package:domora/features/proposals/domain/usecases/check_booking_review_usecase.dart';
 import 'package:domora/features/proposals/ui/bloc/booking_activity_bloc.dart';
+import 'package:domora/features/proposals/ui/bloc/my_proposals_bloc.dart';
 import 'package:domora/features/proposals/ui/bloc/payment_bloc.dart';
 import 'package:domora/features/proposals/ui/bloc/proposal_send_bloc.dart';
 import 'package:domora/features/proposals/ui/bloc/service_proposals_bloc.dart';
@@ -104,6 +111,7 @@ import 'package:domora/features/notifications/domain/usecases/get_notifications_
 import 'package:domora/features/notifications/domain/usecases/mark_notification_read_usecase.dart';
 import 'package:domora/features/notifications/domain/usecases/register_fcm_token_usecase.dart';
 import 'package:domora/features/notifications/domain/usecases/watch_notifications_usecase.dart';
+import 'package:domora/features/notifications/domain/usecases/initialize_fcm_usecase.dart';
 import 'package:domora/features/notifications/ui/bloc/notification_bloc.dart';
 import 'package:domora/core/services/fcm_service.dart';
 
@@ -146,11 +154,13 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SignOutUseCase(sl()));
   sl.registerLazySingleton(() => SignupUseCase(sl()));
   sl.registerLazySingleton(() => RequestPasswordResetUseCase(sl()));
+  sl.registerLazySingleton(() => SetNewPasswordUseCase(sl()));
 
   // BLoCs
   sl.registerFactory(() => LoginBloc(sl(), sl()));
   sl.registerFactory(() => SignupBloc(sl()));
   sl.registerFactory(() => ForgotPasswordBloc(sl()));
+  sl.registerFactory(() => ResetPasswordBloc(sl()));
   sl.registerFactory(() => SplashBloc(sl(), sl()));
   sl.registerFactory(() => OnboardingRouteBloc(sl()));
 
@@ -180,12 +190,13 @@ Future<void> init() async {
     () => ProfileDataSourceImpl(sl(), networkInfo: sl()),
   );
   sl.registerLazySingleton<ProfileRepository>(
-    () => ProfileRepositoryImpl(sl(), sl(), sl()),
+    () => ProfileRepositoryImpl(sl(), sl()),
   );
 
   // UseCases
   sl.registerLazySingleton(() => GetCurrentProfileUseCase(sl()));
   sl.registerLazySingleton(() => GetProviderProfileUseCase(sl()));
+  sl.registerLazySingleton(() => GetClientPublicProfileUseCase(sl()));
   sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));
   sl.registerLazySingleton(() => UpdateClientProfileUseCase(sl()));
   sl.registerLazySingleton(() => UpdateProviderProfileUseCase(sl()));
@@ -195,10 +206,12 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdatePasswordUseCase(sl()));
 
   // BLoCs
-  sl.registerFactory(() => ProfileBloc(sl()));
+  sl.registerFactory(() => ProfileBloc(sl(), sl()));
   sl.registerFactory(() => ProfileSignOutBloc(sl()));
+  sl.registerFactory(  () => ProviderPublicProfileBloc(getProviderProfileUseCase: sl()));
   sl.registerFactory(
-      () => ProviderPublicProfileBloc(getProviderProfileUseCase: sl()));
+    () => ClientPublicProfileBloc(getClientPublicProfile: sl()),
+  );
   sl.registerFactory(
     () => ProfileEditBloc(
       sl(),
@@ -233,6 +246,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetMyServicesUseCase(sl()));
   sl.registerLazySingleton(() => GetAllServicesUseCase(sl()));
   sl.registerLazySingleton(() => GetServiceDetailUseCase(sl()));
+  sl.registerLazySingleton(() => CheckProviderHasProposedUseCase(sl()));
   sl.registerLazySingleton(() => GetCurrentLocationUseCase(sl()));
   sl.registerLazySingleton(() => AutocompleteAddressUseCase(sl()));
   sl.registerLazySingleton(() => ReverseGeocodeUseCase(sl()));
@@ -256,10 +270,12 @@ Future<void> init() async {
       sl(),
       sl(),
       sl(),
+      sl(),
     ),
   );
   sl.registerFactory(
     () => ServiceDetailBloc(
+      sl(),
       sl(),
       sl(),
       sl(),
@@ -298,6 +314,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CheckUserProposalUseCase(sl()));
   sl.registerLazySingleton(() => GetProposalsByServiceUseCase(sl()));
   sl.registerLazySingleton(() => AcceptProposalUseCase(sl()));
+  sl.registerLazySingleton(() => GetMyProposalsUseCase(sl()));
   sl.registerLazySingleton(() => GetClientBookingHistoryUseCase(sl()));
   sl.registerLazySingleton(() => GetProviderActiveBookingsUseCase(sl()));
   sl.registerLazySingleton(() => CompleteBookingUseCase(sl()));
@@ -325,6 +342,13 @@ Future<void> init() async {
       getClientHistory: sl(),
       getProviderActive: sl(),
       completeBooking: sl(),
+      getCurrentSession: sl(),
+      getCurrentProfile: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => MyProposalsBloc(
+      getMyProposals: sl(),
       getCurrentSession: sl(),
     ),
   );
@@ -364,11 +388,22 @@ Future<void> init() async {
     ),
   );
 
-  // FCM Service (singleton — lifecycle attached once per app run)
+  // FCM Service (singleton — lifecycle attached once per app run).
+  // Ambos callbacks desacoplan FcmService de cualquier dependencia de feature:
+  //   onTokenReceived        → delega en RegisterFcmTokenUseCase
+  //   onNotificationReceived → delega en NotificationBloc (vía lambda, no import)
+  // FcmService (core) no importa ningún símbolo de `features/`.
   sl.registerLazySingleton(
     () => FcmService(
-      registerFcmToken: sl(),
-      notificationBloc: sl(),
+      onTokenReceived: (token) async {
+        await sl<RegisterFcmTokenUseCase>().execute(token);
+      },
+      onNotificationReceived: () =>
+          sl<NotificationBloc>().add(const FetchNotificationsEvent()),
     ),
   );
+
+  // InitializeFcmUseCase: thin wrapper para que BLoCs usen FCM sin importar
+  // FcmService directamente (CA: BLoC → UseCase → Servicio/Infraestructura).
+  sl.registerLazySingleton(() => InitializeFcmUseCase(sl()));
 }

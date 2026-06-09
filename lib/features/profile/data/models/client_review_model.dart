@@ -1,7 +1,10 @@
 import '../../domain/entities/provider_review.dart';
 
-class ProviderReviewModel extends ProviderReview {
-  const ProviderReviewModel({
+/// Modelo para reseñas recibidas por un cliente (escritas por proveedores).
+/// La diferencia con [ProviderReviewModel] es que el nombre viene del
+/// proveedor, no del cliente (fk: bookings.provider_id → users).
+class ClientReviewModel extends ProviderReview {
+  const ClientReviewModel({
     required super.reviewerName,
     required super.rating,
     super.comment,
@@ -11,12 +14,15 @@ class ProviderReviewModel extends ProviderReview {
     super.createdAt,
   });
 
-  factory ProviderReviewModel.fromJson(Map<String, dynamic> json) {
+  factory ClientReviewModel.fromJson(Map<String, dynamic> json) {
+    // Estructura de la query:
+    // reviews { ..., bookings!inner(client_id,
+    //   users!bookings_provider_id_fkey(first_name, last_name)) }
     Map<String, dynamic>? reviewerData;
     final bookings = json['bookings'];
     if (bookings is Map) {
-      reviewerData = bookings['users!bookings_client_id_fkey']
-          as Map<String, dynamic>?;
+      reviewerData =
+          bookings['users!bookings_provider_id_fkey'] as Map<String, dynamic>?;
     }
     final firstName = reviewerData?['first_name'] as String?;
     final lastName = reviewerData?['last_name'] as String?;
@@ -24,8 +30,8 @@ class ProviderReviewModel extends ProviderReview {
     if (firstName != null && firstName.isNotEmpty) nameParts.add(firstName);
     if (lastName != null && lastName.isNotEmpty) nameParts.add(lastName);
 
-    return ProviderReviewModel(
-      reviewerName: nameParts.isNotEmpty ? nameParts.join(' ') : 'Cliente',
+    return ClientReviewModel(
+      reviewerName: nameParts.isNotEmpty ? nameParts.join(' ') : 'Proveedor',
       rating: json['rating'] as int? ?? 0,
       comment: json['comment'] as String?,
       punctualityRating: json['punctuality_rating'] as int?,
