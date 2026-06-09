@@ -1,18 +1,28 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:domora/core/services/fcm_background_handler.dart';
+import 'package:domora/firebase_options.dart';
 import 'package:domora/core/error/error_mapper_singleton.dart';
-import 'package:domora/core/error/error_config.dart';
-import 'package:domora/core/error/error_logger.dart';
-import 'package:domora/core/network/data/network_info_impl.dart';
-import 'package:domora/core/error/data/error_mapper_impl.dart';
+import 'package:domora/core/error/failure_mapper.dart';
+import 'package:domora/injection_container.dart' as di;
+import 'package:domora/core/network/network_info.dart';
 import 'package:domora/core/navigation/app_router.dart';
 import 'package:domora/core/theme/app_theme.dart';
+import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/utils/web_utils_stub.dart'
   if (dart.library.html) 'package:domora/core/utils/web_utils.dart';
+
+import 'package:domora/features/notifications/ui/bloc/notification_bloc.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,38 +30,77 @@ Future<void> main() async {
   // Inicializar localización para fechas (Intl)
   await initializeDateFormatting('es_CO', null);
 
+  // Inicializar Firebase + registrar el handler de FCM en background.
+  // El handler de background DEBE registrarse antes de runApp para que
+  // funcione cuando la app no está en primer plano.
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  } catch (e) {
+    debugPrint('Error al inicializar Firebase: $e');
+  }
+
   // Carga de variables de entorno desde .env (declarado como asset).
   await dotenv.load(fileName: '.env');
-
-  // Inicializar sistema de manejo de errores: crear la implementación
-  // concreta en la capa de aplicación y pasarla al singleton.
-  final config = ErrorConfig.auto();
-  final logger = ErrorLogger(config);
-  final mapper = ErrorMapperImpl(logger: logger, config: config);
-  ErrorMapperSingleton.initialize(mapper);
 
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL'] ?? '',
     anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
-    // Persistencia de sesión: por defecto Supabase Flutter ya guarda la sesión
-    // de forma segura.
   );
 
-  // Manejo de fragmentos de autenticación en web (p.ej. #access_token=...)
-  // Evita que el enrutador falle cuando Supabase deja tokens en el hash.
+  // Inicializar Contenedor de Inyección de Dependencias
+  await di.init();
+
+  // Compatibilidad con el Singleton actual de errores
+  ErrorMapperSingleton.initialize(di.sl<FailureMapper>());
+
+  // Manejo de fragmentos de autenticación en web
   await handleAuthRedirectFragment(Supabase.instance.client);
 
-  final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
-  final healthUri = Uri.parse(supabaseUrl).resolve('/auth/v1/health');
-  final networkInfo = NetworkInfoImpl(probeUri: healthUri);
-
-  runApp(DomoraApp(networkInfo: networkInfo));
+  runApp(
+    BlocProvider(
+      create: (_) => di.sl<NotificationBloc>()..add(const FetchNotificationsEvent()),
+      child: const DomoraApp(),
+    ),
+  );
 }
 
-class DomoraApp extends StatelessWidget {
-  final NetworkInfoImpl networkInfo;
+class DomoraApp extends StatefulWidget {
+  const DomoraApp({super.key});
 
-  const DomoraApp({super.key, required this.networkInfo});
+  @override
+  State<DomoraApp> createState() => _DomoraAppState();
+}
+
+class _DomoraAppState extends State<DomoraApp> {
+  late final GoRouter _router;
+  StreamSubscription<AuthState>? _authSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = buildRouter(networkInfo: di.sl<NetworkInfo>());
+    
+    // Escuchar cambios en la autenticación, específicamente para recuperación de contraseña
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      debugPrint('Auth event received: ${data.event}');
+      if (data.event == AuthChangeEvent.passwordRecovery) {
+        debugPrint('Navigating to reset password screen');
+        _router.go(AppConstants.routeResetPassword);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +116,7 @@ class DomoraApp extends StatelessWidget {
       supportedLocales: const [
         Locale('es', 'CO'),
       ],
-      routerConfig: buildRouter(networkInfo: networkInfo),
+      routerConfig: _router,
     );
   }
 }

@@ -14,7 +14,15 @@ class PublishCleaningServiceUseCase {
     // antes de llamar al repositorio.
     
     if (request.title.trim().isEmpty) {
-      return const Left(ValidationFailure('El título no puede estar vacío'));
+      return const Left(ValidationFailure('El título del servicio es obligatorio'));
+    }
+
+    if (request.address.addressLine1.trim().isEmpty) {
+      return const Left(ValidationFailure('La dirección del servicio es obligatoria'));
+    }
+
+    if (request.address.city.trim().isEmpty) {
+      return const Left(ValidationFailure('La ciudad del servicio es obligatoria'));
     }
 
     return await _repository.publishCleaningService(request);

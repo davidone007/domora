@@ -7,8 +7,8 @@ import 'package:domora/features/profile/domain/usecases/update_client_profile_us
 import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
 import 'package:domora/features/profile/domain/usecases/upload_avatar_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_email_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_password_usecase.dart';
+import 'package:domora/features/auth/domain/usecases/update_email_usecase.dart';
+import 'package:domora/features/auth/domain/usecases/update_password_usecase.dart';
 
 // Events
 abstract class ProfileEditEvent extends Equatable {
@@ -24,7 +24,8 @@ class UpdateProfileFieldsEvent extends ProfileEditEvent {
   final String? lastName;
   final String? phone;
 
-  const UpdateProfileFieldsEvent({required this.userId, this.firstName, this.lastName, this.phone});
+  const UpdateProfileFieldsEvent(
+      {required this.userId, this.firstName, this.lastName, this.phone});
 
   @override
   List<Object?> get props => [userId, firstName, lastName, phone];
@@ -63,7 +64,8 @@ class UpdateProviderProfileEvent extends ProfileEditEvent {
   });
 
   @override
-  List<Object?> get props => [userId, yearsExperience, hourlyRate, isAvailable, bio, avatarUrl];
+  List<Object?> get props =>
+      [userId, yearsExperience, hourlyRate, isAvailable, bio, avatarUrl];
 }
 
 class UpdateProviderAddressEvent extends ProfileEditEvent {
@@ -84,7 +86,8 @@ class UpdateProviderAddressEvent extends ProfileEditEvent {
   });
 
   @override
-  List<Object?> get props => [userId, addressLine1, addressLine2, department, city, neighborhood];
+  List<Object?> get props =>
+      [userId, addressLine1, addressLine2, department, city, neighborhood];
 }
 
 class UploadAvatarEvent extends ProfileEditEvent {
@@ -150,12 +153,22 @@ class ProfileEditLoading extends ProfileEditState {
   const ProfileEditLoading();
 }
 
+enum ProfileEditSuccessKind {
+  fieldsUpdated,
+  clientProfileUpdated,
+  providerProfileUpdated,
+  locationUpdated,
+  emailUpdated,
+  passwordUpdated,
+}
+
 class ProfileEditSuccess extends ProfileEditState {
+  final ProfileEditSuccessKind kind;
   final String message;
-  const ProfileEditSuccess([this.message = 'OK']);
+  const ProfileEditSuccess({required this.kind, this.message = 'OK'});
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [kind, message];
 }
 
 class AvatarUploadSuccess extends ProfileEditState {
@@ -202,7 +215,8 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     on<ProfileEditResetEvent>(_onReset);
   }
 
-  Future<void> _onUpdateProfileFields(UpdateProfileFieldsEvent event, Emitter<ProfileEditState> emit) async {
+  Future<void> _onUpdateProfileFields(
+      UpdateProfileFieldsEvent event, Emitter<ProfileEditState> emit) async {
     emit(const ProfileEditLoading());
     final res = await _updateProfile(
       UpdateUserFieldsParams(
@@ -214,11 +228,15 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     );
     res.fold(
       (f) => emit(ProfileEditFailure(f.message)),
-      (_) => emit(const ProfileEditSuccess('Perfil actualizado')),
+      (_) => emit(const ProfileEditSuccess(
+        kind: ProfileEditSuccessKind.fieldsUpdated,
+        message: 'Perfil actualizado',
+      )),
     );
   }
 
-  Future<void> _onUpdateClientProfile(UpdateClientProfileEvent event, Emitter<ProfileEditState> emit) async {
+  Future<void> _onUpdateClientProfile(
+      UpdateClientProfileEvent event, Emitter<ProfileEditState> emit) async {
     emit(const ProfileEditLoading());
     final res = await _updateClientProfile(
       UpdateClientProfileParams(
@@ -229,11 +247,15 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     );
     res.fold(
       (f) => emit(ProfileEditFailure(f.message)),
-      (_) => emit(const ProfileEditSuccess('Perfil de cliente actualizado')),
+      (_) => emit(const ProfileEditSuccess(
+        kind: ProfileEditSuccessKind.clientProfileUpdated,
+        message: 'Perfil de cliente actualizado',
+      )),
     );
   }
 
-  Future<void> _onUpdateProviderProfile(UpdateProviderProfileEvent event, Emitter<ProfileEditState> emit) async {
+  Future<void> _onUpdateProviderProfile(
+      UpdateProviderProfileEvent event, Emitter<ProfileEditState> emit) async {
     emit(const ProfileEditLoading());
     final res = await _updateProviderProfile(
       UpdateProviderProfileParams(
@@ -247,7 +269,10 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     );
     res.fold(
       (f) => emit(ProfileEditFailure(f.message)),
-      (_) => emit(const ProfileEditSuccess('Perfil de proveedor actualizado')),
+      (_) => emit(const ProfileEditSuccess(
+        kind: ProfileEditSuccessKind.providerProfileUpdated,
+        message: 'Perfil de proveedor actualizado',
+      )),
     );
   }
 
@@ -268,11 +293,15 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     );
     res.fold(
       (f) => emit(ProfileEditFailure(f.message)),
-      (_) => emit(const ProfileEditSuccess('Ubicación actualizada')),
+      (_) => emit(const ProfileEditSuccess(
+        kind: ProfileEditSuccessKind.locationUpdated,
+        message: 'Ubicación actualizada',
+      )),
     );
   }
 
-  Future<void> _onUploadAvatar(UploadAvatarEvent event, Emitter<ProfileEditState> emit) async {
+  Future<void> _onUploadAvatar(
+      UploadAvatarEvent event, Emitter<ProfileEditState> emit) async {
     emit(const ProfileEditLoading());
     final res = await _uploadAvatar(
       userId: event.userId,
@@ -285,7 +314,8 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     );
   }
 
-  Future<void> _onUpdateEmail(UpdateEmailEvent event, Emitter<ProfileEditState> emit) async {
+  Future<void> _onUpdateEmail(
+      UpdateEmailEvent event, Emitter<ProfileEditState> emit) async {
     emit(const ProfileEditLoading());
     final res = await _updateEmail(
       currentEmail: event.currentEmail,
@@ -294,14 +324,19 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     );
     res.fold(
       (f) => emit(ProfileEditFailure(f.message)),
-      (_) => emit(const ProfileEditSuccess('Correo actualizado')),
+      (_) => emit(const ProfileEditSuccess(
+        kind: ProfileEditSuccessKind.emailUpdated,
+        message: 'Correo actualizado',
+      )),
     );
   }
 
-  Future<void> _onUpdatePassword(UpdatePasswordEvent event, Emitter<ProfileEditState> emit) async {
+  Future<void> _onUpdatePassword(
+      UpdatePasswordEvent event, Emitter<ProfileEditState> emit) async {
     emit(const ProfileEditLoading());
     if (event.newPassword != event.confirmPassword) {
-      emit(const ProfileEditFailure('La nueva contraseña y su confirmación no coinciden'));
+      emit(const ProfileEditFailure(
+          'La nueva contraseña y su confirmación no coinciden'));
       return;
     }
 
@@ -311,11 +346,15 @@ class ProfileEditBloc extends Bloc<ProfileEditEvent, ProfileEditState> {
     );
     res.fold(
       (f) => emit(ProfileEditFailure(f.message)),
-      (_) => emit(const ProfileEditSuccess('Contraseña actualizada')),
+      (_) => emit(const ProfileEditSuccess(
+        kind: ProfileEditSuccessKind.passwordUpdated,
+        message: 'Contraseña actualizada',
+      )),
     );
   }
 
-  Future<void> _onReset(ProfileEditResetEvent event, Emitter<ProfileEditState> emit) async {
+  Future<void> _onReset(
+      ProfileEditResetEvent event, Emitter<ProfileEditState> emit) async {
     emit(const ProfileEditInitial());
   }
 }

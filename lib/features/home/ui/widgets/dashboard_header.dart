@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:domora/core/theme/app_theme.dart';
+import 'package:domora/features/notifications/ui/bloc/notification_bloc.dart';
 
 /// Header oscuro del dashboard.
 ///
@@ -10,13 +13,9 @@ class DashboardHeader extends StatelessWidget {
   const DashboardHeader({
     super.key,
     this.onMenuTap,
-    this.onNotificationsTap,
-    this.hasNotifications = true,
   });
 
   final VoidCallback? onMenuTap;
-  final VoidCallback? onNotificationsTap;
-  final bool hasNotifications;
 
   @override
   Widget build(BuildContext context) {
@@ -56,28 +55,54 @@ class DashboardHeader extends StatelessWidget {
                 ),
               ),
 
-              // Campana con dot rojo.
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  _IconButtonOnDark(
-                    icon: Icons.notifications_outlined,
-                    onTap: onNotificationsTap,
-                  ),
-                  if (hasNotifications)
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFF3B30),
-                          shape: BoxShape.circle,
-                        ),
+              // Campana con badge dinámico de no leídas.
+              BlocBuilder<NotificationBloc, NotificationState>(
+                builder: (context, state) {
+                  final unread = state.unreadCount;
+                  final label = unread > 9 ? '9+' : '$unread';
+
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      _IconButtonOnDark(
+                        icon: Icons.notifications_outlined,
+                        onTap: () => context.push('/notifications'),
                       ),
-                    ),
-                ],
+                      if (unread > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF3B30),
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(
+                                color: AppTheme.surfaceDark,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                label,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ],
           ),

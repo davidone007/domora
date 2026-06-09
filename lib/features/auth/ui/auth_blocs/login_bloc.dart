@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:domora/features/auth/domain/usecases/login_usecase.dart';
+import 'package:domora/features/notifications/domain/usecases/initialize_fcm_usecase.dart';
  
 // EVENTS
 abstract class LoginEvent extends Equatable {
@@ -62,8 +63,9 @@ class LoginFailState extends LoginState {
 // BLOC
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final LoginUseCase _loginUseCase;
+  final InitializeFcmUseCase _initializeFcm;
 
-  LoginBloc(this._loginUseCase) : super(const LoginInitialState()) {
+  LoginBloc(this._loginUseCase, this._initializeFcm) : super(const LoginInitialState()) {
     on<LoginSubmitEvent>(_onSubmit);
     on<LoginResetEvent>((_, emit) => emit(const LoginInitialState()));
   }
@@ -78,14 +80,23 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       LoginParams(email: event.email, password: event.password),
     );
 
-    result.fold(
-      (failure) => emit(LoginFailState(failure.message)),
-      (auth) => emit(
-        LoginSuccessState(
-          role: auth.role,
-          onboardingCompleted: auth.onboardingCompleted,
-        ),
-      ),
+    await result.fold(
+      (failure) async => emit(LoginFailState(failure.message)),
+      (auth) async {
+        // Registrar/refrescar el token FCM antes de navegar, para garantizar
+        // que el dispositivo está suscrito a notificaciones al entrar al home.
+        try {
+          await _initializeFcm();
+        } catch (_) {
+          // No bloqueamos la navegación si la inicialización FCM falla.
+        }
+        emit(
+          LoginSuccessState(
+            role: auth.role,
+            onboardingCompleted: auth.onboardingCompleted,
+          ),
+        );
+      },
     );
   }
 }

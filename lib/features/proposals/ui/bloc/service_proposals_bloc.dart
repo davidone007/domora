@@ -1,8 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:domora/features/auth/domain/usecases/get_current_session_usecase.dart';
+import '../../domain/entities/proposal.dart';
 import '../../domain/entities/proposal_with_provider.dart';
 import '../../domain/usecases/get_proposals_by_service_usecase.dart';
+import '../../domain/usecases/accept_proposal_usecase.dart';
 
 // Events
 abstract class ServiceProposalsEvent extends Equatable {
@@ -30,49 +32,70 @@ class SortProposalsByPriceEvent extends ServiceProposalsEvent {
   List<Object?> get props => [ascending];
 }
 
+class AcceptProposalRequestedEvent extends ServiceProposalsEvent {
+  final Proposal proposal;
+
+  const AcceptProposalRequestedEvent(this.proposal);
+
+  @override
+  List<Object?> get props => [proposal];
+}
+
 // States
-enum ServiceProposalsStatus { initial, loading, success, error }
+enum ServiceProposalsStatus { initial, loading, success, error, accepting, acceptSuccess }
 
 class ServiceProposalsState extends Equatable {
   final ServiceProposalsStatus status;
   final List<ProposalWithProvider> proposals;
   final String? errorMessage;
+  final String? acceptedBookingId;
+  final double? acceptedAmount;
 
   const ServiceProposalsState({
     this.status = ServiceProposalsStatus.initial,
     this.proposals = const [],
     this.errorMessage,
+    this.acceptedBookingId,
+    this.acceptedAmount,
   });
 
   ServiceProposalsState copyWith({
     ServiceProposalsStatus? status,
     List<ProposalWithProvider>? proposals,
     String? errorMessage,
+    String? acceptedBookingId,
+    double? acceptedAmount,
   }) {
     return ServiceProposalsState(
       status: status ?? this.status,
       proposals: proposals ?? this.proposals,
       errorMessage: errorMessage ?? this.errorMessage,
+      acceptedBookingId: acceptedBookingId ?? this.acceptedBookingId,
+      acceptedAmount: acceptedAmount ?? this.acceptedAmount,
     );
   }
 
   @override
-  List<Object?> get props => [status, proposals, errorMessage];
+  List<Object?> get props => [status, proposals, errorMessage, acceptedBookingId, acceptedAmount];
 }
 
 // BLoC
 class ServiceProposalsBloc extends Bloc<ServiceProposalsEvent, ServiceProposalsState> {
   final GetProposalsByServiceUseCase _getProposalsByServiceUseCase;
   final GetCurrentSessionUseCase _getCurrentSession;
+  final AcceptProposalUseCase _acceptProposalUseCase;
 
   ServiceProposalsBloc({
     required GetProposalsByServiceUseCase getProposalsByServiceUseCase,
     required GetCurrentSessionUseCase getCurrentSession,
+    required AcceptProposalUseCase acceptProposalUseCase,
   })  : _getProposalsByServiceUseCase = getProposalsByServiceUseCase,
         _getCurrentSession = getCurrentSession,
+        _acceptProposalUseCase = acceptProposalUseCase,
         super(const ServiceProposalsState()) {
     on<FetchServiceProposalsEvent>(_onFetchServiceProposals);
     on<SortProposalsByPriceEvent>(_onSortProposalsByPrice);
+    on<AcceptProposalRequestedEvent>(_onAcceptProposalRequested);
   }
 
   Future<void> _onFetchServiceProposals(
@@ -123,4 +146,31 @@ class ServiceProposalsBloc extends Bloc<ServiceProposalsEvent, ServiceProposalsS
 
     emit(state.copyWith(proposals: sortedProposals));
   }
+
+  Future<void> _onAcceptProposalRequested(
+    AcceptProposalRequestedEvent event,
+    Emitter<ServiceProposalsState> emit,
+  ) async {
+    emit(state.copyWith(status: ServiceProposalsStatus.accepting));
+
+    final result = await _acceptProposalUseCase.execute(event.proposal);
+
+    await result.fold(
+      (failure) async => emit(state.copyWith(
+        status: ServiceProposalsStatus.error,
+        errorMessage: 'Error al aceptar la propuesta',
+      )),
+      (bookingId) async {
+        emit(state.copyWith(
+          status: ServiceProposalsStatus.acceptSuccess,
+          acceptedBookingId: bookingId,
+          acceptedAmount: event.proposal.price,
+        ));
+        // Refrescamos la lista para reflejar rechazos automáticos y el
+        // estado de propuesta aceptada antes de que el usuario regrese.
+        add(FetchServiceProposalsEvent(event.proposal.serviceId));
+      },
+    );
+  }
 }
+

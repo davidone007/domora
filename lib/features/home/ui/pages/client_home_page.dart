@@ -17,8 +17,7 @@ import 'package:domora/features/home/ui/widgets/service_card.dart';
 ///      Noticias y Ofertas (chips + banner promocional).
 ///   3. Bottom nav del MainShell.
 class ClientHomePage extends StatefulWidget {
-  final String? userId;
-  const ClientHomePage({super.key, this.userId});
+  const ClientHomePage({super.key});
 
   @override
   State<ClientHomePage> createState() => _ClientHomePageState();
@@ -39,34 +38,15 @@ class _ClientHomePageState extends State<ClientHomePage> {
       ..showSnackBar(SnackBar(content: Text('$name disponible próximamente')));
   }
 
-  void _onNotificationsTap() {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text('No tienes notificaciones nuevas')),
-      );
-  }
-
   @override
   Widget build(BuildContext context) {
     return MainShell(
       activeTab: MainTab.home,
       role: AppConstants.roleClient, // Añadido rol explícito
-      onTabSelected: (tab) {
-        if (tab == MainTab.profile) context.go(AppConstants.routeProfile);
-        if (tab == MainTab.requests) context.go(AppConstants.routeMyServices);
-        if (tab == MainTab.coupons) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(content: Text('Disponible próximamente')),
-            );
-        }
-      },
       body: Column(
         children: [
           // Header oscuro pegado al top.
-          DashboardHeader(onNotificationsTap: _onNotificationsTap),
+          const DashboardHeader(),
 
           // Sheet blanca con curva superior.
           Expanded(
@@ -152,8 +132,4 @@ class _ClientHomePageState extends State<ClientHomePage> {
       ),
     );
   }
-
-  // Mantiene la firma con Supabase por si más adelante mostramos el nombre
-  // del usuario en el saludo. Por ahora dejamos el saludo genérico para que
-  // sea consistente.
 }

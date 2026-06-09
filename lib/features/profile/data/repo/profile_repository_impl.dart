@@ -5,24 +5,24 @@ import 'package:domora/core/error/error_context.dart';
 import 'package:domora/core/error/failure_mapper.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/entities/avatar_file.dart';
-import 'package:domora/features/profile/data/mappers/profile_mappers.dart';
 import 'package:domora/features/profile/data/sources/profile_data_source.dart';
 import 'package:domora/features/profile/domain/entities/address.dart';
 import 'package:domora/features/profile/domain/entities/client_profile.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
 import 'package:domora/features/profile/domain/entities/provider_profile.dart';
+import 'package:domora/features/profile/domain/entities/provider_review.dart';
 import 'package:domora/features/profile/domain/entities/provider_stats.dart';
 import 'package:domora/features/profile/domain/repo/profile_repository.dart';
-import 'package:domora/features/profile/domain/usecases/update_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_client_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_provider_profile_usecase.dart';
-import 'package:domora/features/profile/domain/usecases/update_provider_address_usecase.dart';
+import 'package:domora/features/profile/domain/params/profile_params.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileDataSource _dataSource;
   final FailureMapper _errorMapper;
 
-  ProfileRepositoryImpl(this._dataSource, this._errorMapper);
+  ProfileRepositoryImpl(
+    this._dataSource,
+    this._errorMapper,
+  );
 
   @override
   Future<Either<Failure, FullProfile>> getCurrentProfile() async {
@@ -33,14 +33,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
         return const Left(AuthFailure('No hay una sesión activa'));
       }
 
-      final userMap = await _dataSource.getUser(userId);
-      if (userMap == null) {
+      var user = await _dataSource.getUser(userId);
+      if (user == null) {
         return const Left(ServerFailure('Usuario no encontrado'));
       }
 
       final authEmail = _dataSource.getCurrentUserEmail();
       if (authEmail != null && authEmail.isNotEmpty) {
-        userMap['email'] = authEmail;
+        user = user.copyWith(email: authEmail);
       }
 
       final role = await _dataSource.getRole(userId);
@@ -51,27 +51,24 @@ class ProfileRepositoryImpl implements ProfileRepository {
       ClientProfile? clientProfile;
       ProviderProfile? providerProfile;
       Address? primaryAddress;
+      var reviews = const <ProviderReview>[];
 
       if (role == AppConstants.roleClient) {
-        final cp = await _dataSource.getClientProfile(userId);
-        if (cp != null) clientProfile = ProfileMappers.clientProfileFromMap(cp);
+        clientProfile = await _dataSource.getClientProfile(userId);
       } else if (role == AppConstants.roleProvider) {
-        final pp = await _dataSource.getProviderProfile(userId);
-        if (pp != null) {
-          providerProfile = ProfileMappers.providerProfileFromMap(pp);
-        }
-
-        final addr = await _dataSource.getPrimaryAddress(userId);
-        if (addr != null) primaryAddress = ProfileMappers.addressFromMap(addr);
+        providerProfile = await _dataSource.getProviderProfile(userId);
+        primaryAddress = await _dataSource.getPrimaryAddress(userId);
+        reviews = await _dataSource.getProviderReviews(userId);
       }
 
       return Right(
         FullProfile(
-          user: ProfileMappers.userFromMap(userMap),
+          user: user,
           role: role,
           clientProfile: clientProfile,
           providerProfile: providerProfile,
           primaryAddress: primaryAddress,
+          reviews: reviews,
         ),
       );
     } catch (e, stackTrace) {
@@ -89,7 +86,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, Unit>> updateUserFields(UpdateUserFieldsParams params) async {
     try {
-      // Traducción dominio → esquema de BD: solo ocurre aquí.
       final dbMap = <String, dynamic>{
         if (params.firstName != null) 'first_name': params.firstName,
         if (params.lastName  != null) 'last_name':  params.lastName,
@@ -114,7 +110,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, Unit>> updateClientProfileFields(UpdateClientProfileParams params) async {
     try {
-      // Traducción dominio → esquema de BD.
       final dbMap = <String, dynamic>{
         if (params.bio       != null) 'bio':        params.bio,
         if (params.avatarUrl != null) 'avatar_url': params.avatarUrl,
@@ -138,7 +133,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, Unit>> updateProviderProfileFields(UpdateProviderProfileParams params) async {
     try {
-      // Traducción dominio → esquema de BD.
       final dbMap = <String, dynamic>{
         if (params.yearsExperience != null) 'years_experience': params.yearsExperience,
         if (params.hourlyRate      != null) 'hourly_rate':      params.hourlyRate,
@@ -165,7 +159,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, Unit>> updatePrimaryAddress(UpdateProviderAddressParams params) async {
     try {
-      // Traducción dominio → esquema de BD.
       final dbMap = <String, dynamic>{
         'address_line1': params.addressLine1,
         if (params.addressLine2 != null) 'address_line2': params.addressLine2,
@@ -198,7 +191,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
         isProvider: isProvider,
       );
 
-      // Update the appropriate profile table with the new avatar URL
       if (isProvider) {
         await _dataSource.updateProviderProfile(userId, {'avatar_url': publicUrl});
       } else {
@@ -218,8 +210,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<Either<Failure, FullProfile>> getProviderProfileById(String userId) async {
     try {
-      final userMap = await _dataSource.getUser(userId);
-      if (userMap == null) {
+      final user = await _dataSource.getUser(userId);
+      if (user == null) {
         return const Left(ServerFailure('Proveedor no encontrado'));
       }
 
@@ -231,25 +223,22 @@ class ProfileRepositoryImpl implements ProfileRepository {
       ProviderProfile? providerProfile;
       Address? primaryAddress;
 
-      final pp = await _dataSource.getProviderProfile(userId);
-      if (pp != null) {
-        providerProfile = ProfileMappers.providerProfileFromMap(pp);
-      }
-
-      final addr = await _dataSource.getPrimaryAddress(userId);
-      if (addr != null) primaryAddress = ProfileMappers.addressFromMap(addr);
+      providerProfile = await _dataSource.getProviderProfile(userId);
+      primaryAddress = await _dataSource.getPrimaryAddress(userId);
 
       // Cargamos las estadísticas reales
       final statsResult = await getProviderStats(userId);
       final ProviderStats? stats = statsResult.fold((_) => null, (s) => s);
+      final reviews = await _dataSource.getProviderReviews(userId);
 
       return Right(
         FullProfile(
-          user: ProfileMappers.userFromMap(userMap),
+          user: user,
           role: role!,
           providerProfile: providerProfile,
           primaryAddress: primaryAddress,
           stats: stats,
+          reviews: reviews,
         ),
       );
     } catch (e, stackTrace) {
@@ -287,5 +276,49 @@ class ProfileRepositoryImpl implements ProfileRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, FullProfile>> getClientPublicProfile(String userId) async {
+    try {
+      final user = await _dataSource.getUser(userId);
+      if (user == null) {
+        return const Left(ServerFailure('Cliente no encontrado'));
+      }
+
+      final clientProfile = await _dataSource.getClientProfile(userId);
+      final reviews = await _dataSource.getClientReviews(userId);
+
+      // Calcular rating promedio a partir de las reseñas recibidas.
+      double avgRating = 0.0;
+      if (reviews.isNotEmpty) {
+        final sum = reviews.map((r) => r.rating).reduce((a, b) => a + b);
+        avgRating = sum / reviews.length;
+      }
+
+      final stats = ProviderStats(
+        averageRating: avgRating,
+        totalReviewsCount: reviews.length,
+        completedServicesCount: 0,
+      );
+
+      return Right(
+        FullProfile(
+          user: user,
+          role: AppConstants.roleClient,
+          clientProfile: clientProfile,
+          stats: stats,
+          reviews: reviews,
+        ),
+      );
+    } catch (e, stackTrace) {
+      return Left(_errorMapper.mapException(
+        e,
+        stackTrace: stackTrace,
+        context: ErrorContext(
+          operation: 'getClientPublicProfile',
+          userId: userId,
+        ).toString(),
+      ));
+    }
+  }
 
 }

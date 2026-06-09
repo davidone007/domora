@@ -56,3 +56,10 @@ SPECS_REFACTOR_AUTH.md
 # .env files
 .env
 
+# Firebase secrets (service account private keys — never commit)
+*-firebase-adminsdk-*.json
+/google-services.json
+
+# Supabase CLI local state
+supabase/.temp/
+

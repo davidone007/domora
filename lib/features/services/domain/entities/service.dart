@@ -10,6 +10,8 @@ class Service extends Equatable {
   final DateTime? preferredDate;
   final String? preferredTimeStart;
   final int quotesCount;
+  final String? bookingProviderId;
+  final List<String> quoteProviderIds;
 
   const Service({
     required this.id,
@@ -20,6 +22,8 @@ class Service extends Equatable {
     this.preferredDate,
     this.preferredTimeStart,
     this.quotesCount = 0,
+    this.bookingProviderId,
+    this.quoteProviderIds = const [],
   });
 
   @override
@@ -32,5 +36,7 @@ class Service extends Equatable {
         preferredDate,
         preferredTimeStart,
         quotesCount,
+        bookingProviderId,
+        quoteProviderIds,
       ];
 }

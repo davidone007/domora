@@ -41,6 +41,9 @@ class ProviderOnboardingData {
   final String city;
   final String? neighborhood;
 
+  // Zonas de atención
+  final List<String> coverageCities;
+
   const ProviderOnboardingData({
     required this.userId,
     required this.firstName,
@@ -55,6 +58,7 @@ class ProviderOnboardingData {
     required this.department,
     required this.city,
     this.neighborhood,
+    this.coverageCities = const [],
   });
 }
 
@@ -146,6 +150,7 @@ class OnboardingDataSourceImpl implements OnboardingDataSource {
         'bio': data.bio,
         if (avatarUrl != null) 'avatar_url': avatarUrl,
         'is_available': true,
+        'coverage_cities': data.coverageCities,
       },
       onConflict: 'user_id',
     );

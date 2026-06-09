@@ -6,9 +6,12 @@ import 'package:intl/intl.dart';
 import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/widgets/main_shell.dart';
+import 'package:domora/core/widgets/rating_stars.dart';
 import 'package:domora/features/profile/domain/entities/full_profile.dart';
+import 'package:domora/features/profile/domain/entities/provider_review.dart';
 import 'package:domora/features/profile/ui/bloc/profile_bloc.dart';
 import 'package:domora/features/profile/ui/bloc/profile_signout_bloc.dart';
+import 'package:domora/features/profile/ui/widgets/review_card.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -47,91 +50,101 @@ class _ProfilePageState extends State<ProfilePage> {
             ..hideCurrentSnackBar()
             ..showSnackBar(SnackBar(content: Text(state.message)));
         } else if (state is ProfileSignOutSuccessState) {
-          context.go(AppConstants.routeWelcome);
+          context.go(AppConstants.routeLogin);
         }
       },
-      child: MainShell(
-        activeTab: MainTab.profile,
-        onTabSelected: (tab) {
-          if (tab == MainTab.home) _goToHome();
-          if (tab == MainTab.requests || tab == MainTab.coupons) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                const SnackBar(content: Text('Disponible próximamente')),
-              );
+      child: BlocBuilder<ProfileBloc, ProfileState>(
+        builder: (context, state) {
+          String? currentRole;
+          if (state is ProfileLoadedState) {
+            currentRole = state.profile.role;
+          } else if (state is ProfileTogglingAvailabilityState) {
+            currentRole = state.profile.role;
           }
-        },
-        body: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              // AppBar manual (no usamos Scaffold.appBar porque el MainShell ya
-              // posee el Scaffold raíz; añadir otro daría doble AppBar).
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: _goToHome,
-                      icon: const Icon(Icons.arrow_back, size: 22),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          'Mi perfil',
-                          style: Theme.of(context).textTheme.titleMedium,
+
+          return MainShell(
+            activeTab: MainTab.profile,
+            role: currentRole,
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  // AppBar manual (no usamos Scaffold.appBar porque el MainShell ya
+                  // posee el Scaffold raíz; añadir otro daría doble AppBar).
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: _goToHome,
+                          icon: const Icon(Icons.arrow_back, size: 22),
                         ),
-                      ),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              'Mi perfil',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ),
+                        BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
+                          builder: (context, signOutState) {
+                            final isLoading =
+                                signOutState is ProfileSignOutLoadingState;
+                            return IconButton(
+                              tooltip: 'Cerrar sesión',
+                              onPressed: isLoading
+                                  ? null
+                                  : () => context
+                                      .read<ProfileSignOutBloc>()
+                                      .add(const ProfileSignOutSubmitEvent()),
+                              icon: const Icon(Icons.logout, size: 22),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    BlocBuilder<ProfileSignOutBloc, ProfileSignOutState>(
-                      builder: (context, signOutState) {
-                        final isLoading =
-                            signOutState is ProfileSignOutLoadingState;
-                        return IconButton(
-                          tooltip: 'Cerrar sesión',
-                          onPressed: isLoading
-                              ? null
-                              : () => context
-                                  .read<ProfileSignOutBloc>()
-                                  .add(const ProfileSignOutSubmitEvent()),
-                          icon: const Icon(Icons.logout, size: 22),
-                        );
+                  ),
+                  Expanded(
+                    child: Builder(
+                      builder: (context) {
+                        if (state is ProfileLoadingState ||
+                            state is ProfileInitialState) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (state is ProfileErrorState) {
+                          return _ErrorView(
+                            message: state.message,
+                            onRetry: () => context
+                                .read<ProfileBloc>()
+                                .add(const ProfileRefreshEvent()),
+                          );
+                        }
+                        if (state is ProfileLoadedState) {
+                          return RefreshIndicator(
+                            onRefresh: () async => context
+                                .read<ProfileBloc>()
+                                .add(const ProfileRefreshEvent()),
+                            child: _ProfileContent(profile: state.profile),
+                          );
+                        }
+                        if (state is ProfileTogglingAvailabilityState) {
+                          return RefreshIndicator(
+                            onRefresh: () async => context
+                                .read<ProfileBloc>()
+                                .add(const ProfileRefreshEvent()),
+                            child: _ProfileContent(profile: state.profile),
+                          );
+                        }
+                        return const SizedBox.shrink();
                       },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: BlocBuilder<ProfileBloc, ProfileState>(
-                  builder: (context, state) {
-                    if (state is ProfileLoadingState ||
-                        state is ProfileInitialState) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (state is ProfileErrorState) {
-                      return _ErrorView(
-                        message: state.message,
-                        onRetry: () => context
-                            .read<ProfileBloc>()
-                            .add(const ProfileRefreshEvent()),
-                      );
-                    }
-                    if (state is ProfileLoadedState) {
-                      return RefreshIndicator(
-                        onRefresh: () async => context
-                            .read<ProfileBloc>()
-                            .add(const ProfileRefreshEvent()),
-                        child: _ProfileContent(profile: state.profile),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -164,7 +177,12 @@ class _ProfileContent extends StatelessWidget {
                 alignment: Alignment.topRight,
                 child: IconButton(
                   icon: const Icon(Icons.edit_outlined, color: AppTheme.textSecondary, size: 20),
-                  onPressed: () => context.push(AppConstants.routeProfileEdit, extra: profile),
+                  onPressed: () async {
+                    await context.push(AppConstants.routeProfileEdit, extra: profile);
+                    if (context.mounted) {
+                      context.read<ProfileBloc>().add(const ProfileRefreshEvent());
+                    }
+                  },
                   tooltip: 'Editar Perfil',
                 ),
               ),
@@ -277,6 +295,25 @@ class _ProfileContent extends StatelessWidget {
               ],
             ),
           ],
+          const SizedBox(height: 20),
+          _InfoSection(
+            title: 'Mis reseñas',
+            children: [
+              if (profile.reviews.isEmpty)
+                const _EmptyReviews()
+              else
+                Column(
+                  children: profile.reviews
+                      .map((review) => ReviewCard(
+                            review: review,
+                            showShadow: false,
+                            padding: 14,
+                            starsSize: 16,
+                          ))
+                      .toList(),
+                ),
+            ],
+          ),
         ],
 
         // Acciones.
@@ -389,3 +426,28 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
+
+class _EmptyReviews extends StatelessWidget {
+  const _EmptyReviews();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(Icons.rate_review_outlined, size: 20, color: AppTheme.textTertiary),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Aún no tienes reseñas registradas.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+

@@ -46,6 +46,7 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
   final String department;
   final String city;
   final String? neighborhood;
+  final List<String> coverageCities;
 
   const OnboardingSaveProviderEvent({
     required this.firstName,
@@ -60,6 +61,7 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
     required this.department,
     required this.city,
     this.neighborhood,
+    this.coverageCities = const [],
   });
 
   @override
@@ -76,6 +78,7 @@ class OnboardingSaveProviderEvent extends OnboardingEvent {
     department,
     city,
     neighborhood,
+    coverageCities,
   ];
 }
 
@@ -197,6 +200,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         department: event.department,
         city: event.city,
         neighborhood: event.neighborhood,
+        coverageCities: event.coverageCities,
       ),
     );
     result.fold(

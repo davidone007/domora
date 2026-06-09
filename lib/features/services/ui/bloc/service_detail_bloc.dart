@@ -1,9 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:domora/features/auth/domain/usecases/get_current_session_usecase.dart';
-import 'package:domora/features/proposals/domain/usecases/check_user_proposal_usecase.dart';
+import 'package:domora/features/profile/domain/usecases/get_current_profile_usecase.dart';
 import '../../domain/entities/service_detail.dart';
 import '../../domain/usecases/get_service_detail_usecase.dart';
+import '../../domain/usecases/check_provider_has_proposed_usecase.dart';
 
 // --- EVENTS ---
 abstract class ServiceDetailEvent extends Equatable {
@@ -29,6 +30,7 @@ class ServiceDetailState extends Equatable {
   final bool isProvider;
   final String? currentUserId;
   final bool hasProposed;
+  final bool isAvailable;
 
   const ServiceDetailState({
     this.status = ServiceDetailStatus.initial,
@@ -37,6 +39,7 @@ class ServiceDetailState extends Equatable {
     this.isProvider = false,
     this.currentUserId,
     this.hasProposed = false,
+    this.isAvailable = true,
   });
 
   ServiceDetailState copyWith({
@@ -46,6 +49,7 @@ class ServiceDetailState extends Equatable {
     bool? isProvider,
     String? currentUserId,
     bool? hasProposed,
+    bool? isAvailable,
   }) {
     return ServiceDetailState(
       status: status ?? this.status,
@@ -54,6 +58,7 @@ class ServiceDetailState extends Equatable {
       isProvider: isProvider ?? this.isProvider,
       currentUserId: currentUserId ?? this.currentUserId,
       hasProposed: hasProposed ?? this.hasProposed,
+      isAvailable: isAvailable ?? this.isAvailable,
     );
   }
 
@@ -64,7 +69,8 @@ class ServiceDetailState extends Equatable {
         errorMessage,
         isProvider,
         currentUserId,
-        hasProposed
+        hasProposed,
+        isAvailable,
       ];
 }
 
@@ -72,10 +78,14 @@ class ServiceDetailState extends Equatable {
 class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
   final GetServiceDetailUseCase _getServiceDetail;
   final GetCurrentSessionUseCase _getCurrentSession;
-  final CheckUserProposalUseCase _checkUserProposal;
+  final CheckProviderHasProposedUseCase _checkHasProposed;
+  final GetCurrentProfileUseCase _getCurrentProfile;
 
   ServiceDetailBloc(
-      this._getServiceDetail, this._getCurrentSession, this._checkUserProposal)
+      this._getServiceDetail,
+      this._getCurrentSession,
+      this._checkHasProposed,
+      this._getCurrentProfile)
       : super(const ServiceDetailState()) {
     on<FetchServiceDetailEvent>(_onFetch);
   }
@@ -89,6 +99,7 @@ class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
     String? userId;
     bool isProvider = false;
     bool hasProposed = false;
+    bool isAvailable = true;
 
     sessionResult.fold(
       (_) {},
@@ -101,8 +112,16 @@ class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
     );
 
     if (isProvider && userId != null) {
+      final profileResult = await _getCurrentProfile();
+      profileResult.fold(
+        (_) {},
+        (profile) {
+          isAvailable = profile.providerProfile?.isAvailable ?? true;
+        },
+      );
+
       final proposalResult =
-          await _checkUserProposal.execute(event.serviceId, userId!);
+          await _checkHasProposed.execute(event.serviceId, userId!);
       proposalResult.fold((_) {}, (exists) => hasProposed = exists);
     }
 
@@ -115,6 +134,7 @@ class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
         isProvider: isProvider,
         currentUserId: userId,
         hasProposed: hasProposed,
+        isAvailable: isAvailable,
       )),
       (detail) => emit(state.copyWith(
         status: ServiceDetailStatus.success,
@@ -122,6 +142,7 @@ class ServiceDetailBloc extends Bloc<ServiceDetailEvent, ServiceDetailState> {
         isProvider: isProvider,
         currentUserId: userId,
         hasProposed: hasProposed,
+        isAvailable: isAvailable,
       )),
     );
   }

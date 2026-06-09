@@ -45,6 +45,20 @@ Puedes ver el video con el flujo completo del Sprint 2 aquí:
 
 ---
 
+## ✅ Sprint 3 — Historias de usuario implementadas ( Ciclo transaccional )
+
+| HU   | Descripción | Código clave |
+|------|-------------|--------------|
+| HU14 | Aceptar propuesta y creación de reserva (`booking`) | `features/proposals/ui/screens/service_proposals_screen.dart`, RPC `accept_quote` |
+| HU15 | Realizar pago (efectivo o tarjeta — mock) | `features/proposals/ui/screens/payment_selection_screen.dart` |
+| HU16 | Historial de servicios completados | `features/proposals/ui/screens/booking_activity_screen.dart` |
+| HU17 | Calificar servicio (estrellas + comentario) | `features/proposals/ui/screens/rating_screen.dart` |
+| HU18 | Centro de notificaciones in-app + push (FCM) | `features/notifications`, `core/services/fcm_service.dart` |
+
+Además se incluyeron mejoras transversales de UI/UX y corrección de bugs (recuperación de contraseña, estados vacíos/error/carga reutilizables, badge real de no leídas, guardas de navegación, etc.).
+
+---
+
 ## 👥 Equipo de desarrollo
 
 - Andrés Felipe Cabezas Guerrero
@@ -172,11 +186,12 @@ flutter pub get
 
 ### 4. Configuración de Supabase y Variables de Entorno
 
-1. En el **SQL Editor** de Supabase, ejecute el archivo `supabase_schema.sql` (incluido en la raíz del proyecto). Este script configura:
+1. En el **SQL Editor** de Supabase, ejecute los scripts de la carpeta [`supabase/sql/`](supabase/sql) en el orden indicado en su [`README`](supabase/sql/README.md). Como mínimo, `supabase/sql/supabase_schema.sql` configura:
    - Tablas: `roles`, `users`, `user_roles`, `client_profiles`, `provider_profiles`, `addresses`.
    - Políticas RLS (Row Level Security) para protección de datos.
    - Bucket `avatars` en Storage para fotos de perfil.
    - Trigger `handle_new_user()` para sincronización automática.
+   - Para el flujo completo del Sprint 3 (pagos, reservas, calificaciones y notificaciones), ejecute también los demás scripts de `supabase/sql/`.
 2. Cree un archivo `.env` en la raíz del proyecto y agregue sus credenciales:
 
 ```env
@@ -294,6 +309,35 @@ Para probar las funcionalidades de publicación y cotización:
 4. **Ver Perfil del Aseador (Cliente):**
    - Dentro de la lista de propuestas de un servicio, toque el nombre o la foto de un proveedor para ver su **Perfil Público** con su experiencia, tarifa y estadísticas reales.
 
+### E. Flujo Transaccional y Notificaciones (Sprint 3)
+
+Para probar las funcionalidades del cierre del ciclo de marketplace, use las dos cuentas de prueba (un **Cliente** y un **Proveedor**) — idealmente en **dos dispositivos/emuladores** a la vez para ver las notificaciones cruzadas.
+
+1. **HU14 — Aceptar propuesta (Cliente):**
+   - Inicie sesión como **Cliente** y publique un servicio (o use uno existente con propuestas).
+   - Como **Proveedor**, entre al servicio disponible y envíe una **cotización**.
+   - Vuelva como **Cliente** → pestaña **Solicitudes** → abra su servicio → **"Ver propuestas"** → pulse **"Aceptar"** en una propuesta.
+   - ✔️ Se crea la reserva (`booking`), la propuesta pasa a `accepted`, el servicio a `in_progress` y las demás propuestas a `rejected`.
+
+2. **HU15 — Realizar pago (Cliente):**
+   - Tras aceptar, continúe al flujo de **pago**. Elija **Efectivo** o **Tarjeta** (datos de tarjeta simulados/mock).
+   - Confirme el pago.
+   - ✔️ Se registra el pago en `payments` y aparece la **pantalla de confirmación de pago exitoso**.
+
+3. **HU16 — Historial de servicios (Ambos):**
+   - Vaya a la pestaña **Actividad** (o Solicitudes → historial).
+   - ✔️ Se listan los servicios `completed` con título, fecha, contraparte y precio final, ordenados por fecha.
+
+4. **HU17 — Calificar servicio (Cliente):**
+   - Sobre un servicio finalizado, pulse **"Calificar"**.
+   - Asigne **1 a 5 estrellas** y escriba un comentario (opcional), luego confirme.
+   - ✔️ La reseña se guarda en `reviews` vinculada al `booking` y alimenta el promedio del proveedor.
+
+5. **HU18 — Notificaciones (Ambos):**
+   - **In-app:** toque la **campana** del dashboard para ver el **centro de notificaciones**. El badge muestra el conteo de no leídas (9+ con overflow); al abrir una alerta se marca como leída y el contador baja.
+   - **Push del SO (FCM):** con la app del destinatario **en segundo plano o cerrada**, realice una acción desde la otra cuenta (p. ej. el Proveedor envía una propuesta → el Cliente recibe un **banner del sistema**; el Cliente acepta → el Proveedor recibe el banner). Al tocar el banner se abre la app.
+   - > El token FCM se registra automáticamente al iniciar sesión. Para verificarlo: `SELECT email, (fcm_token IS NOT NULL) AS has_token FROM users;` en el SQL Editor.
+
 ---
 
 ## 🔄 Resumen visual de navegación
@@ -372,15 +416,15 @@ Cierre de sesión → /welcome
 
 ---
 
-## Próximos pasos (Sprint 3)
+## Sprint 3 — Completado ✅
 
-Puedes consultar el detalle de las tareas y criterios de aceptación en el **[Backlog del Sprint 3](Sprint3Backlog.md)**.
+El ciclo transaccional del marketplace quedó cerrado. Puedes consultar el detalle de las tareas y criterios de aceptación en el **[Backlog del Sprint 3](Sprint3Backlog.md)** y las instrucciones de prueba en la sección [Flujo Transaccional y Notificaciones](#e-flujo-transaccional-y-notificaciones-sprint-3).
 
-- Aceptar propuesta y creación de Booking (HU14)
-- Pasarela de pagos (HU15)
-- Historial de servicios completados (HU16)
-- Sistema de calificación post-servicio (HU17)
-- Notificaciones push en tiempo real (HU18)
+- ✅ Aceptar propuesta y creación de Booking (HU14)
+- ✅ Pasarela de pagos — efectivo / tarjeta mock (HU15)
+- ✅ Historial de servicios completados (HU16)
+- ✅ Sistema de calificación post-servicio (HU17)
+- ✅ Notificaciones in-app y push en tiempo real vía FCM (HU18)
 
 ---
 
@@ -390,4 +434,4 @@ Proyecto desarrollado como parte del curso **Aplicaciones Móviles** en la **Uni
 
 ---
 
-*Creado por el equipo de Domora — Sprint 1.*
+*Creado por el equipo de Domora — actualizado en el Sprint 3.*

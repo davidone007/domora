@@ -6,11 +6,13 @@ import '../../domain/entities/service.dart';
 class ServiceCard extends StatelessWidget {
   final Service service;
   final VoidCallback? onTap;
+  final bool showProposalSent;
 
   const ServiceCard({
     super.key,
     required this.service,
     this.onTap,
+    this.showProposalSent = false,
   });
 
   @override
@@ -57,6 +59,31 @@ class ServiceCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (showProposalSent) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primarySoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle, size: 16, color: AppTheme.primary),
+                      SizedBox(width: 6),
+                      Text(
+                        'Propuesta enviada',
+                        style: TextStyle(
+                          color: AppTheme.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (service.description != null && service.description!.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(

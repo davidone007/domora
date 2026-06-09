@@ -2,15 +2,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/network/network_info.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/entities/avatar_file.dart';
-import '../models/cleaning_details_model.dart';
-import '../models/service_address_model.dart';
+import '../models/publish_service_request_model.dart';
 import '../models/service_model.dart';
 import '../models/service_detail_model.dart';
-import '../../domain/entities/cleaning_service_request.dart';
 
 abstract class ServiceRemoteDataSource {
   /// Retorna el ID del servicio creado
-  Future<String> publishCleaningService(CleaningServiceRequest request);
+  Future<String> publishCleaningService(PublishServiceRequestModel request);
 
   Future<void> uploadServiceImages({
     required String serviceId,
@@ -26,6 +24,10 @@ abstract class ServiceRemoteDataSource {
 
   /// Obtiene el detalle de un servicio por su ID
   Future<ServiceDetailModel> getServiceById(String serviceId);
+
+  /// Comprueba si un proveedor ya tiene una propuesta enviada para un servicio.
+  /// Accede a la tabla `quotes` directamente — es acceso a datos, no lógica de negocio.
+  Future<bool> hasUserProposed(String serviceId, String providerId);
 }
 
 class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
@@ -42,10 +44,10 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
     }
 
     final response = await _client
-        .from('services')
-        .select('*, cleaning_details(*), addresses(*), service_images(*), quotes(count)')
-        .eq('id', serviceId)
-        .single();
+      .from('services')
+      .select('*, cleaning_details(*), addresses(*), service_images(*), quotes(count), bookings(provider_id)')
+      .eq('id', serviceId)
+      .single();
 
     return ServiceDetailModel.fromJson(response);
   }
@@ -74,24 +76,23 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
     // Consulta que trae todos los servicios y cuenta las propuestas (quotes)
     final response = await _client
-        .from('services')
-        .select('*, quotes(count)')
-        .order('created_at', ascending: false);
+      .from('services')
+      .select('*, quotes(provider_id), bookings(provider_id)')
+      .order('created_at', ascending: false);
 
     return (response as List).map((json) => ServiceModel.fromJson(json)).toList();
   }
 
   @override
-  Future<String> publishCleaningService(CleaningServiceRequest request) async {
+  Future<String> publishCleaningService(PublishServiceRequestModel request) async {
     if (!await _networkInfo.isConnected()) {
       throw const PostgrestException(message: 'No hay conexión a internet');
     }
 
-    // 1. Insertar dirección
-    final addressModel = ServiceAddressModel.fromEntity(request.address);
+    // 1. Insertar dirección (address ya es ServiceAddressModel, sin conversión)
     final addressResponse = await _client
         .from(AppConstants.tableAddresses)
-        .insert(addressModel.toJson(request.clientId))
+        .insert(request.address.toJson(request.clientId))
         .select('id')
         .single();
 
@@ -106,11 +107,10 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
     final serviceId = serviceResponse['id'] as String;
 
-    // 3. Insertar detalles de limpieza
-    final detailsModel = CleaningDetailsModel.fromEntity(request.details);
+    // 3. Insertar detalles de limpieza (details ya es CleaningDetailsModel)
     await _client
         .from('cleaning_details')
-        .insert(detailsModel.toJson(serviceId));
+        .insert(request.details.toJson(serviceId));
 
     return serviceId;
   }
@@ -138,6 +138,22 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
         });
       }
     }
+  }
+
+  @override
+  Future<bool> hasUserProposed(String serviceId, String providerId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const PostgrestException(message: 'No hay conexión a internet');
+    }
+
+    final response = await _client
+        .from('quotes')
+        .select('id')
+        .eq('service_id', serviceId)
+        .eq('provider_id', providerId)
+        .maybeSingle();
+
+    return response != null;
   }
 
   Future<String?> _uploadImage(String serviceId, AvatarFile file) async {

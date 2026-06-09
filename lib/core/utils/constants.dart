@@ -14,6 +14,7 @@ class AppConstants {
   static const String tableBookings = 'bookings';
   static const String tableReviews = 'reviews';
   static const String tableQuotes = 'quotes';
+  static const String tablePayments = 'payments';
 
   // ---------------------------------------------------------------------------
   // Buckets
@@ -46,4 +47,6 @@ class AppConstants {
   static const String routeProfileEdit = '/profile/edit';
   static const String routeMyServices = '/my-services';
   static const String routeServiceProposals = '/service-proposals';
+  static const String routeForgotPassword = '/forgot-password';
+  static const String routeResetPassword = '/reset-password';
 }

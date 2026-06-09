@@ -27,7 +27,8 @@ class AppTheme {
   static const Color textSecondary = Color(0xFF6E6E73);
 
   /// Gris claro para labels desactivados / hints.
-  static const Color textTertiary = Color(0xFF9A9AA0);
+  /// Ajustado a un tono ligeramente más oscuro para cumplir contraste AA.
+  static const Color textTertiary = Color(0xFF7A7A82);
 
   /// Gris muy claro para bordes de inputs.
   static const Color border = Color(0xFFE3E3E8);

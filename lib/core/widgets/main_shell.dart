@@ -5,14 +5,11 @@ import 'package:domora/core/theme/app_theme.dart';
 import 'package:domora/core/utils/constants.dart';
 
 /// Pestañas del bottom nav.
-enum MainTab { home, requests, coupons, profile }
+enum MainTab { home, requests, activity, profile }
 
 /// Shell reutilizable que envuelve cualquier pantalla principal con un
 /// bottom navigation bar oscuro y una píldora blanca elevada para la pestaña
 /// activa.
-///
-/// Cada pantalla principal (home cliente, home proveedor, etc.) se renderiza
-/// como `body` y le indica al shell qué pestaña está activa.
 class MainShell extends StatelessWidget {
   const MainShell({
     super.key,
@@ -26,14 +23,7 @@ class MainShell extends StatelessWidget {
   final MainTab activeTab;
   final Widget body;
   final String? role;
-
-  /// Callback opcional. Si la pestaña tocada es la misma activa, no se
-  /// invoca (no tiene sentido re-navegar a uno mismo).
   final void Function(MainTab tab)? onTabSelected;
-
-  /// Si la página tiene un fondo oscuro o decorativo que debe extenderse
-  /// detrás del nav, ponemos `true`. Para páginas con fondo blanco normal,
-  /// `false` deja el nav anclado al borde inferior con su propio fondo.
   final bool extendBodyBehindNav;
 
   void _handleTap(BuildContext context, MainTab tab) {
@@ -42,9 +32,6 @@ class MainShell extends StatelessWidget {
       return;
     }
 
-    // Navegación por defecto. La pantalla padre puede sobrescribir vía
-    // [onTabSelected] si necesita lógica especial (por ejemplo, decidir
-    // entre client-home y provider-home según rol).
     if (onTabSelected != null) {
       onTabSelected!(tab);
       return;
@@ -52,8 +39,6 @@ class MainShell extends StatelessWidget {
 
     switch (tab) {
       case MainTab.home:
-        // Si el rol es proveedor, intentamos ir al home de proveedor.
-        // Aunque el router suele manejar esto, aquí forzamos consistencia.
         if (role == AppConstants.roleProvider) {
           context.go(AppConstants.routeProviderHome);
         } else {
@@ -66,12 +51,8 @@ class MainShell extends StatelessWidget {
       case MainTab.requests:
         context.go(AppConstants.routeMyServices);
         break;
-      case MainTab.coupons:
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            const SnackBar(content: Text('Disponible próximamente')),
-          );
+      case MainTab.activity:
+        context.go('/activity');
         break;
     }
   }
@@ -91,9 +72,6 @@ class MainShell extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Bottom nav oscuro con la pestaña activa elevada en círculo blanco.
-// -----------------------------------------------------------------------------
 class _DomoraBottomNav extends StatelessWidget {
   const _DomoraBottomNav({required this.activeTab, required this.onTap, this.role});
 
@@ -135,10 +113,10 @@ class _DomoraBottomNav extends StatelessWidget {
                 onTap: onTap,
               ),
               _NavItem(
-                tab: MainTab.coupons,
-                icon: Icons.confirmation_number_outlined,
-                label: 'Cupones',
-                active: activeTab == MainTab.coupons,
+                tab: MainTab.activity,
+                icon: Icons.history_outlined,
+                label: 'Actividad',
+                active: activeTab == MainTab.activity,
                 onTap: onTap,
               ),
               _NavItem(
@@ -197,7 +175,6 @@ class _ActiveItem extends StatelessWidget {
       clipBehavior: Clip.none,
       alignment: Alignment.center,
       children: [
-        // Etiqueta abajo del círculo elevado.
         Positioned(
           bottom: 8,
           child: Text(
@@ -209,7 +186,6 @@ class _ActiveItem extends StatelessWidget {
             ),
           ),
         ),
-        // Círculo blanco elevado con icono verde.
         Positioned(
           top: -22,
           child: Container(
@@ -218,8 +194,7 @@ class _ActiveItem extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
-              border: Border.all(
-                  color: AppTheme.surfaceDark, width: 4),
+              border: Border.all(color: AppTheme.surfaceDark, width: 4),
             ),
             child: Icon(icon, color: AppTheme.primary, size: 28),
           ),

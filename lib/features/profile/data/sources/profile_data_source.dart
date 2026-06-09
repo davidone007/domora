@@ -5,17 +5,23 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:domora/core/utils/constants.dart';
 import 'package:domora/core/network/network_info.dart';
 import 'package:domora/core/entities/avatar_file.dart';
+import '../models/user_model.dart';
+import '../models/address_model.dart';
+import '../models/client_profile_model.dart';
+import '../models/provider_profile_model.dart';
+import '../models/provider_review_model.dart';
+import '../models/client_review_model.dart';
 
 abstract class ProfileDataSource {
   String? getCurrentUserId();
 
   /// Devuelve el email del usuario autenticado desde la sesión local de Supabase.
   String? getCurrentUserEmail();
-  Future<Map<String, dynamic>?> getUser(String userId);
+  Future<UserModel?> getUser(String userId);
   Future<String?> getRole(String userId);
-  Future<Map<String, dynamic>?> getClientProfile(String userId);
-  Future<Map<String, dynamic>?> getProviderProfile(String userId);
-  Future<Map<String, dynamic>?> getPrimaryAddress(String userId);
+  Future<ClientProfileModel?> getClientProfile(String userId);
+  Future<ProviderProfileModel?> getProviderProfile(String userId);
+  Future<AddressModel?> getPrimaryAddress(String userId);
 
   /// Actualiza la fila en la tabla `users` identificada por `userId`.
   Future<void> updateUser(String userId, Map<String, dynamic> updates);
@@ -24,10 +30,12 @@ abstract class ProfileDataSource {
   Future<void> updateClientProfile(String userId, Map<String, dynamic> updates);
 
   /// Actualiza la fila en `provider_profiles` para el `userId`.
-  Future<void> updateProviderProfile(String userId, Map<String, dynamic> updates);
+  Future<void> updateProviderProfile(
+      String userId, Map<String, dynamic> updates);
 
   /// Actualiza o crea la dirección principal del usuario.
-  Future<void> updatePrimaryAddress(String userId, Map<String, dynamic> updates);
+  Future<void> updatePrimaryAddress(
+      String userId, Map<String, dynamic> updates);
 
   /// Sube el avatar a Supabase Storage y retorna la URL pública.
   /// El parámetro [isProvider] determina la subcarpeta (client_avatars o provider_avatars).
@@ -39,13 +47,18 @@ abstract class ProfileDataSource {
 
   Future<int> getCompletedServicesCount(String providerId);
   Future<Map<String, dynamic>> getReviewsStats(String providerId);
+  Future<List<ProviderReviewModel>> getProviderReviews(String providerId);
+
+  /// Devuelve las reseñas recibidas por un cliente (escritas por proveedores).
+  Future<List<ClientReviewModel>> getClientReviews(String clientId);
 }
 
 class ProfileDataSourceImpl implements ProfileDataSource {
   final SupabaseClient _client;
   final NetworkInfo _networkInfo;
 
-  ProfileDataSourceImpl(this._client, {required NetworkInfo networkInfo}) : _networkInfo = networkInfo;
+  ProfileDataSourceImpl(this._client, {required NetworkInfo networkInfo})
+      : _networkInfo = networkInfo;
 
   @override
   String? getCurrentUserId() => _client.auth.currentUser?.id;
@@ -54,16 +67,18 @@ class ProfileDataSourceImpl implements ProfileDataSource {
   String? getCurrentUserEmail() => _client.auth.currentUser?.email;
 
   @override
-  Future<Map<String, dynamic>?> getUser(String userId) async {
+  Future<UserModel?> getUser(String userId) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    return await _client
+    final data = await _client
         .from(AppConstants.tableUsers)
         .select()
         .eq('id', userId)
         .maybeSingle();
+
+    return data != null ? UserModel.fromJson(data) : null;
   }
 
   @override
@@ -85,33 +100,37 @@ class ProfileDataSourceImpl implements ProfileDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>?> getClientProfile(String userId) async {
+  Future<ClientProfileModel?> getClientProfile(String userId) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    return await _client
+    final data = await _client
         .from(AppConstants.tableClientProfiles)
         .select()
         .eq('user_id', userId)
         .maybeSingle();
+
+    return data != null ? ClientProfileModel.fromJson(data) : null;
   }
 
   @override
-  Future<Map<String, dynamic>?> getProviderProfile(String userId) async {
+  Future<ProviderProfileModel?> getProviderProfile(String userId) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    return await _client
+    final data = await _client
         .from(AppConstants.tableProviderProfiles)
         .select()
         .eq('user_id', userId)
         .maybeSingle();
+
+    return data != null ? ProviderProfileModel.fromJson(data) : null;
   }
 
   @override
-  Future<Map<String, dynamic>?> getPrimaryAddress(String userId) async {
+  Future<AddressModel?> getPrimaryAddress(String userId) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
@@ -123,7 +142,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .eq('user_id', userId)
         .eq('is_primary', true)
         .maybeSingle();
-    if (primary != null) return primary;
+    if (primary != null) return AddressModel.fromJson(primary);
 
     final any = await _client
         .from(AppConstants.tableAddresses)
@@ -131,7 +150,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         .eq('user_id', userId)
         .limit(1)
         .maybeSingle();
-    return any;
+    return any != null ? AddressModel.fromJson(any) : null;
   }
 
   @override
@@ -144,36 +163,60 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw const SocketException('userId está vacío');
     }
 
-    await _client.from(AppConstants.tableUsers).update(updates).eq('id', userId);
+    await _client
+        .from(AppConstants.tableUsers)
+        .update(updates)
+        .eq('id', userId);
   }
 
   @override
-  Future<void> updateClientProfile(String userId, Map<String, dynamic> updates) async {
+  Future<void> updateClientProfile(
+      String userId, Map<String, dynamic> updates) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    await _client.from(AppConstants.tableClientProfiles).update(updates).eq('user_id', userId);
+    await _client
+        .from(AppConstants.tableClientProfiles)
+        .update(updates)
+        .eq('user_id', userId);
   }
 
   @override
-  Future<void> updateProviderProfile(String userId, Map<String, dynamic> updates) async {
+  Future<void> updateProviderProfile(
+      String userId, Map<String, dynamic> updates) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    await _client.from(AppConstants.tableProviderProfiles).update(updates).eq('user_id', userId);
+    await _client.from(AppConstants.tableProviderProfiles).upsert(
+      {
+        'user_id': userId,
+        ...updates,
+      },
+      onConflict: 'user_id',
+    );
   }
 
   @override
-  Future<void> updatePrimaryAddress(String userId, Map<String, dynamic> updates) async {
+  Future<void> updatePrimaryAddress(
+      String userId, Map<String, dynamic> updates) async {
     if (!await _networkInfo.isConnected()) {
       throw const SocketException('No internet');
     }
 
-    final current = await getPrimaryAddress(userId);
+    final current = await _client
+        .from(AppConstants.tableAddresses)
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_primary', true)
+        .maybeSingle();
+
     if (current != null && current['id'] != null) {
-      await _client.from(AppConstants.tableAddresses).update(updates).eq('id', current['id']);
+      await _client
+          .from(AppConstants.tableAddresses)
+          .update(updates)
+          .eq('id', current['id']);
       return;
     }
 
@@ -204,15 +247,14 @@ class ProfileDataSourceImpl implements ProfileDataSource {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final path = '$userId/avatar_$timestamp.$safeExt';
 
-    await _client.storage
-      .from(AppConstants.bucketAvatars)
-        .uploadBinary(
+    await _client.storage.from(AppConstants.bucketAvatars).uploadBinary(
           path,
           avatarFile.bytes,
           fileOptions: const FileOptions(upsert: true),
         );
 
-    final publicUrl = _client.storage.from(AppConstants.bucketAvatars).getPublicUrl(path);
+    final publicUrl =
+        _client.storage.from(AppConstants.bucketAvatars).getPublicUrl(path);
 
     return publicUrl;
   }
@@ -238,11 +280,14 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw const SocketException('No internet');
     }
 
-    // Consultamos las reviews uniéndolas con bookings para filtrar por provider_id
+    // Consultamos las reviews uniéndolas con bookings para filtrar por provider_id.
+    // POST-MIGRACIÓN: añadir .or('reviewer_type.eq.client,reviewer_type.is.null')
+    // para excluir reseñas proveedor→cliente del cálculo del promedio.
     final List<dynamic> response = await _client
         .from(AppConstants.tableReviews)
         .select('rating, bookings!inner(provider_id)')
-        .eq('bookings.provider_id', providerId);
+        .eq('bookings.provider_id', providerId)
+        .or('reviewer_type.eq.client,reviewer_type.is.null');
 
     if (response.isEmpty) {
       return {'average_rating': 0.0, 'total_reviews': 0};
@@ -255,5 +300,57 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       'average_rating': average,
       'total_reviews': ratings.length,
     };
+  }
+
+  @override
+  Future<List<ProviderReviewModel>> getProviderReviews(String providerId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    // POST-MIGRACIÓN: añadir .or('reviewer_type.eq.client,reviewer_type.is.null')
+    // para excluir reseñas proveedor→cliente de la vista pública del proveedor.
+    final List<dynamic> response = await _client
+        .from(AppConstants.tableReviews)
+        .select(
+          'id, rating, comment, '
+          'punctuality_rating, quality_rating, communication_rating, '
+          'created_at, '
+          'bookings!inner(provider_id, '
+          'users!bookings_client_id_fkey(first_name, last_name))',
+        )
+        .eq('bookings.provider_id', providerId)
+        .or('reviewer_type.eq.client,reviewer_type.is.null')
+        .order('created_at', ascending: false);
+
+    return response
+        .map((json) => ProviderReviewModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<ClientReviewModel>> getClientReviews(String clientId) async {
+    if (!await _networkInfo.isConnected()) {
+      throw const SocketException('No internet');
+    }
+
+    // Obtiene reviews escritas por proveedores sobre este cliente.
+    // reviewer_type = 'provider' significa que un proveedor calificó al cliente.
+    final List<dynamic> response = await _client
+        .from(AppConstants.tableReviews)
+        .select(
+          'id, rating, comment, '
+          'punctuality_rating, quality_rating, communication_rating, '
+          'created_at, '
+          'bookings!inner(client_id, '
+          'users!bookings_provider_id_fkey(first_name, last_name))',
+        )
+        .eq('bookings.client_id', clientId)
+        .eq('reviewer_type', 'provider')
+        .order('created_at', ascending: false);
+
+    return response
+        .map((json) => ClientReviewModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 }

@@ -8,6 +8,7 @@ class ProviderProfile extends Equatable {
   final bool isAvailable;
   final String? bio;
   final String? avatarUrl;
+  final List<String> coverageCities;
 
   const ProviderProfile({
     required this.id,
@@ -17,9 +18,10 @@ class ProviderProfile extends Equatable {
     this.isAvailable = true,
     this.bio,
     this.avatarUrl,
+    this.coverageCities = const [],
   });
 
   @override
   List<Object?> get props =>
-      [id, userId, yearsExperience, hourlyRate, isAvailable, bio, avatarUrl];
+      [id, userId, yearsExperience, hourlyRate, isAvailable, bio, avatarUrl, coverageCities];
 }
