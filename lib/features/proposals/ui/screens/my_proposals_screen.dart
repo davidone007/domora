@@ -226,9 +226,11 @@ class _ProposalStatusBadge extends StatelessWidget {
       case 'accepted':
         color = AppTheme.primary;
         label = 'Aceptada';
+        break;
       case 'rejected':
         color = AppTheme.error;
         label = 'Rechazada';
+        break;
       default:
         color = Colors.orange;
         label = 'Pendiente';

@@ -54,7 +54,9 @@ class FcmService {
     _handlersAttached = true;
 
     _tokenRefreshSub = _messaging.onTokenRefresh.listen((newToken) {
-      onTokenReceived(newToken);
+      onTokenReceived(newToken).catchError((Object e) {
+        if (kDebugMode) debugPrint('[FCM] Token refresh callback error: $e');
+      });
       if (kDebugMode) debugPrint('[FCM] Token refreshed');
     });
 

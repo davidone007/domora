@@ -395,7 +395,9 @@ Future<void> init() async {
   // FcmService (core) no importa ningún símbolo de `features/`.
   sl.registerLazySingleton(
     () => FcmService(
-      onTokenReceived: (token) => sl<RegisterFcmTokenUseCase>().execute(token),
+      onTokenReceived: (token) async {
+        await sl<RegisterFcmTokenUseCase>().execute(token);
+      },
       onNotificationReceived: () =>
           sl<NotificationBloc>().add(const FetchNotificationsEvent()),
     ),
